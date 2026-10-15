@@ -180,3 +180,39 @@
 
 .ed-actions .btn { white-space: nowrap; }
 @media (max-width: 380px) { .ed-top h2 { visibility: hidden; } }
+
+/* ---------- 꾸미기 모드: 착한 일 메모지 ----------
+   그림판 너비 기준 크기라 내보낸 그림(drawing.js의 MEMO 비율)과 같은 모양이 된다 */
+.ed-canvas-wrap { container-type: size; }
+.ed-memo {
+  position: absolute;
+  width: 50cqw;
+  padding: 3.5cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4cqw;
+  background: #fff2b3;
+  color: var(--plate-ink);
+  border-radius: 1.2cqw;
+  box-shadow: 0 0.8cqw 2cqw rgb(0 0 0 / 0.25);
+  transform: translate(-50%, -50%) rotate(-2deg);
+  touch-action: none;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+  z-index: 2;
+  transition: box-shadow 0.2s, transform 0.2s var(--ease-out);
+}
+.ed-memo::before {
+  content: "";
+  position: absolute;
+  top: -1.2cqw;
+  left: 36%;
+  width: 28%;
+  height: 2.8cqw;
+  background: rgb(255 198 90 / 0.85);
+}
+.ed-memo.is-dragging { cursor: grabbing; transform: translate(-50%, -50%) rotate(-2deg) scale(1.04); box-shadow: 0 2cqw 4cqw rgb(0 0 0 / 0.3); }
+.ed-memo-head { font-family: var(--font-display); font-size: 2.8cqw; color: #9a7323; }
+.ed-memo-body { font-family: var(--font-display); font-size: 4.2cqw; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
+.editor.is-decorate .ed-tip { display: block !important; color: var(--soup); }

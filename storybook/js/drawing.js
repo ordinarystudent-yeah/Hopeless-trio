@@ -1,6 +1,10 @@
 /* 별빛스프 — 그림 편집기
    StarSoupEditor.open({ title, image, askName, name }) → Promise<{ image, name } | null>
    - image: 이어서 그릴 기존 그림 (data URL)
+   꾸미기 모드: open({ title, base, memo: { text, x, y }, doneLabel })
+     → Promise<{ image, base, memo } | null>
+     - 메모지(착한 일)를 그림판 위에서 끌어 옮길 수 있다 (크기 조절 없음)
+     - image: 종이 바탕 + 그림 + 메모지를 합친 완성 그림, base: 메모 없는 그림만 (다시 꾸밀 때 사용)
    - 그림을 지우는 방법은 '전체 지우기' 하나뿐이며(실행 취소로 되돌릴 수 있음) 항상 확인창을 거친다
    - 결과 image는 그림이 있는 부분만 잘라낸 투명 배경 PNG (스티커로 사용)
    Pointer Events로 마우스·손가락·펜을 함께 처리한다. */
@@ -23,6 +27,9 @@
   var tool = DEFAULTS.tool, size = DEFAULTS.size, color = DEFAULTS.color;
   var pf = 1;          // 필압 배율 (펜슬일 때만 바뀜)
   var penSeen = false; // 펜슬을 한 번이라도 쓰면 손바닥(터치)은 그리기에서 무시
+  var memo = null;      // 꾸미기 모드의 메모지 { text, x, y } (x·y는 메모 가운데, 그림판 기준 0~1)
+  var memoEl = null;
+  var MEMO = { w: 0.5, pad: 0.035, head: 0.028, font: 0.042, line: 1.45 }; // 그림판 너비 대비 비율
   var undo = [], dirty = false, stroke = null, photo = null, stamp = null, resolver = null, ready = false;
 
   /* ---------- 준비 ---------- */
@@ -117,6 +124,10 @@
     init();
     opts = opts || {};
     $('editor-title').textContent = opts.title || '그림 그리기';
+    $('ed-done').textContent = opts.doneLabel || '다 그렸어요';
+    $('ed-tip').textContent = opts.memo ? '메모지를 끌어서 원하는 곳에 옮겨 보세요. 그림 없이 넘어가도 괜찮아요.' : '사진 파일을 그림판에 끌어다 놓거나 붙여넣어도 들어가요.';
+    root.classList.toggle('is-decorate', !!opts.memo);
+    setMemo(opts.memo || null);
     $('ed-name-field').hidden = !opts.askName;
     nameInput.value = opts.name || '';
     g.clearRect(0, 0, SIZE, SIZE);
@@ -132,7 +143,13 @@
     document.documentElement.classList.add('is-editing');
     $('ed-back').focus({ preventScroll: true });
 
-    if (opts.image) {
+    if (opts.base) {
+      // 꾸미기 모드: 지난번 그림을 원래 자리·크기 그대로
+      var bim = new Image();
+      bim.onload = function () { g.drawImage(bim, 0, 0, SIZE, SIZE); };
+      bim.onerror = function () { ui().toast('지난번 그림을 불러오지 못했어요. 새로 그려 주세요.'); };
+      bim.src = opts.base;
+    } else if (opts.image) {
       var im = new Image();
       im.onload = function () {
         var s = Math.min(SIZE * 0.86 / im.width, SIZE * 0.86 / im.height, 1.6);
@@ -165,6 +182,7 @@
 
   function finish() {
     if (photo) commitPhoto();
+    if (memo) { close(exportDecorated()); return; }
     var image = exportTrimmed();
     if (!image) { ui().toast('아직 그린 그림이 없어요. 그림을 그리거나 사진을 넣어 주세요.'); return; }
     close({ image: image, name: nameInput.value.trim() });
@@ -519,6 +537,114 @@
     out.height = Math.round(h * s);
     out.getContext('2d').drawImage(canvas, minX, minY, w, h, 0, 0, out.width, out.height);
     return out.toDataURL('image/png');
+  }
+
+  /* ---------- 메모지 (꾸미기 모드) ---------- */
+  function setMemo(m) {
+    if (memoEl) { memoEl.remove(); memoEl = null; }
+    memo = m && m.text ? { text: m.text, x: typeof m.x === 'number' ? m.x : 0.5, y: typeof m.y === 'number' ? m.y : 0.2 } : (m ? { text: '', x: 0.5, y: 0.2 } : null);
+    if (!memo || !memo.text) return;
+    memoEl = document.createElement('div');
+    memoEl.className = 'ed-memo';
+    memoEl.setAttribute('role', 'img');
+    memoEl.setAttribute('aria-label', '착한 일 메모지 (끌어서 옮기기)');
+    var head = document.createElement('span');
+    head.className = 'ed-memo-head';
+    head.textContent = '내가 한 착한 일';
+    var body = document.createElement('span');
+    body.className = 'ed-memo-body';
+    body.textContent = memo.text;
+    memoEl.append(head, body);
+    wrap.append(memoEl);
+    placeMemo();
+
+    var drag = null;
+    memoEl.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var r = wrap.getBoundingClientRect();
+      drag = { id: e.pointerId, r: r, dx: e.clientX - (r.left + memo.x * r.width), dy: e.clientY - (r.top + memo.y * r.height) };
+      try { memoEl.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
+      memoEl.classList.add('is-dragging');
+    });
+    memoEl.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var mw = memoEl.offsetWidth / drag.r.width / 2, mh = memoEl.offsetHeight / drag.r.height / 2;
+      memo.x = Math.max(mw, Math.min(1 - mw, (e.clientX - drag.dx - drag.r.left) / drag.r.width));
+      memo.y = Math.max(mh, Math.min(1 - mh, (e.clientY - drag.dy - drag.r.top) / drag.r.height));
+      placeMemo();
+      dirty = true;
+    });
+    var end = function () { drag = null; memoEl.classList.remove('is-dragging'); };
+    memoEl.addEventListener('pointerup', end);
+    memoEl.addEventListener('pointercancel', end);
+  }
+
+  function placeMemo() {
+    if (!memoEl) return;
+    memoEl.style.left = memo.x * 100 + '%';
+    memoEl.style.top = memo.y * 100 + '%';
+  }
+
+  // 한국어는 어절 단위로, 너무 긴 어절은 글자 단위로 줄을 나눈다
+  function wrapText(ctx, text, maxW) {
+    var lines = [], line = '';
+    text.split(/(\s+)/).filter(Boolean).forEach(function (tok) {
+      if (ctx.measureText(line + tok).width <= maxW) { line += tok; return; }
+      if (line.trim()) lines.push(line.trim());
+      line = '';
+      Array.from(tok.trim()).forEach(function (ch) {
+        if (line && ctx.measureText(line + ch).width > maxW) { lines.push(line); line = ch; } else line += ch;
+      });
+    });
+    if (line.trim()) lines.push(line.trim());
+    return lines;
+  }
+
+  function drawMemo(ctx, W) {
+    var pad = MEMO.pad * W, w = MEMO.w * W, fs = MEMO.font * W, hs = MEMO.head * W;
+    ctx.font = fs + 'px Jua, "Gowun Dodum", sans-serif';
+    var lines = wrapText(ctx, memo.text, w - pad * 2);
+    var h = pad * 2 + hs * 1.5 + lines.length * fs * MEMO.line;
+    var cx = memo.x * W, cy = memo.y * W;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-2 * Math.PI / 180);
+    ctx.shadowColor = 'rgba(0,0,0,.25)';
+    ctx.shadowBlur = W * 0.02;
+    ctx.shadowOffsetY = W * 0.008;
+    ctx.fillStyle = '#fff2b3';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(-w / 2, -h / 2, w, h, W * 0.012); else ctx.rect(-w / 2, -h / 2, w, h);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = 'rgba(255, 198, 90, .85)';                   // 위쪽 테이프
+    ctx.fillRect(-w * 0.14, -h / 2 - W * 0.012, w * 0.28, W * 0.028);
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#9a7323';
+    ctx.font = hs + 'px Jua, "Gowun Dodum", sans-serif';
+    ctx.fillText('내가 한 착한 일', -w / 2 + pad, -h / 2 + pad);
+    ctx.fillStyle = '#3b2c18';
+    ctx.font = fs + 'px Jua, "Gowun Dodum", sans-serif';
+    lines.forEach(function (ln, i) { ctx.fillText(ln, -w / 2 + pad, -h / 2 + pad + hs * 1.5 + i * fs * MEMO.line); });
+    ctx.restore();
+  }
+
+  // 꾸미기 결과: 종이 바탕 + 그림 + 메모지 (정사각형). 그린 것도 메모도 없으면 image는 null
+  function exportDecorated() {
+    var d = g.getImageData(0, 0, SIZE, SIZE).data, drawn = false;
+    for (var i = 3; i < d.length; i += 16) { if (d[i] > 8) { drawn = true; break; } }
+    var base = drawn ? canvas.toDataURL('image/png') : null;
+    if (!drawn && !memo.text) return { image: null, base: null, memo: { x: memo.x, y: memo.y } };
+    var out = document.createElement('canvas');
+    var W = EXPORT_MAX;
+    out.width = out.height = W;
+    var o = out.getContext('2d');
+    o.fillStyle = '#fbf6ea';
+    o.fillRect(0, 0, W, W);
+    o.drawImage(canvas, 0, 0, W, W);
+    if (memo.text) drawMemo(o, W);
+    return { image: out.toDataURL('image/jpeg', 0.9), base: base, memo: { x: memo.x, y: memo.y } };
   }
 
   window.StarSoupEditor = { open: open };

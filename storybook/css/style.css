@@ -430,7 +430,7 @@ textarea.input { resize: none; }
   position: absolute;
   right: 10cqh;
   top: 9cqh;
-  width: 40cqh;
+  width: 52cqh;
   margin: 0;
   padding: 2cqh 2cqh 1cqh;
   background: var(--paper);
@@ -439,7 +439,7 @@ textarea.input { resize: none; }
   transform: rotate(5deg);
   box-shadow: 0 3cqh 6cqh -2cqh rgb(0 0 0 / 0.6);
 }
-.polaroid img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; }
+.polaroid img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
 .polaroid figcaption { font-family: var(--font-display); font-size: 3.4cqh; text-align: center; padding-top: 1cqh; }
 
 /* ---------- 엔딩 기록 (#10 오른쪽 쪽) ---------- */

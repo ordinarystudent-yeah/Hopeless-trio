@@ -6,7 +6,8 @@
   var store = window.StarSoupStorage;
   var LAST = S.scenes.length - 1;
   var IMG_FOOD = 'food-custom';
-  var IMG_DEED = 'deed-art';
+  var IMG_DEED = 'deed-art';        // 착한 일 꾸미기 완성 그림 (메모지 포함)
+  var IMG_DEED_BASE = 'deed-base';  // 메모지 없는 그림만 (다시 꾸밀 때)
 
   var book = document.getElementById('book');
   var progress = document.getElementById('progress');
@@ -19,7 +20,7 @@
     return {
       version: 2, scene: 0, page: 0, maxScene: 0,
       name: '', food: null, customFoodName: '', deed: '', taste: null,
-      stickers: {}, returnTo: null
+      stickers: {}, deedMemo: null, returnTo: null
     };
   }
   var state = freshState();
@@ -184,12 +185,15 @@
     s.maxScene = Number.isInteger(raw.maxScene) ? clamp(raw.maxScene, 0, LAST) : 0;
     s.scene = Number.isInteger(raw.scene) ? clamp(raw.scene, 0, s.maxScene) : 0;
     s.page = raw.page === 1 ? 1 : 0;
+    if (raw.deedMemo && typeof raw.deedMemo === 'object') {
+      s.deedMemo = { x: num(raw.deedMemo.x, 0, 1, 0.5), y: num(raw.deedMemo.y, 0, 1, 0.2) };
+    }
     if (raw.stickers && typeof raw.stickers === 'object') {
       S.scenes.forEach(function (sc) {
         var list = raw.stickers[sc.id];
         if (!Array.isArray(list)) return;
         s.stickers[sc.id] = list.filter(function (st) {
-          return st && (st.kind === 'food' || st.kind === 'deed');
+          return st && st.kind === 'food';
         }).slice(0, 8).map(function (st) {
           return {
             kind: st.kind, x: num(st.x, 0, 1, 0.5), y: num(st.y, 0, 1, 0.5),
@@ -414,7 +418,14 @@
     return el('div', { class: 'pg-text reveal' + (f ? '' : ' is-empty'), 'aria-live': 'polite' },
       el('p', { class: 'eyebrow', text: f ? '한입 냠, ' + f.name : '음식을 고르면' }),
       el('p', { class: 'story story--sm', text: f ? f.desc : '왼쪽에서 먹고 싶은 음식을 골라 보세요. 고른 음식은 스티커가 되어 이 책에 붙어요.' }),
-      f ? el('p', { class: 'hint sticker-hint', text: '스티커를 끌어서 원하는 곳에 붙여 보세요. 모서리를 끌면 크기와 방향이 바뀌어요.' }) : null);
+      f ? el('p', { class: 'hint sticker-hint', text: foodStickerHint() }) : null);
+  }
+
+  function foodStickerHint() {
+    var where = foodStickerScene();
+    if (!where) return mode === 'spread' ? '다음 장면으로 넘기면 고른 음식이 스티커가 되어 나타나요.' : '스티커가 나타나면 끌어서 원하는 곳에 붙여 보세요.';
+    if (where !== 'food') return '고른 음식 스티커는 다음 장면에 붙어 있어요.';
+    return '스티커를 끌어서 원하는 곳에 붙여 보세요. 모서리를 끌면 크기와 방향이 바뀌어요.';
   }
 
   function pickFood(leaf, id, fromEl) {
@@ -428,19 +439,11 @@
       old.replaceWith(fresh);
       fresh.classList.add('is-pop');
     }
-    if (changed || !findSticker('food', 'food')) placeSticker(leaf, 'food', 'food', fromEl);
+    // 고르기만 한다. 스티커는 다음 화면으로 넘겼을 때 나타나고, 쪽·장면은 저절로 넘어가지 않는다.
+    // 이미 붙인 스티커가 있으면 그 자리에서 그림만 바뀐다.
+    if (changed) repaintFoodStickers();
     updateControls();
     saveSoon();
-    // 고르기만 하고 쪽·장면은 넘기지 않는다. 넘기는 건 언제나 '다음' 버튼이나 손가락으로.
-    hintHiddenSticker('food');
-  }
-
-  // 한 쪽씩 볼 때 스티커가 지금 안 보이는 쪽에 있으면 알려 준다
-  function hintHiddenSticker(kind) {
-    var st = findSticker(S.scenes[state.scene].id, kind);
-    if (mode === 'single' && st && (st.x < 0.5) !== (state.page === 0)) {
-      toast(state.page === 0 ? '스티커는 다음 쪽에 붙어 있어요.' : '스티커는 앞쪽에 붙어 있어요.');
-    }
   }
 
   function drawFood(leaf) {
@@ -451,13 +454,10 @@
       state.customFoodName = res.name.slice(0, S.limits.foodName);
       saveImage(IMG_FOOD, res.image);
       state.food = 'custom';
-      // 카드에 내 그림이 보이도록 장면을 새로 그린 뒤 스티커를 붙인다
+      // 카드에 내 그림이 보이도록 장면을 새로 그린다. 스티커는 다음 화면에서 나타난다.
       rerender();
-      var fresh = currentLeaf();
-      placeSticker(fresh, 'food', 'food', fresh.querySelector('.tile[data-id="custom"]'));
       updateControls();
       saveNow();
-      hintHiddenSticker('food');
     });
   }
 
@@ -482,19 +482,7 @@
           onclick: function () { area.value = ex; state.deed = ex; count(); saveSoon(); }
         });
       }));
-    var has = !!images[IMG_DEED];
-    var draw = el('button', {
-      type: 'button', class: 'btn btn-soft btn-small', text: has ? '착한 일 그림 다시 그리기' : '그림이나 사진으로 꾸미기',
-      onclick: function () {
-        window.StarSoupEditor.open({ title: '착한 일 그리기', image: images[IMG_DEED] }).then(function (res) {
-          if (!res) return;
-          saveImage(IMG_DEED, res.image);
-          rerender();
-          placeSticker(currentLeaf(), 'deed', 'deed', null);
-          saveNow();
-        });
-      }
-    });
+    var draw = el('p', { class: 'hint deed-next-hint', text: '다음으로 넘기면 그림이나 사진으로 착한 일을 꾸밀 수 있어요.' });
     return el('div', { class: 'pg-widget' },
       el('div', { class: 'field' },
         el('label', { for: 'input-deed', text: '내가 한 착한 일' }),
@@ -545,44 +533,51 @@
   }
 
   function stickerSource(st) {
-    if (st.kind === 'deed') return { image: images[IMG_DEED], emoji: '💛', label: '착한 일 그림 스티커' };
     var f = ctx().food;
     if (!f) return null;
     return { image: f.custom ? images[IMG_FOOD] : f.image, emoji: f.emoji, label: f.name + ' 스티커' };
   }
 
-  function placeSticker(leaf, sceneId, kind, fromEl) {
-    var list = state.stickers[sceneId] || (state.stickers[sceneId] = []);
-    var st = findSticker(sceneId, kind);
-    if (!st) {
-      var spot = S.stickerSpots[kind];
-      // 한 쪽씩 볼 때는 지금 보고 있는 쪽에 붙인다 (음식은 왼쪽 쪽 카드 격자의 빈 칸)
-      if (mode === 'single' && (spot.x < 0.5) !== (state.page === 0)) {
-        spot = kind === 'food' && state.page === 0 ? S.stickerSpots.foodLeft
-          : { x: state.page === 0 ? spot.x - 0.5 : spot.x + 0.5, y: spot.y, w: spot.w, r: spot.r };
-      }
-      st = { kind: kind, x: spot.x, y: spot.y, w: spot.w, r: spot.r };
-      list.push(st);
-    }
-    paintStickers(leaf);
-    var node = leaf._stickers.querySelector('[data-kind="' + kind + '"]');
-    if (!node) return;
-    // 넓은 화면에서는 바로 손잡이를 보여 주고, 좁은 화면에서는 눌렀을 때만 (옆 카드를 가리지 않게)
-    if (mode === 'spread') selectSticker(leaf, node);
-    // 고른 카드에서 스티커가 톡 튀어나와 붙는 자리로 날아간다
-    if (reduceMotion) return;
-    var to = node.getBoundingClientRect();
-    var from = fromEl && fromEl.getBoundingClientRect();
-    var dx = 0, dy = 0;
-    if (from && mode === 'spread') {
-      dx = from.left + from.width / 2 - (to.left + to.width / 2);
-      dy = from.top + from.height / 2 - (to.top + to.height / 2);
-    }
-    node.querySelector('.st-body').animate([
-      { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.4) rotate(-20deg)', opacity: 0.4 },
-      { transform: 'translate(' + dx * 0.2 + 'px,' + (dy * 0.2 - 30) + 'px) scale(1.15) rotate(6deg)', opacity: 1, offset: 0.7 },
-      { transform: 'none', opacity: 1 }
-    ], { duration: 640, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  // 음식 스티커가 붙어 있는 장면 id (없으면 null)
+  function foodStickerScene() {
+    var ids = Object.keys(state.stickers);
+    for (var i = 0; i < ids.length; i++) if (findSticker(ids[i], 'food')) return ids[i];
+    return null;
+  }
+
+  function repaintFoodStickers() {
+    var leaf = currentLeaf();
+    if (leaf) paintStickers(leaf);
+    var hint = leaf && leaf.querySelector('.sticker-hint');
+    if (hint) hint.textContent = foodStickerHint();
+  }
+
+  // 음식을 고른 화면에서 다음 화면으로 넘기면, 도착한 화면에 스티커가 톡 나타난다
+  // (한 쪽씩 보기: #4 오른쪽 쪽 / 펼침면: #5 요정 장면)
+  function spawnFoodSticker() {
+    if (!state.food || foodStickerScene()) return;
+    var sceneId = S.scenes[state.scene].id;
+    var spot = S.stickerSpots[sceneId];
+    if (!spot) return;
+    var st = { kind: 'food', x: spot.x, y: spot.y, w: spot.w, r: spot.r };
+    (state.stickers[sceneId] = state.stickers[sceneId] || []).push(st);
+    saveNow();
+    var leaf = currentLeaf();
+    setTimeout(function () {
+      if (!leaf.isConnected || leaf.classList.contains('is-leaving')) return;
+      paintStickers(leaf);
+      var hint = leaf.querySelector('.sticker-hint');
+      if (hint) hint.textContent = foodStickerHint();
+      var node = leaf._stickers.querySelector('[data-kind="food"]');
+      if (!node) return;
+      if (mode === 'spread') selectSticker(leaf, node);
+      node.querySelector('.st-body').animate([
+        { transform: 'scale(.2) rotate(-25deg)', opacity: 0 },
+        { transform: 'scale(1.18) rotate(8deg)', opacity: 1, offset: 0.65 },
+        { transform: 'none', opacity: 1 }
+      ], { duration: 620, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      toast('고른 음식이 스티커가 되었어요! 끌어서 붙여 보세요.');
+    }, ARC.duration * 0.8);
   }
 
   function paintStickers(leaf) {
@@ -949,8 +944,36 @@
       if (grid) { grid.classList.remove('is-shake'); void grid.offsetWidth; grid.classList.add('is-shake'); }
       return;
     }
-    if (mode === 'single' && state.page === 0) { flipPage(1); return; }
-    go(state.returnTo != null && state.scene < state.returnTo ? state.returnTo : state.scene + 1, 0);
+    var here = S.scenes[state.scene].id;
+    var fromFoodChoice = here === 'food' && (mode === 'spread' || state.page === 0);
+    if (here === 'deed' && (mode === 'spread' || state.page === 1)) { openDeedDecor(); return; }
+    if (mode === 'single' && state.page === 0) flipPage(1);
+    else go(forwardTarget(), 0);
+    if (fromFoodChoice) spawnFoodSticker();
+  }
+
+  function forwardTarget() {
+    return state.returnTo != null && state.scene < state.returnTo ? state.returnTo : state.scene + 1;
+  }
+
+  // 착한 일을 적은 뒤 나오는 꾸미기 화면 (동화 쪽이 아닌 별도 화면).
+  // 그림이나 사진을 넣고, 적은 착한 일이 메모지로 나와 끌어서 옮길 수 있다. 완성 그림은 #7에 붙는다.
+  function openDeedDecor() {
+    var m = state.deedMemo || {};
+    window.StarSoupEditor.open({
+      title: '착한 일 꾸미기',
+      base: images[IMG_DEED_BASE],
+      memo: { text: state.deed.trim(), x: m.x, y: m.y },
+      doneLabel: '다 꾸몄어요'
+    }).then(function (res) {
+      if (!res) return; // '동화로'를 누르면 #6에 그대로 머문다
+      state.deedMemo = res.memo;
+      [[IMG_DEED_BASE, res.base], [IMG_DEED, res.image]].forEach(function (pair) {
+        if (pair[1]) saveImage(pair[0], pair[1]);
+        else { delete images[pair[0]]; store.deleteImage(pair[0]).catch(function () {}); }
+      });
+      go(forwardTarget(), 0);
+    });
   }
 
   function prev() {
@@ -1164,7 +1187,7 @@
   /* ---------- 시작 ---------- */
   var saved = { scene: 0, page: 0 };
   function loadImages() {
-    var keys = [IMG_FOOD, IMG_DEED];
+    var keys = [IMG_FOOD, IMG_DEED, IMG_DEED_BASE];
     return Promise.all(keys.map(function (k) {
       return store.getImage(k).then(function (v) { if (typeof v === 'string') images[k] = v; }, function () {});
     }));
