@@ -425,22 +425,48 @@ textarea.input { resize: none; }
 .is-shake { animation: shake 0.4s; }
 @keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
-/* 착한 일 그림 (#7) */
-.polaroid {
-  position: absolute;
-  right: 10cqh;
-  top: 9cqh;
-  width: 52cqh;
+/* 착한 일 종이 (#7, 13쪽): 종이 바탕 + 그림 + 메모지를 사진처럼. 끌어서 옮긴다 */
+.paper-body {
   margin: 0;
-  padding: 2cqh 2cqh 1cqh;
+  padding: 1.8cqh 1.8cqh 1cqh;
   background: var(--paper);
   color: var(--plate-ink);
   border-radius: 1cqh;
-  transform: rotate(5deg);
-  box-shadow: 0 3cqh 6cqh -2cqh rgb(0 0 0 / 0.6);
+  box-shadow: 0 2.4cqh 4.8cqh -1.6cqh rgb(0 0 0 / 0.6);
 }
-.polaroid img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
-.polaroid figcaption { font-family: var(--font-display); font-size: 3.4cqh; text-align: center; padding-top: 1cqh; }
+.paper-body img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; pointer-events: none; }
+.paper-body figcaption { font-family: var(--font-display); font-size: 3.2cqh; text-align: center; padding-top: 1cqh; }
+.sticker--paper .st-body { filter: none; }
+.sticker--paper.is-dragging .st-body { transform: scale(1.03); box-shadow: 0 4cqh 6cqh -2cqh rgb(0 0 0 / 0.65); }
+
+/* 착한 일 꾸미기 안내 화면 */
+.prompt-card { align-items: center; text-align: center; gap: 14px; }
+.prompt-card h1 { text-wrap: balance; word-break: keep-all; }
+.prompt-kicker { margin: 0; font-family: var(--font-display); font-size: 0.85rem; color: var(--soft); letter-spacing: 0.06em; }
+.prompt-text { margin: 0; max-width: 34em; color: var(--soft); word-break: keep-all; }
+.prompt-preview:empty { display: none; }
+.prompt-memo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 260px;
+  padding: 14px 18px;
+  background: #fff2b3;
+  color: var(--plate-ink);
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  line-height: 1.4;
+  text-align: left;
+  transform: rotate(-2deg);
+  box-shadow: 0 8px 18px rgb(0 0 0 / 0.3);
+  word-break: keep-all;
+}
+.prompt-memo-head { font-size: 0.8rem; color: #9a7323; }
+.prompt-paper { width: min(200px, 50vw); container-type: inline-size; transform: rotate(3deg); padding: 10px 10px 6px; border-radius: 6px; }
+.prompt-paper figcaption { font-size: 0.85rem; padding-top: 4px; }
+.prompt-go { min-width: min(100%, 280px); min-height: 64px; font-size: 1.25rem; margin-top: 4px; }
+#deed-prompt .intro-actions .btn { flex: 1; }
 
 /* ---------- 엔딩 기록 (#10 오른쪽 쪽) ---------- */
 .recap h2 { margin: 0; font-family: var(--font-display); font-size: 6cqh; font-weight: 400; text-wrap: balance; }

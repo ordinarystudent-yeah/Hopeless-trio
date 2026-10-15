@@ -152,7 +152,7 @@
     {
       id: 'serve', act: 2, tone: 'gold',
       image: 'assets/fairies/07-fairies-serve.png', alt: '박수를 치며 음식을 놓아 주는 요정들',
-      pages: [{ art: 'cloche', widgets: ['deed-art'] }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
+      pages: [{ art: 'cloche' }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
       text: function (c) {
         if (c.deed) {
           return [
@@ -204,7 +204,8 @@
   var stickerSpots = {
     // 음식 스티커는 음식을 고른 다음 화면에 나타난다
     food: { x: 0.75, y: 0.68, w: 0.12, r: -6 },     // 한 쪽씩 보기: #4 오른쪽 쪽 아래
-    fairies: { x: 0.76, y: 0.76, w: 0.11, r: 6 }    // 펼침면: #5 요정 장면 오른쪽 쪽 아래
+    fairies: { x: 0.76, y: 0.76, w: 0.11, r: 6 },   // 펼침면: #5 요정 장면 오른쪽 쪽 아래
+    serve: { x: 0.3, y: 0.42, w: 0.15, r: 5 }       // 착한 일 종이(그림+메모지): #7 왼쪽 쪽(13쪽)
   };
 
   /* ---------- 임시 그림 (실제 삽화가 들어오기 전까지만 사용) ---------- */
@@ -300,7 +301,7 @@
   };
 
   window.StarSoup = {
-    version: '0.9',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '1.0',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

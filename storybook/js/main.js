@@ -193,7 +193,7 @@
         var list = raw.stickers[sc.id];
         if (!Array.isArray(list)) return;
         s.stickers[sc.id] = list.filter(function (st) {
-          return st && st.kind === 'food';
+          return st && (st.kind === 'food' || st.kind === 'deed');
         }).slice(0, 8).map(function (st) {
           return {
             kind: st.kind, x: num(st.x, 0, 1, 0.5), y: num(st.y, 0, 1, 0.5),
@@ -316,9 +316,6 @@
       case 'food-grid': return foodGrid(leaf);
       case 'food-result': return foodResult(c);
       case 'deed': return deedField(leaf);
-      case 'deed-art': return images[IMG_DEED]
-        ? el('figure', { class: 'polaroid' }, el('img', { src: images[IMG_DEED], alt: '내가 그린 착한 일' }), el('figcaption', { text: '내가 한 착한 일' }))
-        : null;
       case 'taste': return tasteList(leaf);
       case 'recap': return recap(c);
     }
@@ -533,6 +530,7 @@
   }
 
   function stickerSource(st) {
+    if (st.kind === 'deed') return images[IMG_DEED] ? { image: images[IMG_DEED], paper: true, label: '내가 꾸민 착한 일 종이' } : null;
     var f = ctx().food;
     if (!f) return null;
     return { image: f.custom ? images[IMG_FOOD] : f.image, emoji: f.emoji, label: f.name + ' 스티커' };
@@ -586,6 +584,7 @@
     (state.stickers[leaf._sceneId] || []).forEach(function (st) {
       var src = stickerSource(st);
       if (!src) return;
+      if (src.paper) { layer.append(paperSticker(leaf, st, src)); return; }
       var body = el('div', { class: 'st-body' });
       var emoji = el('span', { class: 'st-emoji', text: src.emoji });
       body.append(emoji);
@@ -606,6 +605,31 @@
       bindSticker(leaf, node);
       layer.append(node);
     });
+  }
+
+  // 착한 일 종이: 사진처럼 보이는 종이 한 장. 옮기기만 한다 (크기·방향 조절 없음)
+  function paperSticker(leaf, st, src) {
+    var node = el('div', {
+      class: 'sticker sticker--paper', tabindex: '0', role: 'img', 'data-kind': st.kind, 'data-fixed': 'true',
+      'aria-label': src.label + ' (끌어서 옮기기)'
+    }, el('figure', { class: 'st-body paper-body' },
+      el('img', { src: src.image, alt: '', draggable: 'false' }),
+      el('figcaption', { text: '내가 한 착한 일' })));
+    node._st = st;
+    positionSticker(node);
+    bindSticker(leaf, node);
+    return node;
+  }
+
+  function ensureDeedSticker() {
+    var list = state.stickers.serve || (state.stickers.serve = []);
+    var has = findSticker('serve', 'deed');
+    if (images[IMG_DEED] && !has) {
+      var spot = S.stickerSpots.serve;
+      list.push({ kind: 'deed', x: spot.x, y: spot.y, w: spot.w, r: spot.r });
+    } else if (!images[IMG_DEED] && has) {
+      list.splice(list.indexOf(has), 1);
+    }
   }
 
   function positionSticker(node) {
@@ -653,11 +677,11 @@
       if (e.target.closest('.st-del')) return;
       e.preventDefault();
       e.stopPropagation();
-      selectSticker(leaf, node);
+      if (!node.hasAttribute('data-fixed')) selectSticker(leaf, node);
       try { node.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
       touches[e.pointerId] = { x: e.clientX, y: e.clientY };
       node.classList.add('is-dragging');
-      if (count() === 2) { startPinch(); return; }
+      if (count() === 2) { if (!node.hasAttribute('data-fixed')) startPinch(); return; }
       if (count() > 2) return;
       var rect = spreadEl().getBoundingClientRect();
       var st = node._st;
@@ -711,10 +735,11 @@
     }
     node.addEventListener('pointerup', end);
     node.addEventListener('pointercancel', end);
-    node.querySelector('.st-del').addEventListener('click', function (e) { e.stopPropagation(); removeSticker(leaf, node); });
+    var del = node.querySelector('.st-del');
+    if (del) del.addEventListener('click', function (e) { e.stopPropagation(); removeSticker(leaf, node); });
     node.addEventListener('keydown', function (e) {
       var st = node._st, step = e.shiftKey ? 0.05 : 0.01;
-      if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeSticker(leaf, node); return; }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !node.hasAttribute('data-fixed')) { e.preventDefault(); removeSticker(leaf, node); return; }
       var moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
       if (!moves[e.key]) return;
       e.preventDefault();
@@ -946,7 +971,7 @@
     }
     var here = S.scenes[state.scene].id;
     var fromFoodChoice = here === 'food' && (mode === 'spread' || state.page === 0);
-    if (here === 'deed' && (mode === 'spread' || state.page === 1)) { openDeedDecor(); return; }
+    if (here === 'deed' && (mode === 'spread' || state.page === 1)) { showDeedPrompt(); return; }
     if (mode === 'single' && state.page === 0) flipPage(1);
     else go(forwardTarget(), 0);
     if (fromFoodChoice) spawnFoodSticker();
@@ -966,15 +991,50 @@
       memo: { text: state.deed.trim(), x: m.x, y: m.y },
       doneLabel: '다 꾸몄어요'
     }).then(function (res) {
-      if (!res) return; // '동화로'를 누르면 #6에 그대로 머문다
+      if (!res) return; // '동화로'를 누르면 안내 화면에 그대로 머문다
       state.deedMemo = res.memo;
       [[IMG_DEED_BASE, res.base], [IMG_DEED, res.image]].forEach(function (pair) {
         if (pair[1]) saveImage(pair[0], pair[1]);
         else { delete images[pair[0]]; store.deleteImage(pair[0]).catch(function () {}); }
       });
-      go(forwardTarget(), 0);
+      ensureDeedSticker();
+      saveNow();
+      leaveThen(document.getElementById('deed-prompt-card'), 1, function () { enterBook(forwardTarget(), 0, 1); });
     });
   }
+
+  // 착한 일을 적은 뒤 나오는 안내 화면 (동화 쪽이 아님): 가운데 버튼을 눌러야 꾸미기 화면으로 간다
+  function showDeedPrompt() {
+    var leaf = currentLeaf();
+    var show = function () {
+      if (leaf) retire(leaf);
+      paintDeedPrompt();
+      showScreen('deedPrompt');
+      enterCard(document.getElementById('deed-prompt-card'), 1);
+    };
+    if (leaf) leaveThen(leaf, 1, show); else show();
+  }
+
+  function paintDeedPrompt() {
+    var box = document.getElementById('deed-prompt-preview');
+    var deed = state.deed.trim();
+    box.replaceChildren();
+    if (images[IMG_DEED]) {
+      box.append(el('figure', { class: 'paper-body prompt-paper' },
+        el('img', { src: images[IMG_DEED], alt: '지난번에 꾸민 착한 일 그림' }), el('figcaption', { text: '내가 한 착한 일' })));
+    } else if (deed) {
+      box.append(el('div', { class: 'prompt-memo' }, el('span', { class: 'prompt-memo-head', text: '내가 한 착한 일' }), el('span', { text: deed })));
+    }
+    document.getElementById('btn-deed-draw').textContent = images[IMG_DEED] ? '그림 다시 꾸미기' : '그림 그리러 가기';
+  }
+
+  document.getElementById('btn-deed-draw').addEventListener('click', openDeedDecor);
+  document.getElementById('btn-deed-skip').addEventListener('click', function () {
+    leaveThen(document.getElementById('deed-prompt-card'), 1, function () { enterBook(forwardTarget(), 0, 1); });
+  });
+  document.getElementById('btn-deed-back').addEventListener('click', function () {
+    leaveThen(document.getElementById('deed-prompt-card'), -1, function () { enterBook(state.scene, 1, -1); });
+  });
 
   function prev() {
     if (mode === 'single' && state.page === 1) { flipPage(0); return; }
@@ -1078,7 +1138,8 @@
   var screens = {
     cover: document.getElementById('cover'),
     guide: document.getElementById('guide'),
-    book: document.getElementById('stage')
+    book: document.getElementById('stage'),
+    deedPrompt: document.getElementById('deed-prompt')
   };
   var controlsEl = document.getElementById('controls');
   var stopCoverSparkles = null;
@@ -1133,7 +1194,7 @@
     });
   }
 
-  function enterBook(index, page) {
+  function enterBook(index, page, dir) {
     state.scene = clamp(index, 0, LAST);
     state.page = mode === 'single' ? (page || 0) : 0;
     state.maxScene = Math.max(state.maxScene, state.scene);
@@ -1144,7 +1205,7 @@
       setTimeout(function () { toast('휴대폰을 가로로 돌리면 펼친 책으로 크게 볼 수 있어요.', 4200); }, 900);
     }
     var leaf = render(false);
-    if (leaf.animate) { leaf.style.opacity = '0'; nextFrame(function () { leaf.style.opacity = ''; arcIn(leaf, 1); }); }
+    if (leaf.animate) { leaf.style.opacity = '0'; nextFrame(function () { leaf.style.opacity = ''; arcIn(leaf, dir || 1); }); }
   }
 
   function start(card) {
@@ -1203,6 +1264,7 @@
     if (res.data) state = sanitize(res.data);
     saved = { scene: state.scene, page: state.page };
     loadImages().then(function () {
+      ensureDeedSticker();
       if (state.food === 'custom' && !images[IMG_FOOD]) {
         state.food = null;
         toast('지난번에 그린 음식 그림을 불러오지 못했어요. 다시 골라 주세요.', 3600);

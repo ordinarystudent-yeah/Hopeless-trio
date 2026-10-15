@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.9">
-<link rel="stylesheet" href="css/editor.css?v=0.9">
+<link rel="stylesheet" href="css/style.css?v=1.0">
+<link rel="stylesheet" href="css/editor.css?v=1.0">
 </head>
 <body>
 <div class="app" id="app" data-screen="cover">
@@ -56,6 +56,21 @@
     <div class="intro-actions">
       <button type="button" class="btn btn-ghost" id="btn-guide-back">표지로</button>
       <button type="button" class="btn btn-primary" id="btn-guide-start">시작하기</button>
+    </div>
+  </section>
+
+  <!-- 착한 일을 적은 뒤 나오는 안내 화면 (동화 쪽이 아님) -->
+  <section class="intro" id="deed-prompt" aria-labelledby="deed-prompt-title" hidden>
+    <div class="guide-card prompt-card" id="deed-prompt-card">
+      <p class="prompt-kicker">전 · 착한 일과 별빛스프</p>
+      <h1 id="deed-prompt-title">착한 일을 그림으로 남겨 볼까요?</h1>
+      <div class="prompt-preview" id="deed-prompt-preview"></div>
+      <p class="prompt-text">그림을 그리거나 사진을 넣고, 착한 일 메모지를 마음에 드는 곳에 붙여요. 다 꾸민 종이는 다음 장면에 붙어요.</p>
+      <button type="button" class="btn btn-primary prompt-go" id="btn-deed-draw">그림 그리러 가기</button>
+    </div>
+    <div class="intro-actions">
+      <button type="button" class="btn btn-ghost" id="btn-deed-back">이전</button>
+      <button type="button" class="btn btn-ghost" id="btn-deed-skip">건너뛰기</button>
     </div>
   </section>
 
@@ -172,9 +187,9 @@
   </div>
 </div>
 
-<script src="js/storage.js?v=0.9"></script>
-<script src="js/story.js?v=0.9"></script>
-<script src="js/drawing.js?v=0.9"></script>
-<script src="js/main.js?v=0.9"></script>
+<script src="js/storage.js?v=1.0"></script>
+<script src="js/story.js?v=1.0"></script>
+<script src="js/drawing.js?v=1.0"></script>
+<script src="js/main.js?v=1.0"></script>
 </body>
 </html>
