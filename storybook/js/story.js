@@ -83,34 +83,49 @@
   ];
 
   /* ---------- 10개 장면 ----------
-     layout: hero(큰 삽화 위에 글) · split(삽화 + 글 카드) · choice(카드 고르기) · ending
-     input: name | deed      choice: food | taste      require: 다음으로 가기 전 꼭 골라야 하는 것 */
+     장면 하나 = 펼친 책 한 면 = 가로 A4 두 쪽(왼쪽 쪽, 오른쪽 쪽).
+     image  : 펼침면 전체에 깔리는 삽화 한 장 (가로:세로 = 594:210, 약 2.83:1)
+     pages  : [왼쪽 쪽, 오른쪽 쪽] 구성
+       art      임시 그림 종류 (실제 삽화가 들어오면 자동으로 숨겨짐)
+       artPos   임시 그림 위치 top | bottom (기본은 가운데)
+       text     true면 이 쪽에 본문을 놓는다
+       place    본문 세로 위치 top | center | bottom
+       widgets  이 쪽에 놓을 입력 도구 (nameplate, name, food-grid, food-result, deed, deed-art, taste, recap)
+     require     다음 장면으로 가기 전에 꼭 골라야 하는 값
+     requirePage 그 값을 고르는 쪽 (휴대폰에서 한 쪽씩 넘길 때 이 쪽을 떠나기 전에 확인) */
   var scenes = [
     {
-      id: 'intro', act: 0, layout: 'hero',
-      image: 'assets/backgrounds/01-intro-night.png', alt: '모두가 잠든 밤하늘과 꿈', tone: 'night', motif: 'moon',
+      id: 'intro', act: 0, tone: 'night',
+      image: 'assets/backgrounds/01-intro.png', alt: '모두가 잠든 밤하늘과 꿈',
+      pages: [{ art: 'moon' }, { text: true, place: 'center' }],
       nextLabel: '꿈속으로 들어가기',
       text: function () { return [['모두가 잠이 든 밤.\n아이들의 꿈속에는 특별한 일이 일어나고 있어요.']]; }
     },
     {
-      id: 'table', act: 0, layout: 'split',
-      image: 'assets/backgrounds/02-dream-table.png', alt: '갖가지 음식이 차려진 꿈속 식탁', tone: 'table', motif: 'table',
+      id: 'table', act: 0, tone: 'table',
+      image: 'assets/backgrounds/02-dream-table.png', alt: '갖가지 음식이 차려진 꿈속 식탁',
+      pages: [{ art: 'table' }, { text: true, place: 'center' }],
       text: function () { return [['아이들의 앞에는 갖가지 음식이 차려진 식탁이 있네요?']]; }
     },
     {
-      id: 'name', act: 0, layout: 'split', input: 'name',
-      image: 'assets/backgrounds/03-nameplate.png', alt: '빈 이름표가 놓인 나의 자리', tone: 'table', motif: 'seat',
+      id: 'name', act: 0, tone: 'table',
+      image: 'assets/backgrounds/03-nameplate.png', alt: '빈 이름표가 놓인 나의 자리',
+      pages: [{ art: 'seat', widgets: ['nameplate'] }, { text: true, place: 'center', widgets: ['name'] }],
       nextLabel: function (c) { return c.hasName ? '이 이름으로 앉기' : '이름 없이 앉기'; },
       text: function () { return [['당신의 자리도 있어요.\n당신의 이름은 무엇인가요?']]; }
     },
     {
-      id: 'food', act: 1, layout: 'choice', choice: 'food', require: 'food',
+      id: 'food', act: 1, tone: 'table',
+      image: 'assets/backgrounds/04-food-choice.png', alt: '맛있는 음식이 잔뜩 놓인 식탁',
+      pages: [{ text: true, widgets: ['food-grid'] }, { widgets: ['food-result'] }],
+      require: 'food', requirePage: 0,
       requireMessage: '먹고 싶은 음식을 하나 골라 주세요.',
       text: function () { return [['자리에 앉아 앞을 바라보니 맛있는 음식들이 잔뜩 있어요.\n어떤 것부터 먹고 싶나요?']]; }
     },
     {
-      id: 'fairies', act: 1, layout: 'split',
-      image: 'assets/fairies/05-fairies-arrive.png', alt: '특별한 음식을 들고 오는 요정들', tone: 'fairy', motif: 'fairies',
+      id: 'fairies', act: 1, tone: 'fairy',
+      image: 'assets/fairies/05-fairies-arrive.png', alt: '특별한 음식을 들고 오는 요정들',
+      pages: [{ art: 'fairies' }, { text: true, place: 'center' }],
       text: function (c) {
         var ate = c.food ? [{ v: c.food.noun }, josa(c.food.noun, '을/를')] : ['음식을'];
         return [
@@ -120,8 +135,9 @@
       }
     },
     {
-      id: 'deed', act: 2, layout: 'split', input: 'deed',
-      image: 'assets/fairies/06-fairy-praise.png', alt: '아이들의 착한 일을 하나하나 말해 주는 요정', tone: 'fairy', motif: 'bubble',
+      id: 'deed', act: 2, tone: 'fairy',
+      image: 'assets/fairies/06-fairy-praise.png', alt: '아이들의 착한 일을 하나하나 말해 주는 요정',
+      pages: [{ text: true, place: 'center' }, { widgets: ['deed'] }],
       text: function (c) {
         return [
           ['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.'],
@@ -130,8 +146,9 @@
       }
     },
     {
-      id: 'serve', act: 2, layout: 'split',
-      image: 'assets/fairies/07-fairies-serve.png', alt: '박수를 치며 음식을 놓아 주는 요정들', tone: 'gold', motif: 'cloche',
+      id: 'serve', act: 2, tone: 'gold',
+      image: 'assets/fairies/07-fairies-serve.png', alt: '박수를 치며 음식을 놓아 주는 요정들',
+      pages: [{ art: 'cloche', widgets: ['deed-art'] }, { text: true, place: 'center' }],
       text: function (c) {
         if (c.deed) {
           return [
@@ -147,8 +164,9 @@
       }
     },
     {
-      id: 'soup', act: 2, layout: 'hero', effect: 'sparkles',
-      image: 'assets/backgrounds/08-starlight-soup.png', alt: '별빛이 동동 떠다니는 스프', tone: 'gold', motif: 'soup',
+      id: 'soup', act: 2, tone: 'gold', effect: 'sparkles',
+      image: 'assets/backgrounds/08-starlight-soup.png', alt: '별빛이 동동 떠다니는 스프',
+      pages: [{ art: 'soup' }, { text: true, place: 'center' }],
       text: function (c) {
         return [
           ['뚜껑을 여니, 별빛이 동동 떠다니는 스프가 있어요.\n'].concat(you(c, '은/는'), [' 한입 스프를 입에 넣었어요.'])
@@ -156,14 +174,18 @@
       }
     },
     {
-      id: 'taste', act: 3, layout: 'choice', choice: 'taste', require: 'taste',
+      id: 'taste', act: 3, tone: 'gold',
+      image: 'assets/backgrounds/09-taste.png', alt: '별빛스프를 맛보는 순간',
+      pages: [{ text: true, place: 'top', art: 'soup', artPos: 'bottom' }, { widgets: ['taste'] }],
+      require: 'taste', requirePage: 1,
       requireMessage: '스프에서 어떤 맛이 났는지 하나 골라 주세요.',
       nextLabel: '잠에서 깨기',
       text: function () { return [['무슨 맛이 났나요?']]; }
     },
     {
-      id: 'ending', act: 3, layout: 'ending',
-      image: 'assets/backgrounds/10-wake-up.png', alt: '아침 햇살 속에서 잠에서 깬 아이', tone: 'dawn', motif: 'dawn',
+      id: 'ending', act: 3, tone: 'dawn',
+      image: 'assets/backgrounds/10-wake-up.png', alt: '아침 햇살 속에서 잠에서 깬 아이',
+      pages: [{ art: 'dawn', artPos: 'top', text: true, place: 'bottom' }, { widgets: ['recap'] }],
       text: function (c) {
         var taste = c.taste ? [{ v: c.taste.label }, josa(c.taste.label, '이/가')] : ['별빛스프의 맛이'];
         return [
@@ -173,6 +195,12 @@
       }
     }
   ];
+
+  /* ---------- 스티커 기본 자리 (펼침면 기준 비율: x·y는 가운데 위치, w는 펼침면 너비 대비 크기) ---------- */
+  var stickerSpots = {
+    food: { x: 0.75, y: 0.66, w: 0.12, r: -6 },   // #4 오른쪽 쪽 아래
+    deed: { x: 0.25, y: 0.7, w: 0.13, r: 4 }      // #6 왼쪽 쪽 아래
+  };
 
   /* ---------- 임시 그림 (실제 삽화가 들어오기 전까지만 사용) ---------- */
   function star(x, y, r) {
@@ -243,9 +271,11 @@
     tastes: tastes,
     scenes: scenes,
     deedExamples: deedExamples,
+    stickerSpots: stickerSpots,
+    customFood: { label: '직접 그리기', fallbackName: '내가 그린 음식' },
     motifs: motifs,
     josa: josa,
-    limits: { name: 12, deed: 80 },
+    limits: { name: 12, deed: 80, foodName: 12 },
     // 삽화 자리에 "어떤 파일을 넣으면 되는지" 경로를 표시한다. 실제 삽화를 다 넣은 뒤에는 false로 바꾼다.
     showAssetNotes: true
   };

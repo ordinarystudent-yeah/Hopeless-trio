@@ -1,24 +1,31 @@
-/* 별빛스프 — 화면 그리기와 장면 이동 */
+/* 별빛스프 — 책 화면, 장면 넘기기, 스티커 */
 (function () {
   'use strict';
 
   var S = window.StarSoup;
   var store = window.StarSoupStorage;
   var LAST = S.scenes.length - 1;
-  var ENDING = LAST;
+  var IMG_FOOD = 'food-custom';
+  var IMG_DEED = 'deed-art';
 
-  var stage = document.getElementById('stage');
+  var book = document.getElementById('book');
   var progress = document.getElementById('progress');
   var btnPrev = document.getElementById('btn-prev');
   var btnNext = document.getElementById('btn-next');
-  var controls = document.getElementById('controls');
+  var endActions = document.getElementById('end-actions');
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function freshState() {
-    return { version: 1, scene: 0, maxScene: 0, name: '', food: null, deed: '', taste: null, returnTo: null };
+    return {
+      version: 2, scene: 0, page: 0, maxScene: 0,
+      name: '', food: null, customFoodName: '', deed: '', taste: null,
+      stickers: {}, returnTo: null
+    };
   }
   var state = freshState();
-  var teardown = [];
+  var images = {};      // 직접 그린 그림 (IndexedDB에서 불러온 data URL)
   var direction = 1;
+  var mode = 'spread';  // spread: 두 쪽을 함께 / single: 한 쪽씩
 
   /* ---------- 작은 도우미 ---------- */
   function el(tag, attrs) {
@@ -41,59 +48,37 @@
     if (Array.isArray(child)) { child.forEach(function (c) { append(node, c); }); return; }
     node.append(child instanceof Node ? child : document.createTextNode(String(child)));
   }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function customFood(c) {
+    var label = state.customFoodName.trim() || S.customFood.fallbackName;
+    return {
+      id: 'custom', custom: true, name: label, noun: label, emoji: '🎨',
+      image: images[IMG_FOOD] || null,
+      desc: c.you + S.josa(c.you, '이/가') + ' 직접 그린 ' + label + S.josa(label, '을/를') +
+        ' 한입 먹으니, 세상에 하나뿐인 맛이 입 안 가득 퍼졌어요.'
+    };
+  }
 
   function ctx() {
     var name = state.name.trim();
-    return {
-      name: name,
-      hasName: !!name,
-      you: name || '당신',
-      deed: state.deed.trim(),
-      food: S.foods.find(function (f) { return f.id === state.food; }) || null,
-      taste: S.tastes.find(function (t) { return t.id === state.taste; }) || null
-    };
+    var c = { name: name, hasName: !!name, you: name || '당신', deed: state.deed.trim() };
+    c.food = state.food === 'custom' ? customFood(c) : (S.foods.find(function (f) { return f.id === state.food; }) || null);
+    c.taste = S.tastes.find(function (t) { return t.id === state.taste; }) || null;
+    return c;
   }
 
   // 문단 배열 → <p>들. 사용자 값은 textContent로만 넣는다.
   function paragraphs(list) {
     return list.map(function (para) {
       var coda = !Array.isArray(para) && para.coda;
-      var parts = coda ? para.parts : para;
       var p = el('p', { class: 'story' + (coda ? ' is-coda' : '') });
-      parts.forEach(function (seg) {
+      (coda ? para.parts : para).forEach(function (seg) {
         if (typeof seg === 'string') p.append(document.createTextNode(seg));
         else p.append(el('span', { class: 'v' + (seg.quote ? ' is-quote' : ''), text: seg.v }));
       });
       return p;
     });
-  }
-
-  function eyebrow(scene, index) {
-    var act = S.acts[scene.act];
-    return el('p', { class: 'eyebrow' },
-      el('span', { text: act.label + ' · ' + act.title }),
-      el('span', { class: 'no', text: '#' + (index + 1) }));
-  }
-
-  // 삽화 자리: 임시 그림을 깔고, 실제 이미지가 불러와지면 그 위를 덮는다.
-  function art(opts) {
-    var box = el('div', { class: 'art', 'data-fit': opts.fit });
-    var ph = el('div', { class: 'ph', 'data-tone': opts.tone || 'night', 'aria-hidden': 'true' });
-    if (opts.glow) ph.style.setProperty('--glow', opts.glow);
-    if (opts.emoji) ph.append(el('span', { class: 'ph-emoji', text: opts.emoji }));
-    else if (opts.motif && S.motifs[opts.motif]) ph.insertAdjacentHTML('beforeend', S.motifs[opts.motif]); // 코드에 고정된 그림만
-    if (opts.note && opts.image && S.showAssetNotes) ph.append(el('span', { class: 'ph-note', text: '삽화 자리 · ' + opts.image }));
-    box.append(ph);
-    if (opts.image) {
-      var img = new Image();
-      img.alt = opts.alt || '';
-      img.decoding = 'async';
-      img.onload = function () { img.classList.add('is-loaded'); };
-      img.onerror = function () { img.remove(); };
-      img.src = opts.image;
-      box.append(img);
-    }
-    return box;
   }
 
   /* ---------- 알림 ---------- */
@@ -120,8 +105,8 @@
       var before = document.activeElement;
 
       function onKey(e) {
-        if (e.key === 'Escape') { e.preventDefault(); done(false); }
-        else if (e.key === 'Tab') { // 두 버튼 사이에서만 포커스가 돈다
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); }
+        else if (e.key === 'Tab') {
           e.preventDefault();
           (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
         }
@@ -143,6 +128,25 @@
       cancelBtn.focus(); // 실수로 누르지 않도록 기본은 "취소"
     });
   }
+  window.StarSoupUI = { ask: ask, toast: toast };
+
+  /* ---------- 누르는 느낌 (손을 대는 순간 살짝 눌리고, 떼면 부드럽게 돌아온다) ---------- */
+  var PRESSABLE = '.btn, .tile, .chip, .tool, .swatch, .icon-btn, .link-btn';
+  var pressed = null;
+  function release() { if (pressed) { pressed.classList.remove('is-pressed'); pressed = null; } }
+  document.addEventListener('pointerdown', function (e) {
+    var t = e.target.closest && e.target.closest(PRESSABLE);
+    if (!t || t.disabled) return;
+    release();
+    pressed = t;
+    t.classList.add('is-pressed');
+  }, true);
+  ['pointerup', 'pointercancel', 'dragstart'].forEach(function (type) { document.addEventListener(type, release, true); });
+  document.addEventListener('pointerout', function (e) { if (pressed && e.target === pressed && !pressed.contains(e.relatedTarget)) release(); }, true);
+  document.addEventListener('keydown', function (e) {
+    if ((e.key === ' ' || e.key === 'Enter') && e.target.matches && e.target.matches(PRESSABLE)) e.target.classList.add('is-pressed');
+  });
+  document.addEventListener('keyup', function (e) { if (e.target.classList) e.target.classList.remove('is-pressed'); });
 
   /* ---------- 저장 ---------- */
   var saveTimer = 0;
@@ -159,71 +163,144 @@
   }
   function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 300); }
 
+  function saveImage(key, dataUrl) {
+    images[key] = dataUrl;
+    return store.putImage(key, dataUrl).catch(function (err) {
+      toast(store.isQuotaError(err)
+        ? '저장 공간이 부족해서 그림을 이 기기에 보관하지 못했어요. 지금 화면에서는 그대로 보여요.'
+        : '그림을 이 기기에 보관하지 못했어요. 지금 화면에서는 그대로 보여요.', 4200);
+    });
+  }
+
   function sanitize(raw) {
     var s = freshState();
     var str = function (v, max) { return typeof v === 'string' ? v.slice(0, max) : ''; };
+    var num = function (v, lo, hi, dflt) { return typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : dflt; };
     s.name = str(raw.name, S.limits.name);
     s.deed = str(raw.deed, S.limits.deed);
-    s.food = S.foods.some(function (f) { return f.id === raw.food; }) ? raw.food : null;
+    s.customFoodName = str(raw.customFoodName, S.limits.foodName);
+    s.food = raw.food === 'custom' || S.foods.some(function (f) { return f.id === raw.food; }) ? raw.food : null;
     s.taste = S.tastes.some(function (t) { return t.id === raw.taste; }) ? raw.taste : null;
-    var n = function (v) { return Number.isInteger(v) ? Math.max(0, Math.min(LAST, v)) : 0; };
-    s.maxScene = n(raw.maxScene);
-    s.scene = Math.min(n(raw.scene), s.maxScene);
+    s.maxScene = Number.isInteger(raw.maxScene) ? clamp(raw.maxScene, 0, LAST) : 0;
+    s.scene = Number.isInteger(raw.scene) ? clamp(raw.scene, 0, s.maxScene) : 0;
+    s.page = raw.page === 1 ? 1 : 0;
+    if (raw.stickers && typeof raw.stickers === 'object') {
+      S.scenes.forEach(function (sc) {
+        var list = raw.stickers[sc.id];
+        if (!Array.isArray(list)) return;
+        s.stickers[sc.id] = list.filter(function (st) {
+          return st && (st.kind === 'food' || st.kind === 'deed');
+        }).slice(0, 8).map(function (st) {
+          return {
+            kind: st.kind, x: num(st.x, 0, 1, 0.5), y: num(st.y, 0, 1, 0.5),
+            w: num(st.w, 0.04, 0.6, 0.12), r: num(st.r, -180, 180, 0)
+          };
+        });
+      });
+    }
     return s;
   }
 
-  /* ---------- 장면 만들기 ---------- */
-  function buildScene(index) {
-    var scene = S.scenes[index];
-    var c = ctx();
-    var root = el('section', { class: 'scene scene--' + scene.layout + (direction < 0 ? ' is-back' : ''), 'aria-labelledby': 'scene-title' });
-    var head = eyebrow(scene, index);
-    head.id = 'scene-title';
-
-    if (scene.layout === 'hero' || scene.layout === 'ending') {
-      var a = art({ image: scene.image, alt: scene.alt, tone: scene.tone, motif: scene.motif, note: true });
-      if (scene.effect === 'sparkles') {
-        var cv = el('canvas', { class: 'sparkles', 'aria-hidden': 'true' });
-        a.append(cv);
-        teardown.push(sparkles(cv));
-      }
-      if (scene.layout === 'hero') {
-        a.append(el('div', { class: 'overlay' }, head, paragraphs(scene.text(c))));
-        root.append(el('div', { class: 'card' }, a));
-      } else {
-        root.append(el('div', { class: 'card' }, a, el('div', { class: 'body' }, head, paragraphs(scene.text(c)))));
-        root.append(endingLower(c));
-      }
-      return root;
-    }
-
-    if (scene.layout === 'split') {
-      var art2 = art({ image: scene.image, alt: scene.alt, tone: scene.tone, motif: scene.motif, note: true });
-      var body = el('div', { class: 'body' }, head, paragraphs(scene.text(c)));
-      if (scene.input === 'name') nameInput(body, art2);
-      if (scene.input === 'deed') deedInput(body);
-      root.append(el('div', { class: 'card card--split' }, art2, body));
-      return root;
-    }
-
-    // choice
-    var side = el('div', { class: 'choice-side' },
-      el('div', { class: 'card' }, el('div', { class: 'body' }, head, paragraphs(scene.text(c)))));
-    var picker = scene.choice === 'food' ? foodPicker(side) : tastePicker(side);
-    root.append(side, picker);
-    return root;
+  /* ---------- 화면 모드: 넓은 가로 화면은 펼침면, 그 밖은 한 쪽씩 ---------- */
+  function pickMode() {
+    return window.innerWidth >= 900 && window.innerWidth / window.innerHeight >= 1.15 ? 'spread' : 'single';
   }
 
-  function nameInput(body, artBox) {
-    var plate = el('div', { class: 'nameplate', 'aria-hidden': 'true' });
-    function paint() {
-      var v = state.name.trim();
-      plate.textContent = v || '이름표';
-      plate.classList.toggle('is-empty', !v);
-    }
-    paint();
-    artBox.append(plate);
+  /* ---------- 삽화 자리 (임시 그림) ---------- */
+  function motif(name, pos) {
+    if (!name || !S.motifs[name]) return null;
+    var box = el('div', { class: 'pg-art', 'data-pos': pos || 'center', 'aria-hidden': 'true' });
+    box.insertAdjacentHTML('beforeend', S.motifs[name]); // 코드에 고정된 그림만
+    return box;
+  }
 
+  function eyebrow(scene, index) {
+    var act = S.acts[scene.act];
+    return el('p', { class: 'eyebrow' },
+      el('span', { text: act.label + ' · ' + act.title }),
+      el('span', { class: 'no', text: '#' + (index + 1) }));
+  }
+
+  /* ---------- 한 장면(펼침면) 만들기 ---------- */
+  function buildLeaf(index) {
+    var scene = S.scenes[index];
+    var c = ctx();
+    var leaf = el('article', { class: 'leaf', 'data-page': state.page, 'aria-label': '#' + (index + 1) + ' 장면' });
+    leaf._teardown = [];
+    var spread = el('div', { class: 'spread', 'data-tone': scene.tone });
+
+    var bg = el('div', { class: 'spread-bg', 'aria-hidden': 'true' });
+    if (scene.image) {
+      var img = new Image();
+      img.alt = '';
+      img.decoding = 'async';
+      img.onload = function () { leaf.classList.add('has-image'); img.classList.add('is-loaded'); };
+      img.onerror = function () { img.remove(); };
+      img.src = scene.image;
+      bg.append(img);
+      if (S.showAssetNotes) bg.append(el('span', { class: 'asset-note', text: '펼침면 삽화 자리 · ' + scene.image }));
+    }
+    spread.append(bg);
+
+    scene.pages.forEach(function (p, pi) {
+      var page = el('section', {
+        class: 'page page--' + (pi ? 'right' : 'left'),
+        'aria-label': (pi ? '오른쪽' : '왼쪽') + ' 쪽'
+      });
+      var dense = (p.widgets || []).indexOf('food-grid') >= 0;
+      var pg = el('div', { class: 'pg' + (dense ? ' pg--dense' : ''), 'data-place': p.place || 'top' });
+      if (p.art) pg.append(motif(p.art, p.artPos));
+      if (p.text) {
+        var block = el('div', { class: 'pg-text' }, eyebrow(scene, index), paragraphs(scene.text(c)));
+        if (index === 0 && pi === 1) block.id = 'scene-title';
+        pg.append(block);
+      }
+      (p.widgets || []).forEach(function (w) { append(pg, widget(w, c, leaf, index)); });
+      page.append(pg, el('span', { class: 'folio', 'aria-hidden': 'true', text: index * 2 + pi + 1 }));
+      spread.append(page);
+    });
+
+    if (scene.effect === 'sparkles') {
+      var cv = el('canvas', { class: 'sparkles', 'aria-hidden': 'true' });
+      spread.append(cv);
+      leaf._teardown.push(sparkles(cv));
+    }
+
+    var layer = el('div', { class: 'stickers' });
+    spread.append(layer);
+    leaf._stickers = layer;
+    leaf._sceneId = scene.id;
+    paintStickers(leaf);
+
+    leaf.append(spread);
+    // 스티커 바깥을 누르면 선택 해제
+    leaf.addEventListener('pointerdown', function (e) {
+      if (!e.target.closest('.sticker')) selectSticker(leaf, null);
+    });
+    return leaf;
+  }
+
+  /* ---------- 쪽 위의 입력 도구 ---------- */
+  function widget(name, c, leaf, index) {
+    switch (name) {
+      case 'nameplate': {
+        var v = c.name;
+        return el('div', { class: 'nameplate' + (v ? '' : ' is-empty'), 'aria-hidden': 'true', text: v || '이름표' });
+      }
+      case 'name': return nameField(leaf);
+      case 'food-grid': return foodGrid(leaf);
+      case 'food-result': return foodResult(c);
+      case 'deed': return deedField(leaf);
+      case 'deed-art': return images[IMG_DEED]
+        ? el('figure', { class: 'polaroid' }, el('img', { src: images[IMG_DEED], alt: '내가 그린 착한 일' }), el('figcaption', { text: '내가 한 착한 일' }))
+        : null;
+      case 'taste': return tasteList(leaf);
+      case 'recap': return recap(c);
+    }
+    return null;
+  }
+
+  function nameField(leaf) {
     var input = el('input', {
       class: 'input', id: 'input-name', type: 'text', maxlength: S.limits.name,
       placeholder: '예: 하늘', autocomplete: 'off', enterkeyhint: 'next'
@@ -231,22 +308,133 @@
     input.value = state.name;
     input.addEventListener('input', function () {
       state.name = input.value.slice(0, S.limits.name);
-      paint();
+      var plate = leaf.querySelector('.nameplate');
+      if (plate) {
+        plate.textContent = state.name.trim() || '이름표';
+        plate.classList.toggle('is-empty', !state.name.trim());
+      }
       updateControls();
       saveSoon();
     });
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); next(); }
     });
-    body.append(el('div', { class: 'field' },
+    return el('div', { class: 'field' },
       el('label', { for: 'input-name', text: '나의 이름' }),
       input,
-      el('p', { class: 'hint', text: '비워 두면 이야기 속에서 ‘당신’이라고 불러요.' })));
+      el('p', { class: 'hint', text: '비워 두면 이야기 속에서 ‘당신’이라고 불러요.' }));
   }
 
-  function deedInput(body) {
+  function tile(opts) {
+    var art = el('span', { class: 'tile-art', 'aria-hidden': 'true' });
+    if (opts.glow) art.style.setProperty('--glow', opts.glow);
+    var fallback = el('span', { class: 'tile-emoji', text: opts.emoji });
+    art.append(fallback);
+    if (opts.image) {
+      var img = el('img', { alt: '' });
+      img.onload = function () { fallback.remove(); };
+      img.onerror = function () { img.remove(); };
+      img.src = opts.image;
+      art.append(img);
+    }
+    return el('button', {
+      type: 'button', class: 'tile' + (opts.extra ? ' ' + opts.extra : ''),
+      'aria-pressed': opts.pressed ? 'true' : 'false', 'data-id': opts.id,
+      onclick: opts.onclick
+    }, art, el('span', { class: 'tile-label', text: opts.label }),
+      el('span', { class: 'check', 'aria-hidden': 'true' }, svgCheck()));
+  }
+
+  function svgCheck() {
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    var path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M5 12.5l4.5 4.5L19 7.5');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '3.2');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.append(path);
+    return svg;
+  }
+
+  function markPressed(grid, id) {
+    grid.querySelectorAll('.tile').forEach(function (t) {
+      t.setAttribute('aria-pressed', t.getAttribute('data-id') === id ? 'true' : 'false');
+    });
+  }
+
+  function foodGrid(leaf) {
+    var grid = el('div', { class: 'grid grid--food', role: 'group', 'aria-label': '음식 고르기' });
+    S.foods.forEach(function (f) {
+      grid.append(tile({
+        id: f.id, label: f.name, image: f.image, emoji: f.emoji, glow: f.glow, pressed: state.food === f.id,
+        onclick: function (e) { pickFood(leaf, f.id, e.currentTarget); }
+      }));
+    });
+    // 직접 그리기: 그림이 있으면 그 그림이 카드가 되고, 고른 상태에서 한 번 더 누르면 다시 그린다
+    var has = !!images[IMG_FOOD];
+    grid.append(tile({
+      id: 'custom', extra: 'tile--draw' + (has ? ' has-art' : ''),
+      label: has ? (state.customFoodName.trim() || S.customFood.fallbackName) : S.customFood.label,
+      image: images[IMG_FOOD], emoji: '✏️', glow: '#3a4a7a', pressed: state.food === 'custom',
+      onclick: function (e) {
+        if (!images[IMG_FOOD] || state.food === 'custom') drawFood(leaf);
+        else pickFood(leaf, 'custom', e.currentTarget);
+      }
+    }));
+    return grid;
+  }
+
+  function foodResult(c) {
+    var f = c.food;
+    return el('div', { class: 'pg-text reveal' + (f ? '' : ' is-empty'), 'aria-live': 'polite' },
+      el('p', { class: 'eyebrow', text: f ? '한입 냠, ' + f.name : '음식을 고르면' }),
+      el('p', { class: 'story story--sm', text: f ? f.desc : '왼쪽에서 먹고 싶은 음식을 골라 보세요. 고른 음식은 스티커가 되어 이 책에 붙어요.' }),
+      f ? el('p', { class: 'hint sticker-hint', text: '스티커를 끌어서 원하는 곳에 붙여 보세요. 모서리를 끌면 크기와 방향이 바뀌어요.' }) : null);
+  }
+
+  function pickFood(leaf, id, fromEl) {
+    var changed = state.food !== id;
+    state.food = id;
+    markPressed(leaf.querySelector('.grid--food'), id);
+    // 오른쪽 쪽 설명 다시 그리기
+    var old = leaf.querySelector('.reveal');
+    if (old) {
+      var fresh = foodResult(ctx());
+      old.replaceWith(fresh);
+      fresh.classList.add('is-pop');
+    }
+    if (changed || !findSticker('food', 'food')) placeSticker(leaf, 'food', 'food', fromEl);
+    updateControls();
+    saveSoon();
+    // 한 쪽씩 보는 화면에서는 스티커가 붙는 오른쪽 쪽을 펼쳐 보여 준다 (장면은 넘어가지 않음)
+    if (mode === 'single' && state.page === 0) setTimeout(function () { if (state.scene === 3 && state.page === 0) flipPage(1); }, 520);
+  }
+
+  function drawFood(leaf) {
+    window.StarSoupEditor.open({
+      title: '음식 그리기', image: images[IMG_FOOD], askName: true, name: state.customFoodName
+    }).then(function (res) {
+      if (!res) return;
+      state.customFoodName = res.name.slice(0, S.limits.foodName);
+      saveImage(IMG_FOOD, res.image);
+      state.food = 'custom';
+      // 카드에 내 그림이 보이도록 장면을 새로 그린 뒤 스티커를 붙인다
+      rerender();
+      var fresh = currentLeaf();
+      placeSticker(fresh, 'food', 'food', fresh.querySelector('.tile[data-id="custom"]'));
+      updateControls();
+      saveNow();
+      if (mode === 'single' && state.page === 0) setTimeout(function () { if (state.scene === 3 && state.page === 0) flipPage(1); }, 520);
+    });
+  }
+
+  function deedField(leaf) {
     var area = el('textarea', {
-      class: 'input', id: 'input-deed', maxlength: S.limits.deed, rows: 3,
+      class: 'input', id: 'input-deed', maxlength: S.limits.deed, rows: 2,
       placeholder: '예: 동생에게 장난감을 양보했어요'
     });
     area.value = state.deed;
@@ -262,154 +450,224 @@
       S.deedExamples.map(function (ex) {
         return el('button', {
           type: 'button', class: 'chip', text: ex,
-          onclick: function () { area.value = ex; state.deed = ex; count(); saveSoon(); area.focus(); }
+          onclick: function () { area.value = ex; state.deed = ex; count(); saveSoon(); }
         });
       }));
-    body.append(
+    var has = !!images[IMG_DEED];
+    var draw = el('button', {
+      type: 'button', class: 'btn btn-soft btn-small', text: has ? '착한 일 그림 다시 그리기' : '그림이나 사진으로 꾸미기',
+      onclick: function () {
+        window.StarSoupEditor.open({ title: '착한 일 그리기', image: images[IMG_DEED] }).then(function (res) {
+          if (!res) return;
+          saveImage(IMG_DEED, res.image);
+          rerender();
+          placeSticker(currentLeaf(), 'deed', 'deed', null);
+          saveNow();
+        });
+      }
+    });
+    return el('div', { class: 'pg-widget' },
       el('div', { class: 'field' },
         el('label', { for: 'input-deed', text: '내가 한 착한 일' }),
         area,
-        el('div', { class: 'field-foot' },
-          el('p', { class: 'hint', text: '비워 두어도 이야기는 이어져요.' }),
-          counter)),
-      chips,
-      el('button', { type: 'button', class: 'btn btn-soft btn-small', disabled: true, text: '그림으로 장면 꾸미기 · 준비 중' }));
+        el('div', { class: 'field-foot' }, el('p', { class: 'hint', text: '비워 두어도 이야기는 이어져요.' }), counter)),
+      chips, draw);
   }
 
-  function tile(item, pressed, onPick, sub) {
-    return el('button', {
-      type: 'button', class: 'tile', 'aria-pressed': pressed ? 'true' : 'false', 'data-id': item.id,
-      onclick: function () { onPick(item); }
-    },
-      (function () {
-        var a = art({ image: item.image, alt: '', tone: 'tile', glow: item.glow, emoji: item.emoji });
-        a.append(el('span', { class: 'check', 'aria-hidden': 'true' },
-          svgCheck()));
-        return a;
-      })(),
-      el('span', { class: 'tile-label' }, item.name || item.label, sub ? el('small', { text: sub }) : null));
-  }
-
-  function svgCheck() {
-    var ns = 'http://www.w3.org/2000/svg';
-    var svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('width', '18');
-    svg.setAttribute('height', '18');
-    var path = document.createElementNS(ns, 'path');
-    path.setAttribute('d', 'M5 12.5l4.5 4.5L19 7.5');
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', 'currentColor');
-    path.setAttribute('stroke-width', '3');
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('stroke-linejoin', 'round');
-    svg.append(path);
-    return svg;
-  }
-
-  function markPressed(grid, id) {
-    grid.querySelectorAll('.tile').forEach(function (t) {
-      t.setAttribute('aria-pressed', t.getAttribute('data-id') === id ? 'true' : 'false');
-    });
-  }
-
-  function foodPicker(side) {
-    var reveal = el('div', { class: 'card reveal', 'aria-live': 'polite' });
-    function paintReveal(pop) {
-      var f = ctx().food;
-      reveal.replaceChildren(el('div', { class: 'body' },
-        el('p', { class: 'eyebrow', text: f ? '한입 냠, ' + f.name : '고르면 맛이 보여요' }),
-        el('p', { class: 'story', text: f ? f.desc : '카드를 눌러 먹고 싶은 음식을 골라 보세요.' })));
-      reveal.classList.toggle('is-empty', !f);
-      if (pop) { reveal.classList.remove('is-pop'); void reveal.offsetWidth; reveal.classList.add('is-pop'); }
-    }
-    paintReveal(false);
-    side.append(reveal);
-
-    var grid = el('div', { class: 'grid', role: 'group', 'aria-label': '음식 고르기' });
-    S.foods.forEach(function (f) {
-      grid.append(tile(f, state.food === f.id, function (item) {
-        state.food = item.id;
-        markPressed(grid, item.id);
-        paintReveal(true);
-        updateControls();
-        saveSoon();
-      }));
-    });
-    return grid;
-  }
-
-  function tastePicker(side) {
-    var line = el('p', { class: 'hint' });
-    function paintLine() {
-      var t = ctx().taste;
-      line.textContent = t ? '입 안 가득 ' + t.label + S.josa(t.label, '이/가') + ' 퍼졌어요.' : '하나를 골라 주세요. 나중에 엔딩에서 바꿀 수도 있어요.';
-    }
-    paintLine();
-    side.querySelector('.body').append(line);
-
+  function tasteList(leaf) {
     var grid = el('div', { class: 'grid grid--taste', role: 'group', 'aria-label': '스프의 맛 고르기' });
     S.tastes.forEach(function (t) {
-      grid.append(tile(t, state.taste === t.id, function (item) {
-        state.taste = item.id;
-        markPressed(grid, item.id);
-        paintLine();
-        updateControls();
-        saveSoon();
+      grid.append(tile({
+        id: t.id, label: t.label, image: t.image, emoji: t.emoji, glow: t.glow, pressed: state.taste === t.id,
+        onclick: function () {
+          state.taste = t.id;
+          markPressed(grid, t.id);
+          updateControls();
+          saveSoon();
+        }
       }));
     });
     return grid;
   }
 
-  function endingLower(c) {
-    function row(label, value, sceneIndex, emptyText) {
+  function recap(c) {
+    function row(label, value, sceneIndex, page, emptyText) {
       return el('div', { class: 'recap-row' },
         el('dt', { text: label }),
         el('dd', { class: value ? '' : 'is-empty', text: value || emptyText }),
-        el('button', { type: 'button', class: 'link-btn', text: '고치기', 'aria-label': label + ' 고치기', onclick: function () { editFrom(sceneIndex); } }));
+        el('button', {
+          type: 'button', class: 'link-btn', text: '고치기', 'aria-label': label + ' 고치기',
+          onclick: function () { state.returnTo = LAST; go(sceneIndex, page); }
+        }));
     }
-    var recap = el('div', { class: 'card recap' }, el('div', { class: 'body' },
+    return el('div', { class: 'pg-text recap' },
       el('h2', { text: c.you + '의 별빛스프 이야기' }),
       el('dl', null,
-        row('이름', c.name, 2, '아직 비어 있어요'),
-        row('처음 고른 음식', c.food && c.food.name, 3, '고르지 않았어요'),
-        row('착한 일', c.deed, 5, '비워 두었어요'),
-        row('스프의 맛', c.taste && c.taste.label, 8, '고르지 않았어요'))));
-
-    var actions = el('div', { class: 'card' }, el('div', { class: 'body' },
-      el('div', { class: 'actions' },
-        el('button', { type: 'button', class: 'btn btn-primary', text: '완성된 동화 다시 보기', onclick: function () { state.returnTo = null; go(0); } }),
-        el('button', { type: 'button', class: 'btn btn-ghost', text: '처음부터 다시 하기', onclick: restart }),
-        el('button', { type: 'button', class: 'btn btn-soft', disabled: true, text: 'PDF로 저장하기' })),
-      el('p', { class: 'soon', text: 'PDF 저장은 다음 단계에서 열려요.' })));
-
-    return el('div', { class: 'ending-lower' }, recap, actions);
+        row('이름', c.name, 2, 1, '아직 비어 있어요'),
+        row('고른 음식', c.food && c.food.name, 3, 0, '고르지 않았어요'),
+        row('착한 일', c.deed, 5, 1, '비워 두었어요'),
+        row('스프의 맛', c.taste && c.taste.label, 8, 1, '고르지 않았어요')));
   }
 
-  function editFrom(index) {
-    state.returnTo = ENDING;
-    go(index);
+  /* ---------- 스티커 ----------
+     위치는 펼침면 기준 비율(0~1)로 저장해서 화면 크기·모드가 바뀌어도 같은 자리에 붙어 있다. */
+  function findSticker(sceneId, kind) {
+    return (state.stickers[sceneId] || []).find(function (s) { return s.kind === kind; }) || null;
   }
 
-  function restart() {
-    ask({
-      title: '처음부터 다시 할까요?',
-      message: '이름, 고른 음식, 착한 일, 스프의 맛이 모두 지워져요.',
-      ok: '다시 하기', cancel: '취소', danger: true
-    }).then(function (yes) {
-      if (!yes) return;
-      state = freshState();
-      store.clear();
-      go(0);
-      toast('새 이야기를 시작해요.');
+  function stickerSource(st) {
+    if (st.kind === 'deed') return { image: images[IMG_DEED], emoji: '💛', label: '착한 일 그림 스티커' };
+    var f = ctx().food;
+    if (!f) return null;
+    return { image: f.custom ? images[IMG_FOOD] : f.image, emoji: f.emoji, label: f.name + ' 스티커' };
+  }
+
+  function placeSticker(leaf, sceneId, kind, fromEl) {
+    var list = state.stickers[sceneId] || (state.stickers[sceneId] = []);
+    var st = findSticker(sceneId, kind);
+    if (!st) {
+      var spot = S.stickerSpots[kind];
+      st = { kind: kind, x: spot.x, y: spot.y, w: spot.w, r: spot.r };
+      list.push(st);
+    }
+    paintStickers(leaf);
+    var node = leaf._stickers.querySelector('[data-kind="' + kind + '"]');
+    if (!node) return;
+    selectSticker(leaf, node);
+    // 고른 카드에서 스티커가 톡 튀어나와 붙는 자리로 날아간다
+    if (reduceMotion) return;
+    var to = node.getBoundingClientRect();
+    var from = fromEl && fromEl.getBoundingClientRect();
+    var dx = 0, dy = 0;
+    if (from && mode === 'spread') {
+      dx = from.left + from.width / 2 - (to.left + to.width / 2);
+      dy = from.top + from.height / 2 - (to.top + to.height / 2);
+    }
+    node.querySelector('.st-body').animate([
+      { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.4) rotate(-20deg)', opacity: 0.4 },
+      { transform: 'translate(' + dx * 0.2 + 'px,' + (dy * 0.2 - 30) + 'px) scale(1.15) rotate(6deg)', opacity: 1, offset: 0.7 },
+      { transform: 'none', opacity: 1 }
+    ], { duration: 640, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  }
+
+  function paintStickers(leaf) {
+    var layer = leaf._stickers;
+    layer.replaceChildren();
+    (state.stickers[leaf._sceneId] || []).forEach(function (st) {
+      var src = stickerSource(st);
+      if (!src) return;
+      var body = el('div', { class: 'st-body' });
+      var emoji = el('span', { class: 'st-emoji', text: src.emoji });
+      body.append(emoji);
+      if (src.image) {
+        var img = el('img', { alt: '', draggable: 'false' });
+        img.onload = function () { emoji.remove(); };
+        img.onerror = function () { img.remove(); };
+        img.src = src.image;
+        body.append(img);
+      }
+      var node = el('div', {
+        class: 'sticker', tabindex: '0', role: 'img', 'aria-label': src.label + ' (끌어서 옮기기, Delete 키로 떼기)', 'data-kind': st.kind
+      }, body,
+        el('button', { type: 'button', class: 'st-del', 'aria-label': '스티커 떼기' }, '×'),
+        el('span', { class: 'st-handle', 'aria-hidden': 'true' }));
+      node._st = st;
+      positionSticker(node);
+      bindSticker(leaf, node);
+      layer.append(node);
     });
+  }
+
+  function positionSticker(node) {
+    var st = node._st;
+    node.style.left = st.x * 100 + '%';
+    node.style.top = st.y * 100 + '%';
+    node.style.width = st.w * 100 + '%';
+    node.style.setProperty('--w', st.w);
+    node.style.setProperty('--r', st.r + 'deg');
+  }
+
+  function selectSticker(leaf, node) {
+    leaf.querySelectorAll('.sticker.is-selected').forEach(function (n) { if (n !== node) n.classList.remove('is-selected'); });
+    if (node) node.classList.add('is-selected');
+  }
+
+  function removeSticker(leaf, node) {
+    var list = state.stickers[leaf._sceneId] || [];
+    var i = list.indexOf(node._st);
+    if (i >= 0) list.splice(i, 1);
+    node.remove();
+    saveNow();
+    toast('스티커를 뗐어요. 음식 카드를 다시 누르면 새로 붙일 수 있어요.');
+  }
+
+  function bindSticker(leaf, node) {
+    var drag = null;
+    var spreadEl = function () { return leaf.querySelector('.spread'); };
+
+    node.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('.st-del')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      selectSticker(leaf, node);
+      var rect = spreadEl().getBoundingClientRect();
+      var st = node._st;
+      var cx = rect.left + st.x * rect.width, cy = rect.top + st.y * rect.height;
+      drag = {
+        id: e.pointerId, rect: rect, handle: !!e.target.closest('.st-handle'),
+        dx: e.clientX - cx, dy: e.clientY - cy,
+        startDist: Math.hypot(e.clientX - cx, e.clientY - cy) || 1,
+        startAngle: Math.atan2(e.clientY - cy, e.clientX - cx),
+        w: st.w, r: st.r, cx: cx, cy: cy
+      };
+      try { node.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
+      node.classList.add('is-dragging');
+    });
+    node.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var st = node._st;
+      if (drag.handle) {
+        // 모서리 손잡이: 가운데를 기준으로 크기와 방향을 함께 바꾼다
+        var dist = Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy);
+        var ang = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx);
+        st.w = clamp(drag.w * dist / drag.startDist, 0.04, 0.6);
+        st.r = Math.round(drag.r + (ang - drag.startAngle) * 180 / Math.PI);
+        if (st.r > 180) st.r -= 360;
+        if (st.r < -180) st.r += 360;
+      } else {
+        st.x = clamp((e.clientX - drag.dx - drag.rect.left) / drag.rect.width, 0.02, 0.98);
+        st.y = clamp((e.clientY - drag.dy - drag.rect.top) / drag.rect.height, 0.04, 0.96);
+      }
+      positionSticker(node);
+    });
+    function end(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      drag = null;
+      node.classList.remove('is-dragging');
+      saveNow();
+    }
+    node.addEventListener('pointerup', end);
+    node.addEventListener('pointercancel', end);
+    node.querySelector('.st-del').addEventListener('click', function (e) { e.stopPropagation(); removeSticker(leaf, node); });
+    node.addEventListener('keydown', function (e) {
+      var st = node._st, step = e.shiftKey ? 0.05 : 0.01;
+      if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeSticker(leaf, node); return; }
+      var moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+      if (!moves[e.key]) return;
+      e.preventDefault();
+      e.stopPropagation();
+      st.x = clamp(st.x + moves[e.key][0], 0.02, 0.98);
+      st.y = clamp(st.y + moves[e.key][1], 0.04, 0.96);
+      positionSticker(node);
+      saveSoon();
+    });
+    node.addEventListener('focus', function () { selectSticker(leaf, node); });
   }
 
   /* ---------- 별빛 효과 (#8) ---------- */
   function sparkles(canvas) {
     var g = canvas.getContext && canvas.getContext('2d');
     if (!g) return function () {};
-    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var w = 0, h = 0, raf = 0, list = [];
 
     function resize() {
@@ -422,10 +680,10 @@
     }
     function spawn(anywhere) {
       return {
-        x: w * (0.22 + Math.random() * 0.56),
-        y: anywhere ? h * (0.15 + Math.random() * 0.6) : h * (0.55 + Math.random() * 0.12),
-        r: 1.6 + Math.random() * 3.6,
-        vy: 0.15 + Math.random() * 0.4,
+        x: w * (0.08 + Math.random() * 0.6),
+        y: anywhere ? h * (0.1 + Math.random() * 0.7) : h * (0.55 + Math.random() * 0.15),
+        r: 1.4 + Math.random() * 3,
+        vy: 0.12 + Math.random() * 0.35,
         ph: Math.random() * 6.28,
         life: anywhere ? Math.random() * 200 : 0,
         max: 240 + Math.random() * 260
@@ -456,15 +714,14 @@
         drawStar(s.x, s.y, s.r, fade * (0.55 + 0.45 * Math.sin(t / 280 + s.ph)));
       }
       g.globalAlpha = 1;
-      if (!reduce) raf = requestAnimationFrame(frame);
+      if (!reduceMotion) raf = requestAnimationFrame(frame);
     }
 
     var ro = window.ResizeObserver ? new ResizeObserver(resize) : null;
-    // 화면에 붙은 다음 프레임에 크기를 재고 시작한다
     raf = requestAnimationFrame(function (t) {
       resize();
       if (ro) ro.observe(canvas);
-      for (var i = 0; i < 30; i++) list.push(spawn(true));
+      for (var i = 0; i < 44; i++) list.push(spawn(true));
       frame(t);
     });
     return function () { cancelAnimationFrame(raf); if (ro) ro.disconnect(); };
@@ -483,95 +740,198 @@
           type: 'button', class: cls, disabled: i > state.maxScene,
           'aria-label': act.label + ' · ' + (i + 1) + '번 장면' + (i > state.maxScene ? ' (아직 읽지 않음)' : ''),
           'aria-current': i === state.scene ? 'step' : null,
-          onclick: function () { if (i !== state.scene) go(i); }
+          onclick: function () { if (i !== state.scene) go(i, 0); }
         }));
       });
       progress.append(group);
     });
   }
 
-  function missing(scene) {
-    return scene.require && !state[scene.require];
+  function missing(scene) { return scene.require && !state[scene.require]; }
+
+  // 지금 쪽을 떠날 때 꼭 골라야 하는 값이 비어 있는지
+  function blockedHere() {
+    var scene = S.scenes[state.scene];
+    if (!missing(scene)) return false;
+    return mode === 'spread' || state.page >= scene.requirePage;
+  }
+
+  function atLastStep() {
+    return state.scene === LAST && (mode === 'spread' || state.page === 1);
   }
 
   function updateControls() {
     var scene = S.scenes[state.scene];
-    btnPrev.disabled = state.scene === 0;
-    controls.hidden = false;
-    btnNext.hidden = state.scene === LAST;
-    if (state.scene === LAST) return;
-    var label = typeof scene.nextLabel === 'function' ? scene.nextLabel(ctx()) : (scene.nextLabel || '다음');
-    if (state.returnTo != null && state.scene < state.returnTo) label = '엔딩으로 돌아가기';
+    btnPrev.disabled = state.scene === 0 && (mode === 'spread' || state.page === 0);
+    var last = atLastStep();
+    btnNext.hidden = last;
+    endActions.hidden = !last;
+    if (last) return;
+    var leavingScene = mode === 'spread' || state.page === 1;
+    var label = '다음';
+    if (leavingScene) {
+      label = typeof scene.nextLabel === 'function' ? scene.nextLabel(ctx()) : (scene.nextLabel || '다음');
+      if (state.returnTo != null && state.scene < state.returnTo) label = '엔딩으로 돌아가기';
+    } else {
+      label = '다음 쪽';
+    }
     btnNext.textContent = label;
-    btnNext.toggleAttribute('data-blocked', !!missing(scene));
+    btnNext.toggleAttribute('data-blocked', blockedHere());
   }
 
-  /* ---------- 이동 ---------- */
-  function render(focus) {
-    teardown.forEach(function (fn) { fn(); });
-    teardown = [];
-    stage.replaceChildren(buildScene(state.scene));
+  /* ---------- 넘기기 ---------- */
+  function currentLeaf() { return book.querySelector('.leaf:not(.is-leaving)'); }
+
+  function retire(leaf) {
+    (leaf._teardown || []).forEach(function (fn) { fn(); });
+    leaf.remove();
+  }
+
+  // 장면이 바뀔 때: 지금 장면은 카드처럼 호를 그리며 빠지고, 다음 장면이 반대편에서 호를 그리며 들어온다
+  function arc(oldLeaf, newLeaf, dir) {
+    var deg = 22;
+    oldLeaf.classList.add('is-leaving');
+    var out = oldLeaf.animate([
+      { transform: 'rotate(0deg)', opacity: 1 },
+      { transform: 'rotate(' + (-deg * dir) + 'deg)', opacity: 0 }
+    ], { duration: 560, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' });
+    newLeaf.animate([
+      { transform: 'rotate(' + (deg * dir) + 'deg)', opacity: 0 },
+      { transform: 'rotate(0deg)', opacity: 1 }
+    ], { duration: 640, easing: 'cubic-bezier(.2,.8,.2,1)', delay: 60, fill: 'backwards' });
+    out.finished.then(function () { retire(oldLeaf); }, function () { retire(oldLeaf); });
+  }
+
+  function render(animate) {
+    var oldLeaf = currentLeaf();
+    var leaf = buildLeaf(state.scene);
+    book.append(leaf);
+    if (oldLeaf) {
+      if (animate && !reduceMotion && leaf.animate) arc(oldLeaf, leaf, direction);
+      else retire(oldLeaf);
+    }
     renderProgress();
     updateControls();
-    if (focus) {
-      var title = document.getElementById('scene-title');
-      if (title) { title.tabIndex = -1; title.focus({ preventScroll: true }); }
-    }
+    return leaf;
   }
 
-  function go(index) {
-    index = Math.max(0, Math.min(LAST, index));
+  function rerender() { render(false); }
+
+  function go(index, page) {
+    index = clamp(index, 0, LAST);
     direction = index >= state.scene ? 1 : -1;
     state.scene = index;
+    state.page = mode === 'single' ? (page || 0) : 0;
     state.maxScene = Math.max(state.maxScene, index);
-    if (index === ENDING) state.returnTo = null;
+    if (index === LAST && state.returnTo === LAST) state.returnTo = null;
     saveNow();
     render(true);
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
+  // 같은 장면 안에서 왼쪽 쪽 ↔ 오른쪽 쪽 (한 쪽씩 보기에서만)
+  function flipPage(page) {
+    state.page = page;
+    var leaf = currentLeaf();
+    if (leaf) leaf.setAttribute('data-page', page);
+    saveNow();
+    updateControls();
+  }
+
   function next() {
-    var scene = S.scenes[state.scene];
-    if (state.scene >= LAST) return;
-    if (missing(scene)) {
+    if (atLastStep()) return;
+    if (blockedHere()) {
+      var scene = S.scenes[state.scene];
       toast(scene.requireMessage);
-      var grid = stage.querySelector('.grid');
+      var grid = currentLeaf() && currentLeaf().querySelector('.grid');
       if (grid) { grid.classList.remove('is-shake'); void grid.offsetWidth; grid.classList.add('is-shake'); }
       return;
     }
-    go(state.returnTo != null && state.scene < state.returnTo ? state.returnTo : state.scene + 1);
+    if (mode === 'single' && state.page === 0) { flipPage(1); return; }
+    go(state.returnTo != null && state.scene < state.returnTo ? state.returnTo : state.scene + 1, 0);
   }
 
-  function prev() { if (state.scene > 0) go(state.scene - 1); }
+  function prev() {
+    if (mode === 'single' && state.page === 1) { flipPage(0); return; }
+    if (state.scene > 0) go(state.scene - 1, 1);
+  }
 
   btnNext.addEventListener('click', next);
   btnPrev.addEventListener('click', prev);
+  document.getElementById('btn-reread').addEventListener('click', function () { state.returnTo = null; go(0, 0); });
+  document.getElementById('btn-restart').addEventListener('click', function () {
+    ask({
+      title: '처음부터 다시 할까요?',
+      message: '이름, 고른 음식, 착한 일, 스프의 맛, 직접 그린 그림과 스티커가 모두 지워져요.',
+      ok: '다시 하기', cancel: '취소', danger: true
+    }).then(function (yes) {
+      if (!yes) return;
+      state = freshState();
+      images = {};
+      store.clear();
+      go(0, 0);
+      toast('새 이야기를 시작해요.');
+    });
+  });
 
   document.addEventListener('keydown', function (e) {
-    if (!modal.hidden || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (!modal.hidden || document.documentElement.classList.contains('is-editing')) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
     var t = e.target;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable || t.classList.contains('sticker'))) return;
     if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
   });
 
   window.addEventListener('pagehide', saveNow);
 
+  var resizeTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      var m = pickMode();
+      if (m === mode) return;
+      mode = m;
+      book.setAttribute('data-mode', mode);
+      if (mode === 'spread') state.page = 0;
+      rerender();
+    }, 120);
+  });
+
   /* ---------- 시작 ---------- */
+  function loadImages() {
+    var keys = [IMG_FOOD, IMG_DEED];
+    return Promise.all(keys.map(function (k) {
+      return store.getImage(k).then(function (v) { if (typeof v === 'string') images[k] = v; }, function () {});
+    }));
+  }
+
   function boot() {
+    mode = pickMode();
+    book.setAttribute('data-mode', mode);
     var res = store.load();
     if (res.error) toast('지난번 기록을 불러오지 못했어요. 처음부터 시작할게요.', 3600);
     if (res.data) state = sanitize(res.data);
-    var resumeAt = state.scene;
+    var resumeAt = state.scene, resumePage = state.page;
     state.scene = 0;
-    render(false);
-    if (resumeAt > 0) {
-      ask({
-        title: '읽던 이야기가 있어요',
-        message: '#' + (resumeAt + 1) + ' 장면까지 읽었어요. 이어서 읽을까요?',
-        ok: '이어서 읽기', cancel: '첫 장면부터'
-      }).then(function (yes) { if (yes) go(resumeAt); });
-    }
+    state.page = 0;
+
+    // 그림을 불러오는 동안 기다리지 않도록 0.8초가 지나면 먼저 화면을 그린다
+    var timeout = new Promise(function (r) { setTimeout(r, 800); });
+    Promise.race([loadImages(), timeout]).then(function () {
+      if (state.food === 'custom' && !images[IMG_FOOD]) {
+        state.food = null;
+        toast('지난번에 그린 음식 그림을 불러오지 못했어요. 다시 골라 주세요.', 3600);
+      }
+      render(false);
+      if (resumeAt > 0 || resumePage > 0) {
+        ask({
+          title: '읽던 이야기가 있어요',
+          message: '#' + (resumeAt + 1) + ' 장면까지 읽었어요. 이어서 읽을까요?',
+          ok: '이어서 읽기', cancel: '첫 장면부터'
+        }).then(function (yes) { if (yes) go(resumeAt, resumePage); });
+      }
+    });
   }
 
   boot();

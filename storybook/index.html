@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/editor.css">
 </head>
 <body>
 <div class="app" id="app">
@@ -20,15 +21,104 @@
     <nav class="progress" id="progress" aria-label="동화 진행 상황"></nav>
   </header>
 
-  <main class="stage" id="stage"></main>
+  <!-- 펼친 책: 장면마다 한 장(leaf)씩 바뀐다 -->
+  <main class="stage" id="stage">
+    <div class="book" id="book" data-mode="spread"></div>
+  </main>
 
   <nav class="controls" id="controls" aria-label="페이지 이동">
-    <button type="button" class="btn btn-ghost btn-prev" id="btn-prev" aria-label="이전 장면">
+    <button type="button" class="btn btn-ghost btn-prev" id="btn-prev" aria-label="이전">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span class="btn-prev-label">이전</span>
     </button>
     <button type="button" class="btn btn-primary" id="btn-next">다음</button>
+    <div class="end-actions" id="end-actions" hidden>
+      <button type="button" class="btn btn-primary" id="btn-reread">동화 다시 보기</button>
+      <button type="button" class="btn btn-ghost" id="btn-restart">처음부터 하기</button>
+      <button type="button" class="btn btn-soft" id="btn-pdf" disabled title="PDF 저장은 다음 단계에서 열려요">PDF로 저장하기 · 준비 중</button>
+    </div>
   </nav>
+</div>
+
+<!-- 그림 편집기 -->
+<div class="editor" id="editor" role="dialog" aria-modal="true" aria-labelledby="editor-title" hidden>
+  <header class="ed-top">
+    <button type="button" class="btn btn-ghost btn-small" id="ed-back">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      동화로
+    </button>
+    <h2 id="editor-title">그림 그리기</h2>
+    <button type="button" class="icon-btn" id="ed-undo" aria-label="실행 취소" title="실행 취소 (Ctrl+Z)">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 7H4V2M4 7c2.2-2.6 5-4 8.2-4 5 0 8.8 4 8.8 9s-4 9-9 9c-3.6 0-6.6-2-8-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" class="btn btn-primary btn-small" id="ed-done">다 그렸어요</button>
+  </header>
+
+  <div class="ed-main">
+    <div class="ed-stage">
+      <div class="ed-canvas-wrap" id="ed-canvas-wrap">
+        <canvas id="ed-canvas" aria-label="그림판"></canvas>
+        <div class="ed-photo" id="ed-photo" hidden><img id="ed-photo-img" alt="넣은 사진"></div>
+      </div>
+    </div>
+
+    <div class="ed-panel">
+      <div class="ed-photo-bar" id="ed-photo-bar" hidden>
+        <label for="ed-photo-scale">사진 크기</label>
+        <input type="range" id="ed-photo-scale" min="20" max="250" value="100">
+        <div class="ed-photo-actions">
+          <button type="button" class="btn btn-ghost btn-small" id="ed-photo-cancel">사진 빼기</button>
+          <button type="button" class="btn btn-primary btn-small" id="ed-photo-ok">사진 붙이기</button>
+        </div>
+      </div>
+
+      <div class="field ed-name-field" id="ed-name-field">
+        <label for="ed-name">무슨 음식인가요? (안 써도 돼요)</label>
+        <input type="text" class="input input-sm" id="ed-name" maxlength="12" placeholder="예: 무지개 케이크" autocomplete="off">
+      </div>
+
+      <div class="ed-tools" role="group" aria-label="그리기 도구">
+        <button type="button" class="tool" data-tool="pen" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L16 4.6a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>펜
+        </button>
+        <button type="button" class="tool" data-tool="pencil" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l2-6 9-9 4 4-9 9zM7 13l4 4M14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>연필
+        </button>
+        <button type="button" class="tool" data-tool="brush" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 3l-9 9M11 12c-3 0-5 2-5 4.5S4 20 3 20.5c2 1 8 1 9-3.5.4-1.8-.2-3.6-1-5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>브러시
+        </button>
+        <button type="button" class="tool" data-tool="eraser" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20h12M4.5 15.5l9-9a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L11 19H8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>지우개
+        </button>
+        <button type="button" class="tool" data-tool="bucket" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l7-7 8 8-7 7a2 2 0 0 1-2.8 0L4 13.8a2 2 0 0 1 0-2.8zM4 12h15M20 16s1.5 2 1.5 3a1.5 1.5 0 0 1-3 0c0-1 1.5-3 1.5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>페인트 통
+        </button>
+      </div>
+
+      <div class="ed-size" id="ed-size-row">
+        <label for="ed-size">굵기</label>
+        <input type="range" id="ed-size" min="2" max="60" value="14">
+        <span class="ed-size-preview"><span class="ed-size-dot" id="ed-size-dot"></span></span>
+        <output id="ed-size-out" for="ed-size">14</output>
+      </div>
+
+      <div class="ed-colors" role="group" aria-label="색 고르기">
+        <div class="ed-swatches" id="ed-swatches"></div>
+        <label class="swatch swatch-wheel" id="ed-wheel" title="더 많은 색">
+          <input type="color" id="ed-color" value="#2b2118" aria-label="색상 휠에서 고르기">
+        </label>
+      </div>
+
+      <div class="ed-actions">
+        <button type="button" class="btn btn-ghost btn-small" id="ed-camera">사진 찍기</button>
+        <button type="button" class="btn btn-ghost btn-small" id="ed-album">앨범에서 고르기</button>
+        <button type="button" class="btn btn-ghost btn-small is-warn" id="ed-clear">전체 지우기</button>
+        <button type="button" class="btn btn-ghost btn-small is-warn" id="ed-new">새로 시작</button>
+      </div>
+      <input type="file" id="ed-file-camera" accept="image/*" capture="environment" hidden>
+      <input type="file" id="ed-file-album" accept="image/*" hidden>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -46,6 +136,7 @@
 
 <script src="js/storage.js"></script>
 <script src="js/story.js"></script>
+<script src="js/drawing.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
