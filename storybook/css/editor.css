@@ -136,24 +136,27 @@
   .ed-panel { flex: 0 0 min(340px, 42%); padding-block: 4px 14px; }
 }
 
-/* 휴대폰 세로: 그림판을 조금 줄이고 도구를 촘촘히 놓아 스크롤 없이 모두 보이게 */
+/* 휴대폰 세로: 도구를 먼저 자리 잡고, 남는 높이만큼 그림판을 크게 (색이 가려지지 않게) */
 @media (max-width: 600px) and (orientation: portrait) {
   .ed-top { padding-block: 6px; }
-  .ed-canvas-wrap { width: min(100%, 42dvh); }
-  .ed-main { gap: 10px; }
-  .ed-panel { gap: 10px; }
-  .ed-name-field label { font-size: 0.78rem; }
+  .ed-main { gap: 8px; }
+  .ed-stage { flex: 1 1 auto; min-height: 150px; }
+  .ed-canvas-wrap { width: auto; height: 100%; max-width: 100%; border-radius: 18px; }
+  .ed-panel { flex: none; overflow: visible; gap: 8px; }
+  .ed-name-field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .ed-name-field .input-sm { padding: 8px 12px; }
   .tool { min-height: 52px; padding: 6px 2px; font-size: 0.72rem; }
   .tool svg { width: 22px; height: 22px; }
   .ed-size-preview { width: 40px; height: 40px; }
   .ed-size { grid-template-columns: auto minmax(0, 1fr) 40px 2em; }
-  .ed-colors { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 5px 4px; margin-inline: -4px; }
-  .swatch { flex: none; width: 34px; height: 34px; }
+  .ed-colors { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px 8px; padding: 4px; }
+  .swatch { width: 100%; height: auto; aspect-ratio: 1; max-width: 36px; justify-self: center; }
+  .ed-size { gap: 8px; }
   .ed-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ed-actions .ed-clear { grid-column: auto; }
   .ed-actions .btn { min-height: 42px; font-size: 0.9rem; padding: 0 6px; }
   .ed-tip { display: none; }
+  .ed-panel { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* 높이가 낮은 화면(가로 휴대폰) */
@@ -167,10 +170,13 @@
   .tool { min-height: 46px; padding: 4px 2px; font-size: 0.7rem; }
   .tool svg { width: 20px; height: 20px; }
   .ed-size-preview { width: 36px; height: 36px; }
-  .ed-colors { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 5px 4px; margin-inline: -4px; }
-  .swatch { flex: none; width: 30px; height: 30px; }
+  .ed-colors { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; padding: 4px; }
+  .swatch { width: 100%; height: auto; aspect-ratio: 1; max-width: 32px; justify-self: center; }
   .ed-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ed-actions .ed-clear { grid-column: auto; }
   .ed-actions .btn { min-height: 38px; font-size: 0.85rem; padding: 0 6px; }
   .ed-tip { display: none; }
 }
+
+.ed-actions .btn { white-space: nowrap; }
+@media (max-width: 380px) { .ed-top h2 { visibility: hidden; } }

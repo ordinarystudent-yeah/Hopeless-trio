@@ -913,13 +913,13 @@
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
-  // 같은 장면 안에서 왼쪽 쪽 ↔ 오른쪽 쪽 (한 쪽씩 보기에서만)
+  // 같은 장면 안에서 왼쪽 쪽 ↔ 오른쪽 쪽 (한 쪽씩 보기에서만). 장면을 넘길 때와 같은 호를 그리며 넘어간다.
   function flipPage(page) {
+    if (page === state.page) return;
+    direction = page > state.page ? 1 : -1;
     state.page = page;
-    var leaf = currentLeaf();
-    if (leaf) leaf.setAttribute('data-page', page);
     saveNow();
-    updateControls();
+    render(true);
   }
 
   function next() {
@@ -966,10 +966,10 @@
     if (s.leaf && s.leaf.style.transform) {
       var from = s.leaf.style.transform;
       s.leaf.style.transform = '';
-      var withinScene = mode === 'single' && ((dx < 0 && state.page === 0) || (dx > 0 && state.page === 1));
-      var turns = go2 && !withinScene && !(dx < 0 && (blockedHere() || atLastStep())) && !(dx > 0 && state.scene === 0);
+      var atStart = state.scene === 0 && (mode === 'spread' || state.page === 0);
+      var turns = go2 && !(dx < 0 && (blockedHere() || atLastStep())) && !(dx > 0 && atStart);
       if (!turns) {
-        // 넘기지 않거나 같은 장면 안에서 쪽만 넘길 때는 제자리로 부드럽게 돌아온다
+        // 넘기지 않을 때는 제자리로 부드럽게 돌아온다
         s.leaf.animate([{ transform: from }, { transform: 'rotate(0deg)' }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
       } else {
         dragFrom = from;
@@ -1130,7 +1130,7 @@
     document.getElementById('cover-kicker').textContent = c.kicker;
     document.getElementById('cover-title').textContent = c.title;
     document.getElementById('cover-sub').textContent = c.subtitle;
-    document.getElementById('build-tag').textContent = '버전 ' + S.version;
+    document.getElementById('build-tag').textContent = 'V' + S.version;
     var artBox = document.getElementById('cover-art');
     artBox.insertAdjacentHTML('beforeend', S.motifs.coverArt || S.motifs.soup); // 코드에 고정된 그림만
     if (c.image) {
