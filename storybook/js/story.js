@@ -95,6 +95,7 @@
        text     true면 이 쪽에 본문을 놓는다
        place    본문 세로 위치 top | center | bottom
        widgets  이 쪽에 놓을 입력 도구 (nameplate, name, food-grid, food-result, deed, deed-art, taste, recap)
+     question    입력칸이 있는 쪽 맨 위에 놓이는 질문 (#6)
      require     다음 장면으로 가기 전에 꼭 골라야 하는 값
      requirePage 그 값을 고르는 쪽 (휴대폰에서 한 쪽씩 넘길 때 이 쪽을 떠나기 전에 확인) */
   var scenes = [
@@ -145,9 +146,11 @@
       text: function (c) {
         return [
           ['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.'],
-          you(c, '이/가').concat([' 한 착한 일도 말해주네요?\n']).concat(you(c, '이/가'), [' 한 착한 일은 무엇인가요?'])
+          you(c, '이/가').concat([' 한 착한 일도 말해주네요?'])
         ];
-      }
+      },
+      // 입력칸이 있는 오른쪽 쪽 맨 위에 놓이는 질문
+      question: function (c) { return [you(c, '이/가').concat([' 한 착한 일은 무엇인가요?'])]; }
     },
     {
       id: 'serve', act: 2, tone: 'gold',
@@ -301,7 +304,7 @@
   };
 
   window.StarSoup = {
-    version: '1.0',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '1.1',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

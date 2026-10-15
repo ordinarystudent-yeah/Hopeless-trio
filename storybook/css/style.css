@@ -41,7 +41,9 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* 넘기는 장이 화면 밖으로 나가도 페이지가 넓어지지 않게 (안드로이드 크롬은 넓어진 만큼 화면을 축소해 버린다) */
 html { overflow-x: clip; }
+body { overflow-x: clip; }
 html, body { height: 100%; }
 html.is-editing { overflow: hidden; }
 
@@ -293,6 +295,7 @@ button, input, textarea { font: inherit; color: inherit; }
   text-wrap: pretty;
 }
 .story--sm { font-size: 5.4cqh; }
+.story--q { font-size: 5.8cqh; line-height: 1.45; }
 .story.is-coda { font-family: var(--font-display); color: var(--soup); font-size: 6.4cqh; line-height: 1.45; }
 .v { color: var(--soup); font-family: var(--font-display); }
 .v.is-quote { font-family: var(--font-body); font-weight: 700; }
@@ -467,6 +470,20 @@ textarea.input { resize: none; }
 .prompt-paper figcaption { font-size: 0.85rem; padding-top: 4px; }
 .prompt-go { min-width: min(100%, 280px); min-height: 64px; font-size: 1.25rem; margin-top: 4px; }
 #deed-prompt .intro-actions .btn { flex: 1; }
+@media (max-width: 600px), (max-height: 700px) {
+  #deed-prompt { gap: 12px; justify-content: center; }
+  .prompt-card { gap: 10px; padding: 20px 18px 18px; }
+  .prompt-card h1 { font-size: 1.3rem; }
+  .prompt-kicker { display: none; }
+  .prompt-memo { font-size: 1rem; padding: 10px 14px; }
+  .prompt-paper { width: min(140px, 38vw); }
+  .prompt-text { font-size: 0.9rem; line-height: 1.5; }
+  .prompt-go { min-height: 54px; font-size: 1.1rem; }
+  #deed-prompt .intro-actions .btn { min-height: 48px; }
+}
+@media (max-height: 520px) {
+  .prompt-text, .prompt-preview { display: none; }
+}
 
 /* ---------- 엔딩 기록 (#10 오른쪽 쪽) ---------- */
 .recap h2 { margin: 0; font-family: var(--font-display); font-size: 6cqh; font-weight: 400; text-wrap: balance; }

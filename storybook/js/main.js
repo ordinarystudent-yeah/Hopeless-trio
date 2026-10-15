@@ -315,7 +315,7 @@
       case 'name': return nameField(leaf);
       case 'food-grid': return foodGrid(leaf);
       case 'food-result': return foodResult(c);
-      case 'deed': return deedField(leaf);
+      case 'deed': return deedField(leaf, c, S.scenes[index]);
       case 'taste': return tasteList(leaf);
       case 'recap': return recap(c);
     }
@@ -458,7 +458,7 @@
     });
   }
 
-  function deedField(leaf) {
+  function deedField(leaf, c, scene) {
     var area = el('textarea', {
       class: 'input', id: 'input-deed', maxlength: S.limits.deed, rows: 2,
       placeholder: '예: 동생에게 장난감을 양보했어요'
@@ -480,9 +480,12 @@
         });
       }));
     var draw = el('p', { class: 'hint deed-next-hint', text: '다음으로 넘기면 그림이나 사진으로 착한 일을 꾸밀 수 있어요.' });
+    var question = paragraphs(scene.question(c));
+    question.forEach(function (p) { p.classList.add('story--q'); p.id = 'deed-question'; });
+    area.setAttribute('aria-labelledby', 'deed-question');
     return el('div', { class: 'pg-widget' },
+      question,
       el('div', { class: 'field' },
-        el('label', { for: 'input-deed', text: '내가 한 착한 일' }),
         area,
         el('div', { class: 'field-foot' }, el('p', { class: 'hint', text: '비워 두어도 이야기는 이어져요.' }), counter)),
       chips, draw);
