@@ -324,7 +324,7 @@
   function nameField(leaf) {
     var input = el('input', {
       class: 'input', id: 'input-name', type: 'text', maxlength: S.limits.name,
-      placeholder: '예: 하늘', autocomplete: 'off', enterkeyhint: 'next'
+      placeholder: '예: 하늘', autocomplete: 'off', enterkeyhint: 'done'
     });
     input.value = state.name;
     input.addEventListener('input', function () {
@@ -338,7 +338,7 @@
       saveSoon();
     });
     input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); next(); }
+      if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); input.blur(); }
     });
     return el('div', { class: 'field' },
       el('label', { for: 'input-name', text: '나의 이름' }),
@@ -431,8 +431,16 @@
     if (changed || !findSticker('food', 'food')) placeSticker(leaf, 'food', 'food', fromEl);
     updateControls();
     saveSoon();
-    // 한 쪽씩 보는 화면에서는 스티커가 붙는 오른쪽 쪽을 펼쳐 보여 준다 (장면은 넘어가지 않음)
-    if (mode === 'single' && state.page === 0) setTimeout(function () { if (state.scene === 3 && state.page === 0) flipPage(1); }, 520);
+    // 고르기만 하고 쪽·장면은 넘기지 않는다. 넘기는 건 언제나 '다음' 버튼이나 손가락으로.
+    hintHiddenSticker('food');
+  }
+
+  // 한 쪽씩 볼 때 스티커가 지금 안 보이는 쪽에 있으면 알려 준다
+  function hintHiddenSticker(kind) {
+    var st = findSticker(S.scenes[state.scene].id, kind);
+    if (mode === 'single' && st && (st.x < 0.5) !== (state.page === 0)) {
+      toast(state.page === 0 ? '스티커는 다음 쪽에 붙어 있어요.' : '스티커는 앞쪽에 붙어 있어요.');
+    }
   }
 
   function drawFood(leaf) {
@@ -449,7 +457,7 @@
       placeSticker(fresh, 'food', 'food', fresh.querySelector('.tile[data-id="custom"]'));
       updateControls();
       saveNow();
-      if (mode === 'single' && state.page === 0) setTimeout(function () { if (state.scene === 3 && state.page === 0) flipPage(1); }, 520);
+      hintHiddenSticker('food');
     });
   }
 
@@ -548,13 +556,19 @@
     var st = findSticker(sceneId, kind);
     if (!st) {
       var spot = S.stickerSpots[kind];
+      // 한 쪽씩 볼 때는 지금 보고 있는 쪽에 붙인다 (음식은 왼쪽 쪽 카드 격자의 빈 칸)
+      if (mode === 'single' && (spot.x < 0.5) !== (state.page === 0)) {
+        spot = kind === 'food' && state.page === 0 ? S.stickerSpots.foodLeft
+          : { x: state.page === 0 ? spot.x - 0.5 : spot.x + 0.5, y: spot.y, w: spot.w, r: spot.r };
+      }
       st = { kind: kind, x: spot.x, y: spot.y, w: spot.w, r: spot.r };
       list.push(st);
     }
     paintStickers(leaf);
     var node = leaf._stickers.querySelector('[data-kind="' + kind + '"]');
     if (!node) return;
-    selectSticker(leaf, node);
+    // 넓은 화면에서는 바로 손잡이를 보여 주고, 좁은 화면에서는 눌렀을 때만 (옆 카드를 가리지 않게)
+    if (mode === 'spread') selectSticker(leaf, node);
     // 고른 카드에서 스티커가 톡 튀어나와 붙는 자리로 날아간다
     if (reduceMotion) return;
     var to = node.getBoundingClientRect();
