@@ -787,19 +787,46 @@
     leaf.remove();
   }
 
-  // 장면이 바뀔 때: 지금 장면은 카드처럼 호를 그리며 빠지고, 다음 장면이 반대편에서 호를 그리며 들어온다
+  // 장면이 바뀔 때: 지금 장면은 카드처럼 호를 그리며 빠지고, 다음 장면이 반대편에서 호를 그리며 들어온다.
+  // 두 장이 같은 시간·같은 곡선으로 움직여 한 덩어리처럼 이어지고, 투명도는 겹치는 가운데 구간에서만 바뀐다.
+  var ARC = { deg: 18, duration: 820, easing: 'cubic-bezier(.65,0,.35,1)' };
+
+  function arcOut(leaf, dir) {
+    leaf.classList.add('is-leaving');
+    var d = -ARC.deg * dir;
+    var anim = leaf.animate([
+      { transform: 'rotate(0deg) scale(1)', opacity: 1 },
+      { transform: 'rotate(' + d * 0.45 + 'deg) scale(.975)', opacity: 1, offset: 0.4 },
+      { transform: 'rotate(' + d + 'deg) scale(.94)', opacity: 0 }
+    ], { duration: ARC.duration, easing: ARC.easing, fill: 'forwards' });
+    anim.finished.then(function () { retire(leaf); }, function () { retire(leaf); });
+    return anim;
+  }
+
+  function arcIn(leaf, dir) {
+    var d = ARC.deg * dir;
+    leaf.classList.add('is-entering');
+    var anim = leaf.animate([
+      { transform: 'rotate(' + d + 'deg) scale(.94)', opacity: 0 },
+      { transform: 'rotate(' + d * 0.45 + 'deg) scale(.975)', opacity: 1, offset: 0.6 },
+      { transform: 'rotate(0deg) scale(1)', opacity: 1 }
+    ], { duration: ARC.duration, easing: ARC.easing, fill: 'backwards' });
+    var done = function () { leaf.classList.remove('is-entering'); };
+    anim.finished.then(done, done);
+    return anim;
+  }
+
+  // 새 장면을 다 그린 뒤 다음 프레임에 움직이기 시작해야 첫 몇 프레임이 끊기지 않는다
+  function nextFrame(fn) { requestAnimationFrame(function () { requestAnimationFrame(fn); }); }
+
   function arc(oldLeaf, newLeaf, dir) {
-    var deg = 22;
     oldLeaf.classList.add('is-leaving');
-    var out = oldLeaf.animate([
-      { transform: 'rotate(0deg)', opacity: 1 },
-      { transform: 'rotate(' + (-deg * dir) + 'deg)', opacity: 0 }
-    ], { duration: 560, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' });
-    newLeaf.animate([
-      { transform: 'rotate(' + (deg * dir) + 'deg)', opacity: 0 },
-      { transform: 'rotate(0deg)', opacity: 1 }
-    ], { duration: 640, easing: 'cubic-bezier(.2,.8,.2,1)', delay: 60, fill: 'backwards' });
-    out.finished.then(function () { retire(oldLeaf); }, function () { retire(oldLeaf); });
+    newLeaf.style.opacity = '0';
+    nextFrame(function () {
+      newLeaf.style.opacity = '';
+      arcOut(oldLeaf, dir);
+      arcIn(newLeaf, dir);
+    });
   }
 
   function render(animate) {
@@ -868,14 +895,22 @@
       if (!yes) return;
       state = freshState();
       images = {};
+      saved = { scene: 0, page: 0 };
       store.clear();
-      go(0, 0);
-      toast('새 이야기를 시작해요.');
+      var leaf = currentLeaf();
+      var toCover = function () {
+        if (leaf) retire(leaf);
+        showScreen('cover');
+        enterCard(document.getElementById('cover-card'), -1);
+        toast('새 이야기를 시작할 준비가 됐어요.');
+      };
+      if (leaf) leaveThen(leaf, -1, toCover); else toCover();
     });
   });
 
   document.addEventListener('keydown', function (e) {
     if (!modal.hidden || document.documentElement.classList.contains('is-editing')) return;
+    if (app.getAttribute('data-screen') !== 'book') return;
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     var t = e.target;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable || t.classList.contains('sticker'))) return;
@@ -894,11 +929,117 @@
       mode = m;
       book.setAttribute('data-mode', mode);
       if (mode === 'spread') state.page = 0;
-      rerender();
+      if (app.getAttribute('data-screen') === 'book') rerender();
     }, 120);
   });
 
+  /* ---------- 표지·사용 설명·책 화면 ---------- */
+  var app = document.getElementById('app');
+  var screens = {
+    cover: document.getElementById('cover'),
+    guide: document.getElementById('guide'),
+    book: document.getElementById('stage')
+  };
+  var controlsEl = document.getElementById('controls');
+  var stopCoverSparkles = null;
+
+  function showScreen(name) {
+    app.setAttribute('data-screen', name);
+    Object.keys(screens).forEach(function (k) { screens[k].hidden = k !== name; });
+    controlsEl.hidden = name !== 'book';
+    if (name === 'cover' && !stopCoverSparkles) {
+      var cv = el('canvas', { class: 'sparkles', 'aria-hidden': 'true' });
+      document.getElementById('cover-art').append(cv);
+      stopCoverSparkles = sparkles(cv);
+    } else if (name !== 'cover' && stopCoverSparkles) {
+      stopCoverSparkles();
+      stopCoverSparkles = null;
+      var old = document.querySelector('#cover-art .sparkles');
+      if (old) old.remove();
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  // 화면 하나가 카드처럼 빠진 다음 다른 화면으로 바꾼다
+  function leaveThen(card, dir, fn) {
+    if (reduceMotion || !card.animate) { fn(); return; }
+    var anim = card.animate([
+      { transform: 'rotate(0deg) scale(1)', opacity: 1 },
+      { transform: 'rotate(' + (-ARC.deg * dir) + 'deg) scale(.94)', opacity: 0 }
+    ], { duration: 520, easing: 'cubic-bezier(.55,0,.75,.3)' });
+    anim.finished.then(fn, fn);
+  }
+  function enterCard(card, dir) {
+    if (reduceMotion || !card.animate) return;
+    nextFrame(function () {
+      card.animate([
+        { transform: 'rotate(' + (ARC.deg * dir) + 'deg) scale(.94)', opacity: 0 },
+        { transform: 'rotate(0deg) scale(1)', opacity: 1 }
+      ], { duration: 640, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    });
+  }
+
+  function openGuide() {
+    leaveThen(document.getElementById('cover-card'), 1, function () {
+      showScreen('guide');
+      enterCard(document.getElementById('guide-card'), 1);
+    });
+  }
+  function backToCover() {
+    leaveThen(document.getElementById('guide-card'), -1, function () {
+      showScreen('cover');
+      enterCard(document.getElementById('cover-card'), -1);
+    });
+  }
+
+  function enterBook(index, page) {
+    state.scene = clamp(index, 0, LAST);
+    state.page = mode === 'single' ? (page || 0) : 0;
+    state.maxScene = Math.max(state.maxScene, state.scene);
+    showScreen('book');
+    saveNow();
+    var leaf = render(false);
+    if (!reduceMotion && leaf.animate) { leaf.style.opacity = '0'; nextFrame(function () { leaf.style.opacity = ''; arcIn(leaf, 1); }); }
+  }
+
+  function start(card) {
+    var resumeAt = saved.scene, resumePage = saved.page;
+    var begin = function (i, p) { leaveThen(card, 1, function () { enterBook(i, p); }); };
+    if (resumeAt > 0 || resumePage > 0) {
+      ask({
+        title: '읽던 이야기가 있어요',
+        message: '#' + (resumeAt + 1) + ' 장면까지 읽었어요. 이어서 읽을까요?',
+        ok: '이어서 읽기', cancel: '첫 장면부터'
+      }).then(function (yes) { saved = { scene: 0, page: 0 }; begin(yes ? resumeAt : 0, yes ? resumePage : 0); });
+    } else {
+      begin(0, 0);
+    }
+  }
+
+  document.getElementById('btn-start').addEventListener('click', function () { start(document.getElementById('cover-card')); });
+  document.getElementById('btn-guide').addEventListener('click', openGuide);
+  document.getElementById('btn-guide-back').addEventListener('click', backToCover);
+  document.getElementById('btn-guide-start').addEventListener('click', function () { start(document.getElementById('guide-card')); });
+
+  function paintCover() {
+    var c = S.cover;
+    document.getElementById('cover-kicker').textContent = c.kicker;
+    document.getElementById('cover-title').textContent = c.title;
+    document.getElementById('cover-sub').textContent = c.subtitle;
+    var artBox = document.getElementById('cover-art');
+    artBox.insertAdjacentHTML('beforeend', S.motifs.coverArt || S.motifs.soup); // 코드에 고정된 그림만
+    if (c.image) {
+      var img = new Image();
+      img.alt = '';
+      img.onload = function () { artBox.classList.add('has-image'); img.classList.add('is-loaded'); };
+      img.onerror = function () { img.remove(); };
+      img.src = c.image;
+      artBox.append(img);
+    }
+  }
+
   /* ---------- 시작 ---------- */
+  var saved = { scene: 0, page: 0 };
   function loadImages() {
     var keys = [IMG_FOOD, IMG_DEED];
     return Promise.all(keys.map(function (k) {
@@ -909,27 +1050,16 @@
   function boot() {
     mode = pickMode();
     book.setAttribute('data-mode', mode);
+    paintCover();
+    showScreen('cover');
     var res = store.load();
     if (res.error) toast('지난번 기록을 불러오지 못했어요. 처음부터 시작할게요.', 3600);
     if (res.data) state = sanitize(res.data);
-    var resumeAt = state.scene, resumePage = state.page;
-    state.scene = 0;
-    state.page = 0;
-
-    // 그림을 불러오는 동안 기다리지 않도록 0.8초가 지나면 먼저 화면을 그린다
-    var timeout = new Promise(function (r) { setTimeout(r, 800); });
-    Promise.race([loadImages(), timeout]).then(function () {
+    saved = { scene: state.scene, page: state.page };
+    loadImages().then(function () {
       if (state.food === 'custom' && !images[IMG_FOOD]) {
         state.food = null;
         toast('지난번에 그린 음식 그림을 불러오지 못했어요. 다시 골라 주세요.', 3600);
-      }
-      render(false);
-      if (resumeAt > 0 || resumePage > 0) {
-        ask({
-          title: '읽던 이야기가 있어요',
-          message: '#' + (resumeAt + 1) + ' 장면까지 읽었어요. 이어서 읽을까요?',
-          ok: '이어서 읽기', cancel: '첫 장면부터'
-        }).then(function (yes) { if (yes) go(resumeAt, resumePage); });
       }
     });
   }

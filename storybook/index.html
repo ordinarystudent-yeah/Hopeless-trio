@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="css/editor.css">
 </head>
 <body>
-<div class="app" id="app">
+<div class="app" id="app" data-screen="cover">
   <header class="topbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2Q12 12 22 12Q12 12 12 22Q12 12 2 12Q12 12 12 2Z" fill="currentColor"/></svg>
@@ -21,12 +21,49 @@
     <nav class="progress" id="progress" aria-label="동화 진행 상황"></nav>
   </header>
 
+  <!-- 표지: 처음 들어오면 보이는 시작 화면 -->
+  <section class="intro" id="cover" aria-label="표지">
+    <div class="cover" id="cover-card">
+      <div class="cover-art" id="cover-art" aria-hidden="true"></div>
+      <div class="cover-frame" aria-hidden="true"></div>
+      <div class="cover-text">
+        <p class="cover-kicker" id="cover-kicker"></p>
+        <h1 class="cover-title" id="cover-title"></h1>
+        <p class="cover-sub" id="cover-sub"></p>
+      </div>
+    </div>
+    <div class="intro-actions">
+      <button type="button" class="btn btn-ghost" id="btn-guide">사용 설명</button>
+      <button type="button" class="btn btn-primary" id="btn-start">시작하기</button>
+    </div>
+  </section>
+
+  <!-- 사용 설명 -->
+  <section class="intro" id="guide" aria-labelledby="guide-title" hidden>
+    <div class="guide-card" id="guide-card">
+      <h1 id="guide-title">이렇게 읽어요</h1>
+      <ol class="guide-steps">
+        <li><strong>책장 넘기기</strong><span>아래의 ‘다음’ 버튼이나 키보드 ← → 키로 넘겨요. 휴대폰에서는 한 쪽씩 넘어가요.</span></li>
+        <li><strong>이름 적기</strong><span>이름을 적으면 이야기 속 주인공이 내 이름으로 바뀌어요. 비워 두어도 괜찮아요.</span></li>
+        <li><strong>음식 고르기</strong><span>먹고 싶은 음식을 골라요. ‘직접 그리기’로 그리거나 사진을 넣을 수도 있어요.</span></li>
+        <li><strong>스티커 붙이기</strong><span>고른 음식은 스티커가 되어 책에 붙어요. 끌어서 옮기고, 노란 손잡이로 크기와 방향을 바꾸고, ×로 떼요.</span></li>
+        <li><strong>착한 일 이야기하기</strong><span>내가 한 착한 일을 적고, 그림으로 꾸밀 수도 있어요.</span></li>
+        <li><strong>스프의 맛 고르기</strong><span>마지막 장에서 내가 만든 이야기를 확인하고, ‘고치기’로 바꿀 수 있어요.</span></li>
+      </ol>
+      <p class="guide-note">적은 내용과 그림은 이 기기에만 저장돼요. 다시 열면 읽던 곳부터 이어서 볼 수 있어요.</p>
+    </div>
+    <div class="intro-actions">
+      <button type="button" class="btn btn-ghost" id="btn-guide-back">표지로</button>
+      <button type="button" class="btn btn-primary" id="btn-guide-start">시작하기</button>
+    </div>
+  </section>
+
   <!-- 펼친 책: 장면마다 한 장(leaf)씩 바뀐다 -->
-  <main class="stage" id="stage">
+  <main class="stage" id="stage" hidden>
     <div class="book" id="book" data-mode="spread"></div>
   </main>
 
-  <nav class="controls" id="controls" aria-label="페이지 이동">
+  <nav class="controls" id="controls" aria-label="페이지 이동" hidden>
     <button type="button" class="btn btn-ghost btn-prev" id="btn-prev" aria-label="이전">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span class="btn-prev-label">이전</span>
@@ -112,9 +149,9 @@
       <div class="ed-actions">
         <button type="button" class="btn btn-ghost btn-small" id="ed-camera">사진 찍기</button>
         <button type="button" class="btn btn-ghost btn-small" id="ed-album">앨범에서 고르기</button>
-        <button type="button" class="btn btn-ghost btn-small is-warn" id="ed-clear">전체 지우기</button>
-        <button type="button" class="btn btn-ghost btn-small is-warn" id="ed-new">새로 시작</button>
+        <button type="button" class="btn btn-ghost btn-small is-warn ed-clear" id="ed-clear">전체 지우기</button>
       </div>
+      <p class="ed-tip">사진 파일을 그림판에 끌어다 놓거나 붙여넣어도 들어가요.</p>
       <input type="file" id="ed-file-camera" accept="image/*" capture="environment" hidden>
       <input type="file" id="ed-file-album" accept="image/*" hidden>
     </div>

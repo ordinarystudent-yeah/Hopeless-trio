@@ -152,8 +152,8 @@
       text: function (c) {
         if (c.deed) {
           return [
-            ['와! ', { v: '“' + c.deed + '”', quote: true }],
-            you(c, '이/가').concat([' 한 이 착한 일로 요정들은 박수를 보내며 ']).concat(you(c), ['의 앞에 그 음식을 놓아주었어요.'])
+            [{ v: '“' + c.deed + '”', quote: true }],
+            ['와!\n'].concat(you(c, '이/가'), [' 한 이 착한 일로 요정들은 박수를 보내며 ']).concat(you(c), ['의 앞에 그 음식을 놓아주었어요.'])
           ];
         }
         // 착한 일을 비워 두었을 때의 기본 문장
@@ -255,6 +255,17 @@
       '<ellipse cx="100" cy="84" rx="54" ry="9" fill="#ffd98a"/>' +
       stars([[80, 83, 5], [106, 81, 6], [128, 85, 4]], '#fffbe9') +
       '<rect x="70" y="140" width="60" height="6" rx="3" fill="#e9d9b8"/></svg>',
+    coverArt: '<svg viewBox="0 0 400 283" xmlns="http://www.w3.org/2000/svg">' +
+      '<mask id="m-cover-moon"><rect width="400" height="283" fill="#fff"/><circle cx="338" cy="52" r="30" fill="#000"/></mask>' +
+      '<circle cx="322" cy="64" r="34" fill="#ffd98a" mask="url(#m-cover-moon)"/>' +
+      '<ellipse cx="200" cy="250" rx="150" ry="22" fill="#2a3266"/>' +
+      '<path d="M120 196 H280 Q272 256 200 258 Q128 256 120 196Z" fill="#fbf4e4"/>' +
+      '<ellipse cx="200" cy="196" rx="80" ry="16" fill="#ffc65a"/>' +
+      '<ellipse cx="200" cy="196" rx="64" ry="10" fill="#ffd98a"/>' +
+      stars([[176, 195, 5], [204, 193, 7], [228, 197, 4]], '#fffbe9') +
+      stars([[182, 160, 6], [214, 138, 8], [196, 112, 5], [226, 94, 4], [168, 128, 4]], '#ffe3a0') +
+      stars([[60, 50, 6], [110, 90, 4], [36, 150, 5], [362, 150, 5], [300, 120, 3.5], [250, 40, 4]], '#fff3cf') +
+      '</svg>',
     dawn: V +
       '<circle cx="152" cy="40" r="20" fill="#ffd27a"/>' +
       '<rect x="22" y="78" width="70" height="34" rx="16" fill="#fbf4e4"/>' +
@@ -265,7 +276,16 @@
       stars([[180, 70, 4], [120, 24, 3]], '#fff3cf') + '</svg>'
   };
 
+  /* ---------- 표지 ---------- */
+  var cover = {
+    image: 'assets/backgrounds/00-cover.png',   // 표지 그림 (가로 A4, 297:210)
+    kicker: '꿈속 식탁 이야기',
+    title: '별빛스프',
+    subtitle: '착한 아이에게 주는 특별한 스프'
+  };
+
   window.StarSoup = {
+    cover: cover,
     acts: acts,
     foods: foods,
     tastes: tastes,

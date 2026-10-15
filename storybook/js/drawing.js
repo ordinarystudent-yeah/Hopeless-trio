@@ -1,6 +1,7 @@
 /* 별빛스프 — 그림 편집기
    StarSoupEditor.open({ title, image, askName, name }) → Promise<{ image, name } | null>
    - image: 이어서 그릴 기존 그림 (data URL)
+   - 그림을 지우는 방법은 '전체 지우기' 하나뿐이며(실행 취소로 되돌릴 수 있음) 항상 확인창을 거친다
    - 결과 image는 그림이 있는 부분만 잘라낸 투명 배경 PNG (스티커로 사용)
    Pointer Events로 마우스·손가락·펜을 함께 처리한다. */
 (function () {
@@ -71,7 +72,6 @@
     $('ed-back').addEventListener('click', back);
     $('ed-done').addEventListener('click', finish);
     $('ed-clear').addEventListener('click', clearAll);
-    $('ed-new').addEventListener('click', startOver);
 
     // 사진: 카메라로 찍기 / 앨범에서 고르기 (둘 다 사용자가 직접 고르는 파일 선택 방식)
     $('ed-camera').addEventListener('click', function () { $('ed-file-camera').click(); });
@@ -82,6 +82,18 @@
         e.target.value = '';
         if (file) loadPhoto(file);
       });
+    });
+    // 사진을 그림판에 끌어다 놓거나 붙여넣어도 들어간다
+    wrap.addEventListener('dragover', function (e) { e.preventDefault(); });
+    wrap.addEventListener('drop', function (e) {
+      e.preventDefault();
+      var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) loadPhoto(file);
+    });
+    document.addEventListener('paste', function (e) {
+      if (root.hidden || !e.clipboardData) return;
+      var item = Array.prototype.find.call(e.clipboardData.items || [], function (it) { return it.kind === 'file' && /^image\//.test(it.type); });
+      if (item) { e.preventDefault(); loadPhoto(item.getAsFile()); }
     });
     photoScale.addEventListener('input', function () { if (photo) { photo.s = photo.fit * Number(photoScale.value) / 100; placePhoto(); } });
     $('ed-photo-ok').addEventListener('click', commitPhoto);
@@ -212,25 +224,6 @@
       if (!yes) return;
       pushUndo();
       g.clearRect(0, 0, SIZE, SIZE);
-      dirty = true;
-    });
-  }
-
-  function startOver() {
-    ui().ask({
-      title: '새로 시작할까요?',
-      message: '지금 그림과 되돌리기 기록을 모두 버리고 빈 종이에서 다시 시작해요.',
-      ok: '새로 시작', cancel: '취소', danger: true
-    }).then(function (yes) {
-      if (!yes) return;
-      cancelPhoto();
-      g.clearRect(0, 0, SIZE, SIZE);
-      undo = [];
-      paintUndo();
-      size = DEFAULTS.size;
-      sizeInput.value = size;
-      setColor(DEFAULTS.color);
-      setTool(DEFAULTS.tool);
       dirty = true;
     });
   }

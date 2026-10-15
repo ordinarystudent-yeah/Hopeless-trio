@@ -126,6 +126,8 @@
 .ed-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ed-actions .btn { padding: 0 10px; }
 .ed-actions .is-warn { color: var(--rose); }
+.ed-actions .ed-clear { grid-column: 1 / -1; }
+.ed-tip { margin: -4px 0 0; font-size: 0.8rem; color: var(--soft); }
 
 @media (min-width: 860px), (orientation: landscape) and (min-width: 600px) {
   .ed-main { flex-direction: row; align-items: stretch; }
