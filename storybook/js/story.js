@@ -94,7 +94,7 @@
        artPos   임시 그림 위치 top | bottom (기본은 가운데)
        text     true면 이 쪽에 본문을 놓는다
        place    본문 세로 위치 top | center | bottom
-       widgets  이 쪽에 놓을 입력 도구 (nameplate, name, food-grid, food-result, deed, deed-art, taste, recap)
+       widgets  이 쪽에 놓을 입력 도구 (nameplate, name, food-grid, food-result, deed, deed-hint, taste, recap)
      question    입력칸이 있는 쪽 맨 위에 놓이는 질문 (#6)
      require     다음 장면으로 가기 전에 꼭 골라야 하는 값
      requirePage 그 값을 고르는 쪽 (휴대폰에서 한 쪽씩 넘길 때 이 쪽을 떠나기 전에 확인) */
@@ -155,7 +155,7 @@
     {
       id: 'serve', act: 2, tone: 'gold',
       image: 'assets/fairies/07-fairies-serve.png', alt: '박수를 치며 음식을 놓아 주는 요정들',
-      pages: [{ art: 'cloche' }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
+      pages: [{ art: 'cloche', place: 'bottom', widgets: ['deed-hint'] }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
       text: function (c) {
         if (c.deed) {
           return [
@@ -304,7 +304,7 @@
   };
 
   window.StarSoup = {
-    version: '1.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '1.3',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

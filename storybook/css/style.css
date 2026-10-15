@@ -423,6 +423,16 @@ textarea.input { resize: none; }
 .grid--taste .check { top: 50%; right: 3cqh; margin-top: max(-9px, -3cqh); }
 
 .reveal.is-empty .story { color: var(--soft); }
+/* 그림 위에 놓이는 짧은 안내 (13쪽 착한 일 종이) */
+.pg-hint {
+  position: relative;
+  align-self: flex-start;
+  padding: 1.8cqh 3.4cqh;
+  border-radius: 99px;
+  background: rgb(17 23 46 / 0.72);
+  color: var(--milk);
+  pointer-events: none;
+}
 .is-pop { animation: pop 0.45s cubic-bezier(0.3, 1.4, 0.5, 1); }
 @keyframes pop { from { transform: scale(0.97); opacity: 0.5; } to { transform: none; opacity: 1; } }
 .is-shake { animation: shake 0.4s; }

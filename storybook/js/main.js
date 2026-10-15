@@ -316,6 +316,9 @@
       case 'food-grid': return foodGrid(leaf);
       case 'food-result': return foodResult(c);
       case 'deed': return deedField(leaf, c, S.scenes[index]);
+      case 'deed-hint': return images[IMG_DEED]
+        ? el('p', { class: 'hint sticker-hint pg-hint' }, '꾸민 착한 일 종이를 끌어서 원하는 곳에 옮겨 보세요.')
+        : null;
       case 'taste': return tasteList(leaf);
       case 'recap': return recap(c);
     }
