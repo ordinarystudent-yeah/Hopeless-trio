@@ -236,17 +236,26 @@ button, input, textarea { font: inherit; color: inherit; }
 .pg-art[data-pos="top"] { place-items: start center; padding-top: 5cqh; }
 .pg-art[data-pos="top"] svg { width: 52%; }
 .pg-art[data-pos="bottom"] { place-items: end center; padding-bottom: 6cqh; }
-.pg-art[data-pos="bottom"] svg { width: 48%; opacity: 0.55; }
+.pg-art[data-pos="bottom"] svg { width: 56%; }
+.pg-art.is-faint svg { opacity: 0.22; }
 
 .pg-text, .pg-widget { position: relative; display: flex; flex-direction: column; gap: 2.6cqh; }
-.has-image .pg-text {
+/* 글 상자: 모든 쪽에 삽화가 깔리므로 글은 항상 반투명 상자 위에 놓는다 */
+.pg-text.is-panel {
   padding: 4cqh 5cqh;
   border-radius: 4cqh;
+  background: rgb(17 23 46 / 0.66);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+.has-image .pg-text.is-panel {
   background: rgb(17 23 46 / 0.72);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
-.pg[data-place="bottom"] .pg-text { padding: 4cqh 5cqh; border-radius: 4cqh; background: linear-gradient(rgb(17 23 46 / 0.55), rgb(17 23 46 / 0.85)); }
+.page-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.4s; }
+.page-img.is-loaded { opacity: 1; }
+.page.has-image .pg-art { display: none; }
+.build-tag { position: absolute; right: 2.4cqh; bottom: 1.6cqh; font-family: var(--font-mono); font-size: max(9px, 2.4cqh); color: var(--soft); opacity: 0.55; }
 
 .folio {
   position: absolute;

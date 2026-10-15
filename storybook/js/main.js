@@ -249,9 +249,23 @@
       });
       var dense = (p.widgets || []).indexOf('food-grid') >= 0;
       var pg = el('div', { class: 'pg' + (dense ? ' pg--dense' : ''), 'data-place': p.place || 'top' });
-      if (p.art) pg.append(motif(p.art, p.artPos));
+      if (p.image) {
+        var pimg = new Image();
+        pimg.alt = '';
+        pimg.className = 'page-img';
+        pimg.decoding = 'async';
+        pimg.onload = function () { page.classList.add('has-image'); pimg.classList.add('is-loaded'); };
+        pimg.onerror = function () { pimg.remove(); };
+        pimg.src = p.image;
+        page.append(pimg);
+      }
+      if (p.art) {
+        var m = motif(p.art, p.artPos);
+        if (p.faint) m.classList.add('is-faint');
+        pg.append(m);
+      }
       if (p.text) {
-        var block = el('div', { class: 'pg-text' }, eyebrow(scene, index), paragraphs(scene.text(c)));
+        var block = el('div', { class: 'pg-text is-panel' }, eyebrow(scene, index), paragraphs(scene.text(c)));
         if (index === 0 && pi === 1) block.id = 'scene-title';
         pg.append(block);
       }
@@ -1026,6 +1040,7 @@
     document.getElementById('cover-kicker').textContent = c.kicker;
     document.getElementById('cover-title').textContent = c.title;
     document.getElementById('cover-sub').textContent = c.subtitle;
+    document.getElementById('build-tag').textContent = 'v' + S.version;
     var artBox = document.getElementById('cover-art');
     artBox.insertAdjacentHTML('beforeend', S.motifs.coverArt || S.motifs.soup); // 코드에 고정된 그림만
     if (c.image) {
