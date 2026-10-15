@@ -106,13 +106,13 @@
       var before = document.activeElement;
 
       function onKey(e) {
-        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(null); }
         else if (e.key === 'Tab') {
           e.preventDefault();
           (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
         }
       }
-      function onBackdrop(e) { if (e.target === modal) done(false); }
+      function onBackdrop(e) { if (e.target === modal) done(null); }
       function done(result) {
         modal.hidden = true;
         okBtn.onclick = cancelBtn.onclick = null;
@@ -928,7 +928,9 @@
   }
 
   function render(animate) {
+    book.querySelectorAll('.leaf.is-leaving').forEach(retire);
     var oldLeaf = currentLeaf();
+    if (oldLeaf) { stopAnims(oldLeaf); oldLeaf.classList.remove('is-entering'); oldLeaf.style.opacity = ''; }
     var leaf = buildLeaf(state.scene);
     book.append(leaf);
     if (oldLeaf) {
@@ -964,7 +966,7 @@
   }
 
   function next() {
-    if (atLastStep()) return;
+    if (switching || atLastStep()) return;
     if (blockedHere()) {
       var scene = S.scenes[state.scene];
       toast(scene.requireMessage);
@@ -1009,13 +1011,14 @@
   // 착한 일을 적은 뒤 나오는 안내 화면 (동화 쪽이 아님): 가운데 버튼을 눌러야 꾸미기 화면으로 간다
   function showDeedPrompt() {
     var leaf = currentLeaf();
-    var show = function () {
-      if (leaf) retire(leaf);
+    if (!leaf) return;
+    stopAnims(leaf);
+    leaveThen(leaf, 1, function () {
+      retire(leaf);
       paintDeedPrompt();
       showScreen('deedPrompt');
       enterCard(document.getElementById('deed-prompt-card'), 1);
-    };
-    if (leaf) leaveThen(leaf, 1, show); else show();
+    });
   }
 
   function paintDeedPrompt() {
@@ -1031,7 +1034,7 @@
     document.getElementById('btn-deed-draw').textContent = images[IMG_DEED] ? '그림 다시 꾸미기' : '그림 그리러 가기';
   }
 
-  document.getElementById('btn-deed-draw').addEventListener('click', openDeedDecor);
+  document.getElementById('btn-deed-draw').addEventListener('click', function () { if (!switching) openDeedDecor(); });
   document.getElementById('btn-deed-skip').addEventListener('click', function () {
     leaveThen(document.getElementById('deed-prompt-card'), 1, function () { enterBook(forwardTarget(), 0, 1); });
   });
@@ -1040,6 +1043,7 @@
   });
 
   function prev() {
+    if (switching) return;
     if (mode === 'single' && state.page === 1) { flipPage(0); return; }
     if (state.scene > 0) go(state.scene - 1, 1);
   }
@@ -1095,10 +1099,7 @@
       ok: '다시 하기', cancel: '취소', danger: true
     }).then(function (yes) {
       if (!yes) return;
-      state = freshState();
-      images = {};
-      saved = { scene: 0, page: 0 };
-      store.clear();
+      resetAll();
       var leaf = currentLeaf();
       var toCover = function () {
         if (leaf) retire(leaf);
@@ -1166,7 +1167,15 @@
   }
 
   // 화면 하나가 카드처럼 빠진 다음 다른 화면으로 바꾼다
+  // 화면이 바뀌는 동안에는 새 입력을 받지 않는다 (두 번 눌러 애니메이션이 겹치지 않게)
+  var switching = false;
+  function stopAnims(elm) { if (elm && elm.getAnimations) elm.getAnimations().forEach(function (a) { a.cancel(); }); }
+
   function leaveThen(card, dir, fn) {
+    if (switching) return;
+    switching = true;
+    controlsEl.hidden = true;
+    stopAnims(card);
     if (!card.animate) { fn(); return; }
     var anim = card.animate([
       { transform: 'rotate(0deg) scale(1)', opacity: 1 },
@@ -1175,12 +1184,23 @@
     anim.finished.then(fn, fn);
   }
   function enterCard(card, dir) {
-    if (!card.animate) return;
+    var done = function () { switching = false; };
+    if (!card.animate) { done(); return; }
+    stopAnims(card);
+    var actions = card.parentNode.querySelector('.intro-actions');
+    card.style.opacity = '0';
+    if (actions) actions.style.opacity = '0';
     nextFrame(function () {
-      card.animate([
+      card.style.opacity = '';
+      if (actions) actions.style.opacity = '';
+      var anim = card.animate([
         { transform: 'rotate(' + (ARC.deg * dir) + 'deg) scale(.94)', opacity: 0 },
         { transform: 'rotate(0deg) scale(1)', opacity: 1 }
       ], { duration: 760, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      // 아래 버튼들은 카드가 거의 자리 잡은 뒤 살며시 나타난다
+      if (actions) actions.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 360, delay: 380, easing: 'ease-out', fill: 'backwards' });
+      anim.finished.then(done, done);
     });
   }
 
@@ -1208,18 +1228,40 @@
       setTimeout(function () { toast('휴대폰을 가로로 돌리면 펼친 책으로 크게 볼 수 있어요.', 4200); }, 900);
     }
     var leaf = render(false);
-    if (leaf.animate) { leaf.style.opacity = '0'; nextFrame(function () { leaf.style.opacity = ''; arcIn(leaf, dir || 1); }); }
+    if (leaf.animate) {
+      leaf.style.opacity = '0';
+      nextFrame(function () {
+        leaf.style.opacity = '';
+        var a = arcIn(leaf, dir || 1);
+        a.finished.then(function () { switching = false; }, function () { switching = false; });
+      });
+    } else {
+      switching = false;
+    }
+  }
+
+  // 지난 기록(이름·선택·그림·스티커)을 모두 지운다
+  function resetAll() {
+    state = freshState();
+    images = {};
+    saved = { scene: 0, page: 0 };
+    store.clear();
   }
 
   function start(card) {
+    if (switching) return;
     var resumeAt = saved.scene, resumePage = saved.page;
     var begin = function (i, p) { leaveThen(card, 1, function () { enterBook(i, p); }); };
     if (resumeAt > 0 || resumePage > 0) {
       ask({
         title: '읽던 이야기가 있어요',
-        message: '#' + (resumeAt + 1) + ' 장면까지 읽었어요. 이어서 읽을까요?',
-        ok: '이어서 읽기', cancel: '첫 장면부터'
-      }).then(function (yes) { saved = { scene: 0, page: 0 }; begin(yes ? resumeAt : 0, yes ? resumePage : 0); });
+        message: '#' + (resumeAt + 1) + ' 장면까지 읽었어요. 처음부터 새로 하면 지난번에 적은 이름, 고른 음식, 그림이 모두 지워져요.',
+        ok: '이어서 읽기', cancel: '처음부터 새로'
+      }).then(function (answer) {
+        if (answer === null) return;          // 창 바깥을 누르면 아무것도 하지 않음
+        if (answer) { saved = { scene: 0, page: 0 }; begin(resumeAt, resumePage); }
+        else { resetAll(); begin(0, 0); toast('지난 기록을 지우고 새로 시작해요.'); }
+      });
     } else {
       begin(0, 0);
     }
