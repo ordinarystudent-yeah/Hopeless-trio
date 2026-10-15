@@ -843,7 +843,11 @@
 
   // 장면이 바뀔 때: 지금 장면은 카드처럼 호를 그리며 빠지고, 다음 장면이 반대편에서 호를 그리며 들어온다.
   // 두 장이 같은 시간·같은 곡선으로 움직여 한 덩어리처럼 이어지고, 투명도는 겹치는 가운데 구간에서만 바뀐다.
-  var ARC = { deg: 18, duration: 820, easing: 'cubic-bezier(.65,0,.35,1)' };
+  // 책장 넘김은 이 책의 핵심 동작이라 '움직임 줄이기'(갤럭시 '애니메이션 제거' 등)가 켜져 있어도 끄지 않고,
+  // 그때는 각도만 줄여 부드럽게 넘긴다.
+  var ARC = reduceMotion
+    ? { deg: 8, duration: 900, easing: 'cubic-bezier(.65,0,.35,1)' }
+    : { deg: 18, duration: 1000, easing: 'cubic-bezier(.65,0,.35,1)' };
   var dragFrom = null;   // 손가락으로 밀던 각도 (그 자리에서 이어서 넘어간다)
 
   function arcOut(leaf, dir) {
@@ -891,7 +895,7 @@
     var leaf = buildLeaf(state.scene);
     book.append(leaf);
     if (oldLeaf) {
-      if (animate && !reduceMotion && leaf.animate) arc(oldLeaf, leaf, direction);
+      if (animate && leaf.animate) arc(oldLeaf, leaf, direction);
       else retire(oldLeaf);
     }
     renderProgress();
@@ -970,7 +974,7 @@
       var turns = go2 && !(dx < 0 && (blockedHere() || atLastStep())) && !(dx > 0 && atStart);
       if (!turns) {
         // 넘기지 않을 때는 제자리로 부드럽게 돌아온다
-        s.leaf.animate([{ transform: from }, { transform: 'rotate(0deg)' }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
+        s.leaf.animate([{ transform: from }, { transform: 'rotate(0deg)' }], { duration: 380, easing: 'cubic-bezier(.2,.8,.2,1)' });
       } else {
         dragFrom = from;
       }
@@ -1062,20 +1066,20 @@
 
   // 화면 하나가 카드처럼 빠진 다음 다른 화면으로 바꾼다
   function leaveThen(card, dir, fn) {
-    if (reduceMotion || !card.animate) { fn(); return; }
+    if (!card.animate) { fn(); return; }
     var anim = card.animate([
       { transform: 'rotate(0deg) scale(1)', opacity: 1 },
       { transform: 'rotate(' + (-ARC.deg * dir) + 'deg) scale(.94)', opacity: 0 }
-    ], { duration: 520, easing: 'cubic-bezier(.55,0,.75,.3)' });
+    ], { duration: 620, easing: 'cubic-bezier(.55,0,.75,.3)' });
     anim.finished.then(fn, fn);
   }
   function enterCard(card, dir) {
-    if (reduceMotion || !card.animate) return;
+    if (!card.animate) return;
     nextFrame(function () {
       card.animate([
         { transform: 'rotate(' + (ARC.deg * dir) + 'deg) scale(.94)', opacity: 0 },
         { transform: 'rotate(0deg) scale(1)', opacity: 1 }
-      ], { duration: 640, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      ], { duration: 760, easing: 'cubic-bezier(.2,.8,.2,1)' });
     });
   }
 
@@ -1103,7 +1107,7 @@
       setTimeout(function () { toast('휴대폰을 가로로 돌리면 펼친 책으로 크게 볼 수 있어요.', 4200); }, 900);
     }
     var leaf = render(false);
-    if (!reduceMotion && leaf.animate) { leaf.style.opacity = '0'; nextFrame(function () { leaf.style.opacity = ''; arcIn(leaf, 1); }); }
+    if (leaf.animate) { leaf.style.opacity = '0'; nextFrame(function () { leaf.style.opacity = ''; arcIn(leaf, 1); }); }
   }
 
   function start(card) {
