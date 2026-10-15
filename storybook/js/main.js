@@ -203,7 +203,14 @@
 
   /* ---------- 화면 모드: 넓은 가로 화면은 펼침면, 그 밖은 한 쪽씩 ---------- */
   function pickMode() {
-    return window.innerWidth >= 900 && window.innerWidth / window.innerHeight >= 1.15 ? 'spread' : 'single';
+    var chrome = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--chrome')) || 172;
+    var w = (document.getElementById('app').clientWidth || window.innerWidth - 32);
+    var h = window.innerHeight - chrome;
+    var ratio = 1.4143;
+    var spreadPage = Math.min(w / 2, h * ratio);   // 펼침면일 때 한 쪽의 너비
+    var singlePage = Math.min(w, h * ratio);       // 한 쪽씩일 때 한 쪽의 너비
+    // 두 쪽을 함께 볼 수 있으면 펼침면(가로 휴대폰·가로 아이패드·PC), 쪽이 너무 작아지면 한 쪽씩(세로 휴대폰·세로 아이패드).
+    return spreadPage >= 270 && spreadPage >= singlePage * 0.55 ? 'spread' : 'single';
   }
 
   /* ---------- 삽화 자리 (임시 그림) ---------- */
@@ -617,13 +624,32 @@
 
   function bindSticker(leaf, node) {
     var drag = null;
+    var touches = {};   // 스티커 위에 닿은 손가락들
+    var pinch = null;
     var spreadEl = function () { return leaf.querySelector('.spread'); };
+    var count = function () { return Object.keys(touches).length; };
+
+    function startPinch() {
+      var ids = Object.keys(touches);
+      var a = touches[ids[0]], b = touches[ids[1]];
+      pinch = {
+        dist: Math.hypot(b.x - a.x, b.y - a.y) || 1,
+        angle: Math.atan2(b.y - a.y, b.x - a.x),
+        w: node._st.w, r: node._st.r
+      };
+      drag = null;
+    }
 
     node.addEventListener('pointerdown', function (e) {
       if (e.target.closest('.st-del')) return;
       e.preventDefault();
       e.stopPropagation();
       selectSticker(leaf, node);
+      try { node.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
+      touches[e.pointerId] = { x: e.clientX, y: e.clientY };
+      node.classList.add('is-dragging');
+      if (count() === 2) { startPinch(); return; }
+      if (count() > 2) return;
       var rect = spreadEl().getBoundingClientRect();
       var st = node._st;
       var cx = rect.left + st.x * rect.width, cy = rect.top + st.y * rect.height;
@@ -634,31 +660,45 @@
         startAngle: Math.atan2(e.clientY - cy, e.clientX - cx),
         w: st.w, r: st.r, cx: cx, cy: cy
       };
-      try { node.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
-      node.classList.add('is-dragging');
     });
     node.addEventListener('pointermove', function (e) {
-      if (!drag || e.pointerId !== drag.id) return;
+      if (!touches[e.pointerId]) return;
+      touches[e.pointerId] = { x: e.clientX, y: e.clientY };
       var st = node._st;
-      if (drag.handle) {
-        // 모서리 손잡이: 가운데를 기준으로 크기와 방향을 함께 바꾼다
-        var dist = Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy);
-        var ang = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx);
-        st.w = clamp(drag.w * dist / drag.startDist, 0.04, 0.6);
-        st.r = Math.round(drag.r + (ang - drag.startAngle) * 180 / Math.PI);
-        if (st.r > 180) st.r -= 360;
-        if (st.r < -180) st.r += 360;
+      if (pinch && count() >= 2) {
+        // 두 손가락: 벌리면 커지고, 돌리면 돌아간다
+        var ids = Object.keys(touches);
+        var a = touches[ids[0]], b = touches[ids[1]];
+        st.w = clamp(pinch.w * Math.hypot(b.x - a.x, b.y - a.y) / pinch.dist, 0.04, 0.6);
+        st.r = Math.round(pinch.r + (Math.atan2(b.y - a.y, b.x - a.x) - pinch.angle) * 180 / Math.PI);
+      } else if (drag && e.pointerId === drag.id) {
+        if (drag.handle) {
+          // 모서리 손잡이: 가운데를 기준으로 크기와 방향을 함께 바꾼다
+          var dist = Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy);
+          var ang = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx);
+          st.w = clamp(drag.w * dist / drag.startDist, 0.04, 0.6);
+          st.r = Math.round(drag.r + (ang - drag.startAngle) * 180 / Math.PI);
+        } else {
+          st.x = clamp((e.clientX - drag.dx - drag.rect.left) / drag.rect.width, 0.02, 0.98);
+          st.y = clamp((e.clientY - drag.dy - drag.rect.top) / drag.rect.height, 0.04, 0.96);
+        }
       } else {
-        st.x = clamp((e.clientX - drag.dx - drag.rect.left) / drag.rect.width, 0.02, 0.98);
-        st.y = clamp((e.clientY - drag.dy - drag.rect.top) / drag.rect.height, 0.04, 0.96);
+        return;
       }
+      if (st.r > 180) st.r -= 360;
+      if (st.r < -180) st.r += 360;
       positionSticker(node);
     });
     function end(e) {
-      if (!drag || (e && e.pointerId !== drag.id)) return;
-      drag = null;
-      node.classList.remove('is-dragging');
-      saveNow();
+      if (!touches[e.pointerId]) return;
+      delete touches[e.pointerId];
+      if (count() < 2) pinch = null;
+      if (drag && e.pointerId === drag.id) drag = null;
+      if (count() === 0) {
+        drag = null;
+        node.classList.remove('is-dragging');
+        saveNow();
+      }
     }
     node.addEventListener('pointerup', end);
     node.addEventListener('pointercancel', end);
@@ -804,12 +844,13 @@
   // 장면이 바뀔 때: 지금 장면은 카드처럼 호를 그리며 빠지고, 다음 장면이 반대편에서 호를 그리며 들어온다.
   // 두 장이 같은 시간·같은 곡선으로 움직여 한 덩어리처럼 이어지고, 투명도는 겹치는 가운데 구간에서만 바뀐다.
   var ARC = { deg: 18, duration: 820, easing: 'cubic-bezier(.65,0,.35,1)' };
+  var dragFrom = null;   // 손가락으로 밀던 각도 (그 자리에서 이어서 넘어간다)
 
   function arcOut(leaf, dir) {
     leaf.classList.add('is-leaving');
     var d = -ARC.deg * dir;
     var anim = leaf.animate([
-      { transform: 'rotate(0deg) scale(1)', opacity: 1 },
+      { transform: (leaf._from || 'rotate(0deg)') + ' scale(1)', opacity: 1 },
       { transform: 'rotate(' + d * 0.45 + 'deg) scale(.975)', opacity: 1, offset: 0.4 },
       { transform: 'rotate(' + d + 'deg) scale(.94)', opacity: 0 }
     ], { duration: ARC.duration, easing: ARC.easing, fill: 'forwards' });
@@ -834,6 +875,8 @@
   function nextFrame(fn) { requestAnimationFrame(function () { requestAnimationFrame(fn); }); }
 
   function arc(oldLeaf, newLeaf, dir) {
+    oldLeaf._from = dragFrom;
+    if (dragFrom) oldLeaf.style.transform = dragFrom;
     oldLeaf.classList.add('is-leaving');
     newLeaf.style.opacity = '0';
     nextFrame(function () {
@@ -897,6 +940,47 @@
     if (state.scene > 0) go(state.scene - 1, 1);
   }
 
+  /* ---------- 밀어서 넘기기 (터치·펜슬) ----------
+     왼쪽으로 밀면 다음, 오른쪽으로 밀면 이전. 미는 동안 책이 손가락을 살짝 따라온다. */
+  var swipe = null;
+  book.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' || swipe) return;
+    if (e.target.closest('.sticker, input, textarea, .chips')) return;
+    swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dir: null, leaf: currentLeaf() };
+  });
+  book.addEventListener('pointermove', function (e) {
+    if (!swipe || e.pointerId !== swipe.id || !swipe.leaf) return;
+    var dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+    if (!swipe.dir && Math.hypot(dx, dy) > 10) swipe.dir = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v';
+    if (swipe.dir !== 'h') return;
+    var w = book.clientWidth || 1;
+    swipe.leaf.style.transform = 'rotate(' + clamp(dx / w * 7, -7, 7) + 'deg)';
+  });
+  function endSwipe(e, cancelled) {
+    if (!swipe || e.pointerId !== swipe.id) return;
+    var s = swipe;
+    swipe = null;
+    var dx = e.clientX - s.x, dy = e.clientY - s.y;
+    var fast = Math.abs(dx) / Math.max(1, performance.now() - s.t) > 0.5;
+    var go2 = !cancelled && s.dir === 'h' && (Math.abs(dx) > 60 || (fast && Math.abs(dx) > 30)) && Math.abs(dx) > Math.abs(dy);
+    if (s.leaf && s.leaf.style.transform) {
+      var from = s.leaf.style.transform;
+      s.leaf.style.transform = '';
+      var withinScene = mode === 'single' && ((dx < 0 && state.page === 0) || (dx > 0 && state.page === 1));
+      var turns = go2 && !withinScene && !(dx < 0 && (blockedHere() || atLastStep())) && !(dx > 0 && state.scene === 0);
+      if (!turns) {
+        // 넘기지 않거나 같은 장면 안에서 쪽만 넘길 때는 제자리로 부드럽게 돌아온다
+        s.leaf.animate([{ transform: from }, { transform: 'rotate(0deg)' }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      } else {
+        dragFrom = from;
+      }
+    }
+    if (go2) { if (dx < 0) next(); else prev(); }
+    dragFrom = null;
+  }
+  book.addEventListener('pointerup', function (e) { endSwipe(e, false); });
+  book.addEventListener('pointercancel', function (e) { endSwipe(e, true); });
+
   btnNext.addEventListener('click', next);
   btnPrev.addEventListener('click', prev);
   document.getElementById('btn-reread').addEventListener('click', function () { state.returnTo = null; go(0, 0); });
@@ -933,6 +1017,7 @@
   });
 
   window.addEventListener('pagehide', saveNow);
+  window.addEventListener('orientationchange', function () { window.dispatchEvent(new Event('resize')); });
 
   var resizeTimer = 0;
   window.addEventListener('resize', function () {
@@ -956,6 +1041,7 @@
   };
   var controlsEl = document.getElementById('controls');
   var stopCoverSparkles = null;
+  var rotateHinted = false;
 
   function showScreen(name) {
     app.setAttribute('data-screen', name);
@@ -1012,6 +1098,10 @@
     state.maxScene = Math.max(state.maxScene, state.scene);
     showScreen('book');
     saveNow();
+    if (mode === 'single' && window.innerHeight > window.innerWidth && window.innerWidth < 700 && !rotateHinted) {
+      rotateHinted = true;
+      setTimeout(function () { toast('휴대폰을 가로로 돌리면 펼친 책으로 크게 볼 수 있어요.', 4200); }, 900);
+    }
     var leaf = render(false);
     if (!reduceMotion && leaf.animate) { leaf.style.opacity = '0'; nextFrame(function () { leaf.style.opacity = ''; arcIn(leaf, 1); }); }
   }
@@ -1040,7 +1130,7 @@
     document.getElementById('cover-kicker').textContent = c.kicker;
     document.getElementById('cover-title').textContent = c.title;
     document.getElementById('cover-sub').textContent = c.subtitle;
-    document.getElementById('build-tag').textContent = 'v' + S.version;
+    document.getElementById('build-tag').textContent = '버전 ' + S.version;
     var artBox = document.getElementById('cover-art');
     artBox.insertAdjacentHTML('beforeend', S.motifs.coverArt || S.motifs.soup); // 코드에 고정된 그림만
     if (c.image) {

@@ -21,6 +21,8 @@
   var root, canvas, g, wrap, sizeInput, sizeOut, sizeDot, colorInput, nameInput, undoBtn;
   var photoLayer, photoImg, photoBar, photoScale;
   var tool = DEFAULTS.tool, size = DEFAULTS.size, color = DEFAULTS.color;
+  var pf = 1;          // 필압 배율 (펜슬일 때만 바뀜)
+  var penSeen = false; // 펜슬을 한 번이라도 쓰면 손바닥(터치)은 그리기에서 무시
   var undo = [], dirty = false, stroke = null, photo = null, stamp = null, resolver = null, ready = false;
 
   /* ---------- 준비 ---------- */
@@ -236,8 +238,11 @@
 
   function onDown(e) {
     if (photo || stroke || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (e.pointerType === 'pen') penSeen = true;
+    else if (penSeen && e.pointerType === 'touch') return;
     e.preventDefault();
     var p = point(e);
+    pf = pressureOf(e);
     if (tool === 'bucket') {
       pushUndo();
       if (fill(p)) dirty = true; else undo.pop(), paintUndo();
@@ -257,9 +262,15 @@
     if (!list.length) list = [e];
     for (var i = 0; i < list.length; i++) {
       var p = point(list[i]);
+      pf = pressureOf(list[i]);
       segment(stroke.last, p);
       stroke.last = p;
     }
+  }
+
+  // 애플펜슬 등 필압이 있는 펜: 살살 그리면 가늘게, 꾹 누르면 굵게 (0.35배 ~ 1.65배)
+  function pressureOf(e) {
+    return e.pointerType === 'pen' && e.pressure > 0 ? 0.35 + 1.3 * e.pressure : 1;
   }
 
   function onUp(e) {
@@ -279,7 +290,7 @@
     prep(tool === 'eraser' ? 'destination-out' : 'source-over');
     g.fillStyle = color;
     g.beginPath();
-    g.arc(p.x, p.y, size * TOOL_SCALE[tool] / 2, 0, Math.PI * 2);
+    g.arc(p.x, p.y, size * TOOL_SCALE[tool] * pf / 2, 0, Math.PI * 2);
     g.fill();
   }
 
@@ -288,7 +299,7 @@
     if (tool === 'pen' || tool === 'eraser') {
       prep(tool === 'eraser' ? 'destination-out' : 'source-over');
       g.strokeStyle = color;
-      g.lineWidth = size * TOOL_SCALE[tool];
+      g.lineWidth = size * TOOL_SCALE[tool] * pf;
       g.beginPath();
       g.moveTo(a.x, a.y);
       g.lineTo(b.x, b.y);
@@ -320,7 +331,7 @@
   }
 
   function pencilSpecks(x, y) {
-    var w = Math.max(1.4, size * TOOL_SCALE.pencil);
+    var w = Math.max(1.4, size * TOOL_SCALE.pencil * pf);
     prep();
     g.fillStyle = color;
     for (var k = 0; k < 3; k++) {
@@ -346,7 +357,8 @@
       stamp = { canvas: c, r: r };
     }
     prep();
-    g.drawImage(stamp.canvas, x - stamp.r, y - stamp.r);
+    var r = stamp.r * pf;
+    g.drawImage(stamp.canvas, x - r, y - r, r * 2, r * 2);
   }
 
   function hexToRgb(hex) {
