@@ -1127,17 +1127,44 @@
   window.addEventListener('pagehide', saveNow);
   window.addEventListener('orientationchange', function () { window.dispatchEvent(new Event('resize')); });
 
+  // 화면 모양이 바뀌면 펼침면/한 쪽 보기를 다시 고른다.
+  // 단, 글을 입력하는 동안에는 바꾸지 않는다: 휴대폰 키보드가 올라오면 화면 높이가 확 줄어드는데,
+  // 그때 책을 다시 그리면 입력칸이 새로 만들어져 키보드가 닫히고 글자가 써지지 않는다 (특히 가로 모드).
   var resizeTimer = 0;
+  var modePending = false;
+  function typingInBook() {
+    var a = document.activeElement;
+    return !!a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && book.contains(a);
+  }
+  function applyMode() {
+    var m = pickMode();
+    if (m === mode) return;
+    mode = m;
+    book.setAttribute('data-mode', mode);
+    if (mode === 'spread') state.page = 0;
+    if (app.getAttribute('data-screen') === 'book') rerender();
+  }
   window.addEventListener('resize', function () {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () {
-      var m = pickMode();
-      if (m === mode) return;
-      mode = m;
-      book.setAttribute('data-mode', mode);
-      if (mode === 'spread') state.page = 0;
-      if (app.getAttribute('data-screen') === 'book') rerender();
+      if (typingInBook()) { modePending = true; return; }
+      applyMode();
     }, 120);
+  });
+  // 입력하는 동안에는 책 크기도 그대로 둔다 (키보드 때문에 책과 글자가 갑자기 작아지지 않게)
+  book.addEventListener('focusin', function (e) {
+    if (!typingInBook()) return;
+    var r = book.getBoundingClientRect();
+    book.style.width = r.width + 'px';
+    book.style.maxWidth = 'none';
+  });
+  book.addEventListener('focusout', function () {
+    setTimeout(function () {
+      if (typingInBook()) return;
+      book.style.width = '';
+      book.style.maxWidth = '';
+      if (modePending) { modePending = false; applyMode(); }
+    }, 250);
   });
 
   /* ---------- 표지·사용 설명·책 화면 ---------- */

@@ -836,8 +836,8 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .cover { width: min(100%, 62vw, calc((100dvh - 56px) * var(--page-ratio))); }
   .intro .intro-actions { flex-direction: column; width: auto; min-width: 180px; }
   .intro .build-tag { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(8px, env(safe-area-inset-bottom, 0px)); margin: 0; }
-  #guide { flex-direction: column; flex-wrap: nowrap; }
-  #guide .intro-actions { flex-direction: row; }
+  #guide, #deed-prompt { flex-direction: column; flex-wrap: nowrap; }
+  #guide .intro-actions, #deed-prompt .intro-actions { flex-direction: row; width: min(100%, 460px); }
 }
 
 /* ---------- 좁은 화면 ---------- */
@@ -852,4 +852,46 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ---------- 휴대폰 글씨 ----------
+   휴대폰(세로 폭 600px 이하, 가로 높이 500px 이하)에서는 쪽이 작아 최소 글씨 크기가 레이아웃을 밀어낸다.
+   휴대폰에서만 글씨와 여백을 한 단계 줄인다. PC·태블릿은 그대로. */
+@media (max-width: 600px) and (orientation: portrait), (max-height: 500px) and (orientation: landscape) {
+  .brand { font-size: 1.1rem; }
+  .act-label { font-size: 0.72rem; }
+
+  .story { font-size: 5.6cqh; line-height: 1.55; }
+  .pg--dense .story { font-size: 4.9cqh; line-height: 1.45; }
+  .pg--dense { gap: 2cqh; }
+  .story--sm { font-size: 5cqh; }
+  .story--q { font-size: 5.2cqh; }
+  .story.is-coda { font-size: 5.8cqh; }
+  .eyebrow { font-size: max(9px, 3.3cqh); }
+  .hint, .counter { font-size: max(9.5px, 3.1cqh); }
+  .field label { font-size: max(9.5px, 3.3cqh); }
+  .input { font-size: max(13px, 4.9cqh); padding: 1.8cqh 3cqh; border-radius: 3cqh; }
+  .chip { font-size: max(10.5px, 3.3cqh); padding: 1.1cqh 2.6cqh; }
+
+  .tile-label { font-size: max(9px, 3.1cqh); line-height: 1.15; padding: 2cqh 1.2cqh 1cqh; }
+  .grid--food { gap: 2cqh; }
+  .grid--taste .tile-label { font-size: 4.3cqh; }
+
+  .recap h2 { font-size: 5.4cqh; }
+  .recap-row { padding: 2cqh 0; }
+  .recap-row dt, .link-btn { font-size: max(9.5px, 3.1cqh); }
+  .recap-row dd { font-size: max(10.5px, 4cqh); }
+  .pg .btn-small { min-height: 34px; font-size: 12.5px; }
+  .pg-hint { padding: 1.4cqh 3cqh; }
+
+  .controls .btn { font-size: 1rem; min-height: 50px; }
+  .end-actions .btn { font-size: 0.88rem; }
+  .toast { font-size: 0.9rem; padding: 10px 16px; }
+  .guide-card { padding: 22px 20px 20px; gap: 12px; }
+  .guide-card h1 { font-size: 1.4rem; }
+  .guide-steps strong { font-size: 1rem; }
+  .guide-steps span { font-size: 0.88rem; }
+  .modal-card h2 { font-size: 1.2rem; }
+  .modal-card p { font-size: 0.95rem; }
+  .btn { font-size: 1rem; }
 }
