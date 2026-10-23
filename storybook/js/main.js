@@ -185,6 +185,8 @@
     s.maxScene = Number.isInteger(raw.maxScene) ? clamp(raw.maxScene, 0, LAST) : 0;
     s.scene = Number.isInteger(raw.scene) ? clamp(raw.scene, 0, s.maxScene) : 0;
     s.page = raw.page === 1 ? 1 : 0;
+    // 예전 버전은 PC에서 음식 스티커를 #5에 붙였다 → 이제는 #4 오른쪽 쪽에만 붙으므로 정리
+    delete s.stickers.fairies;
     if (raw.deedMemo && typeof raw.deedMemo === 'object') {
       s.deedMemo = { x: num(raw.deedMemo.x, 0, 1, 0.5), y: num(raw.deedMemo.y, 0, 1, 0.2) };
     }
@@ -423,7 +425,7 @@
 
   function foodStickerHint() {
     var where = foodStickerScene();
-    if (!where) return mode === 'spread' ? '다음 장면으로 넘기면 고른 음식이 스티커가 되어 나타나요.' : '스티커가 나타나면 끌어서 원하는 곳에 붙여 보세요.';
+    if (!where) return '스티커가 나타나면 끌어서 원하는 곳에 붙여 보세요.';
     if (where !== 'food') return '고른 음식 스티커는 다음 장면에 붙어 있어요.';
     return '스티커를 끌어서 원하는 곳에 붙여 보세요. 모서리를 끌면 크기와 방향이 바뀌어요.';
   }
@@ -442,6 +444,7 @@
     // 고르기만 한다. 스티커는 다음 화면으로 넘겼을 때 나타나고, 쪽·장면은 저절로 넘어가지 않는다.
     // 이미 붙인 스티커가 있으면 그 자리에서 그림만 바뀐다.
     if (changed) repaintFoodStickers();
+    if (mode === 'spread') spawnFoodSticker(0);
     updateControls();
     saveSoon();
   }
@@ -458,6 +461,7 @@
       rerender();
       updateControls();
       saveNow();
+      if (mode === 'spread') spawnFoodSticker(200);
     });
   }
 
@@ -558,13 +562,14 @@
 
   // 음식을 고른 화면에서 다음 화면으로 넘기면, 도착한 화면에 스티커가 톡 나타난다
   // (한 쪽씩 보기: #4 오른쪽 쪽 / 펼침면: #5 요정 장면)
-  function spawnFoodSticker() {
+  // 음식 스티커는 언제나 #4 오른쪽 쪽('한입 냠' 설명 쪽)에 붙는다.
+  // - 펼침면(PC·가로 화면): 두 쪽이 함께 보이므로 음식을 고르는 즉시 나타난다
+  // - 한 쪽씩 보기(휴대폰 세로): 고른 뒤 그 쪽으로 넘겼을 때 나타난다
+  function spawnFoodSticker(delay) {
     if (!state.food || foodStickerScene()) return;
-    var sceneId = S.scenes[state.scene].id;
-    var spot = S.stickerSpots[sceneId];
-    if (!spot) return;
+    var spot = S.stickerSpots.food;
     var st = { kind: 'food', x: spot.x, y: spot.y, w: spot.w, r: spot.r };
-    (state.stickers[sceneId] = state.stickers[sceneId] || []).push(st);
+    (state.stickers.food = state.stickers.food || []).push(st);
     saveNow();
     var leaf = currentLeaf();
     setTimeout(function () {
@@ -581,7 +586,7 @@
         { transform: 'none', opacity: 1 }
       ], { duration: 620, easing: 'cubic-bezier(.2,.8,.2,1)' });
       toast('고른 음식이 스티커가 되었어요! 끌어서 붙여 보세요.');
-    }, ARC.duration * 0.8);
+    }, delay || 0);
   }
 
   function paintStickers(leaf) {
@@ -982,7 +987,7 @@
     if (here === 'deed' && (mode === 'spread' || state.page === 1)) { showDeedPrompt(); return; }
     if (mode === 'single' && state.page === 0) flipPage(1);
     else go(forwardTarget(), 0);
-    if (fromFoodChoice) spawnFoodSticker();
+    if (fromFoodChoice && mode === 'single') spawnFoodSticker(ARC.duration * 0.8);
   }
 
   function forwardTarget() {
