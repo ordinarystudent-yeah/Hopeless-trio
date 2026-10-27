@@ -97,7 +97,7 @@
        ink      'dark'면 삽화가 들어왔을 때 글 상자 없이 진한 글씨로 그림 위에 쓴다 (말풍선·밝은 여백용)
        nameplate 그림 속 이름표 자리 {x, y, w, h, r} (이 쪽 기준 비율). 여기에 바로 이름을 입력한다
        place    본문 세로 위치 top | center | bottom
-       widgets  이 쪽에 놓을 입력 도구 (nameplate, name, food-grid, food-result, deed, deed-hint, taste, recap)
+       widgets  이 쪽에 놓을 입력 도구 (food-result, deed, deed-hint, taste, recap)
      question    입력칸이 있는 쪽 맨 위에 놓이는 질문 (#6)
      require     다음 장면으로 가기 전에 꼭 골라야 하는 값
      requirePage 그 값을 고르는 쪽 (휴대폰에서 한 쪽씩 넘길 때 이 쪽을 떠나기 전에 확인) */
@@ -127,8 +127,9 @@
     {
       id: 'food', act: 1, tone: 'table', no: '4',
       image: 'assets/backgrounds/04-food-choice.jpg', alt: '맛있는 음식이 잔뜩 놓인 식탁에 앉은 주인공',
-      pages: [{ text: true, widgets: ['food-grid'] }, { widgets: ['food-result'], art: 'feast', faint: true }],
-      require: 'food', requirePage: 0,
+      // 음식 카드는 이 펼침면 앞의 '음식 고르기' 화면에서 고른다 (그림을 가리지 않게).
+      // 이 펼침면에는 글과 고른 음식의 설명, 그리고 첫 쪽(5쪽)에 붙는 음식 스티커만 있다.
+      pages: [{ text: true, place: 'top', ink: 'dark', art: 'table' }, { widgets: ['food-result'], place: 'top', art: 'feast', artPos: 'bottom' }],
       requireMessage: '먹고 싶은 음식을 하나 골라 주세요.',
       text: function () { return [['자리에 앉아 앞을 바라보니 맛있는 음식들이 잔뜩 있어요.\n어떤 것부터 먹고 싶나요?']]; }
     },
@@ -211,7 +212,7 @@
   /* ---------- 스티커 기본 자리 (펼침면 기준 비율: x·y는 가운데 위치, w는 펼침면 너비 대비 크기) ---------- */
   var stickerSpots = {
     // 음식 스티커는 음식을 고른 다음 화면에 나타난다
-    food: { x: 0.75, y: 0.68, w: 0.12, r: -6 },     // #4 오른쪽 쪽 아래 ('한입 냠' 설명 쪽)
+    food: { x: 0.27, y: 0.7, w: 0.11, r: -6 },      // #4 첫 쪽(5쪽) 식탁 위
     serve: { x: 0.3, y: 0.42, w: 0.15, r: 5 }       // 착한 일 종이(그림+메모지): #7 왼쪽 쪽(11쪽)
   };
 
@@ -308,7 +309,7 @@
   };
 
   window.StarSoup = {
-    version: '1.6',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '1.7',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

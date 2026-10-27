@@ -264,8 +264,7 @@
         class: 'page page--' + (pi ? 'right' : 'left'),
         'aria-label': (pi ? '오른쪽' : '왼쪽') + ' 쪽'
       });
-      var dense = (p.widgets || []).indexOf('food-grid') >= 0;
-      var pg = el('div', { class: 'pg' + (dense ? ' pg--dense' : ''), 'data-place': p.place || 'top' });
+      var pg = el('div', { class: 'pg', 'data-place': p.place || 'top' });
       if (p.image) {
         var pimg = new Image();
         pimg.alt = '';
@@ -315,7 +314,6 @@
   /* ---------- 쪽 위의 입력 도구 ---------- */
   function widget(name, c, leaf, index) {
     switch (name) {
-      case 'food-grid': return foodGrid(leaf);
       case 'food-result': return foodResult(c);
       case 'deed': return deedField(leaf, c, S.scenes[index]);
       case 'deed-hint': return images[IMG_DEED]
@@ -392,12 +390,13 @@
     });
   }
 
-  function foodGrid(leaf) {
-    var grid = el('div', { class: 'grid grid--food', role: 'group', 'aria-label': '음식 고르기' });
+  // 음식 카드 격자 ('음식 고르기' 화면). 그림 위를 가리지 않도록 책 밖 화면에 둔다.
+  function foodGrid() {
+    var grid = el('div', { class: 'grid grid--food choice-grid', role: 'group', 'aria-label': '음식 고르기' });
     S.foods.forEach(function (f) {
       grid.append(tile({
         id: f.id, label: f.name, image: f.image, emoji: f.emoji, glow: f.glow, pressed: state.food === f.id,
-        onclick: function (e) { pickFood(leaf, f.id, e.currentTarget); }
+        onclick: function () { pickFood(f.id); }
       }));
     });
     // 직접 그리기: 그림이 있으면 그 그림이 카드가 되고, 고른 상태에서 한 번 더 누르면 다시 그린다
@@ -406,9 +405,9 @@
       id: 'custom', extra: 'tile--draw' + (has ? ' has-art' : ''),
       label: has ? (state.customFoodName.trim() || S.customFood.fallbackName) : S.customFood.label,
       image: images[IMG_FOOD], emoji: '✏️', glow: '#3a4a7a', pressed: state.food === 'custom',
-      onclick: function (e) {
-        if (!images[IMG_FOOD] || state.food === 'custom') drawFood(leaf);
-        else pickFood(leaf, 'custom', e.currentTarget);
+      onclick: function () {
+        if (!images[IMG_FOOD] || state.food === 'custom') drawFood();
+        else pickFood('custom');
       }
     }));
     return grid;
@@ -418,8 +417,9 @@
     var f = c.food;
     return el('div', { class: 'pg-text is-panel reveal' + (f ? '' : ' is-empty'), 'aria-live': 'polite' },
       el('p', { class: 'eyebrow', text: f ? '한입 냠, ' + f.name : '음식을 고르면' }),
-      el('p', { class: 'story story--sm', text: f ? f.desc : '왼쪽에서 먹고 싶은 음식을 골라 보세요. 고른 음식은 스티커가 되어 이 책에 붙어요.' }),
-      f ? el('p', { class: 'hint sticker-hint', text: foodStickerHint() }) : null);
+      el('p', { class: 'story story--sm', text: f ? f.desc : '아직 먹고 싶은 음식을 고르지 않았어요.' }),
+      f ? el('p', { class: 'hint sticker-hint', text: foodStickerHint() })
+        : el('button', { type: 'button', class: 'btn btn-soft btn-small', text: '음식 고르러 가기', onclick: function () { showFoodChoice(-1); } }));
   }
 
   function foodStickerHint() {
@@ -429,26 +429,17 @@
     return '스티커를 끌어서 원하는 곳에 붙여 보세요. 모서리를 끌면 크기와 방향이 바뀌어요.';
   }
 
-  function pickFood(leaf, id, fromEl) {
+  function pickFood(id) {
     var changed = state.food !== id;
     state.food = id;
-    markPressed(leaf.querySelector('.grid--food'), id);
-    // 오른쪽 쪽 설명 다시 그리기
-    var old = leaf.querySelector('.reveal');
-    if (old) {
-      var fresh = foodResult(ctx());
-      old.replaceWith(fresh);
-      fresh.classList.add('is-pop');
-    }
-    // 고르기만 한다. 스티커는 다음 화면으로 넘겼을 때 나타나고, 쪽·장면은 저절로 넘어가지 않는다.
-    // 이미 붙인 스티커가 있으면 그 자리에서 그림만 바뀐다.
-    if (changed) repaintFoodStickers();
-    if (mode === 'spread') spawnFoodSticker(0);
-    updateControls();
-    saveSoon();
+    var grid = document.getElementById('food-choice-grid');
+    markPressed(grid, id);
+    paintFoodChoiceNote();
+    // 이미 붙인 스티커가 있으면 그 자리에서 그림만 바뀐다 (스티커는 #4 첫 쪽에 나타난다)
+    if (changed) saveSoon();
   }
 
-  function drawFood(leaf) {
+  function drawFood() {
     window.StarSoupEditor.open({
       title: '음식 그리기', image: images[IMG_FOOD], askName: true, name: state.customFoodName
     }).then(function (res) {
@@ -456,11 +447,8 @@
       state.customFoodName = res.name.slice(0, S.limits.foodName);
       saveImage(IMG_FOOD, res.image);
       state.food = 'custom';
-      // 카드에 내 그림이 보이도록 장면을 새로 그린다. 스티커는 다음 화면에서 나타난다.
-      rerender();
-      updateControls();
+      paintFoodChoice();   // 카드에 내 그림이 보이도록
       saveNow();
-      if (mode === 'spread') spawnFoodSticker(200);
     });
   }
 
@@ -514,20 +502,20 @@
   }
 
   function recap(c) {
-    function row(label, value, sceneIndex, page, emptyText) {
+    function row(label, value, sceneIndex, page, emptyText, open) {
       return el('div', { class: 'recap-row' },
         el('dt', { text: label }),
         el('dd', { class: value ? '' : 'is-empty', text: value || emptyText }),
         el('button', {
           type: 'button', class: 'link-btn', text: '고치기', 'aria-label': label + ' 고치기',
-          onclick: function () { state.returnTo = LAST; go(sceneIndex, page); }
+          onclick: function () { state.returnTo = LAST; if (open) open(); else go(sceneIndex, page); }
         }));
     }
     return el('div', { class: 'pg-text is-panel recap' },
       el('h2', { text: c.you + '의 별빛스프 이야기' }),
       el('dl', null,
         row('이름', c.name, sceneIndex('name'), 1, '아직 비어 있어요'),
-        row('고른 음식', c.food && c.food.name, sceneIndex('food'), 0, '고르지 않았어요'),
+        row('고른 음식', c.food && c.food.name, sceneIndex('food'), 0, '고르지 않았어요', function () { showFoodChoice(-1); }),
         row('착한 일', c.deed, sceneIndex('deed'), 1, '비워 두었어요'),
         row('스프의 맛', c.taste && c.taste.label, sceneIndex('taste'), 1, '고르지 않았어요')));
   }
@@ -561,9 +549,7 @@
 
   // 음식을 고른 화면에서 다음 화면으로 넘기면, 도착한 화면에 스티커가 톡 나타난다
   // (한 쪽씩 보기: #4 오른쪽 쪽 / 펼침면: #5 요정 장면)
-  // 음식 스티커는 언제나 #4 오른쪽 쪽('한입 냠' 설명 쪽)에 붙는다.
-  // - 펼침면(PC·가로 화면): 두 쪽이 함께 보이므로 음식을 고르는 즉시 나타난다
-  // - 한 쪽씩 보기(휴대폰 세로): 고른 뒤 그 쪽으로 넘겼을 때 나타난다
+  // 음식 스티커는 '음식 고르기' 화면에서 고른 뒤 #4 펼침면이 열릴 때 첫 쪽(5쪽)에 톡 나타난다
   function spawnFoodSticker(delay) {
     if (!state.food || foodStickerScene()) return;
     var spot = S.stickerSpots.food;
@@ -572,7 +558,7 @@
     saveNow();
     var leaf = currentLeaf();
     setTimeout(function () {
-      if (!leaf.isConnected || leaf.classList.contains('is-leaving')) return;
+      if (!leaf || !leaf.isConnected || leaf.classList.contains('is-leaving') || leaf._sceneId !== 'food') return;
       paintStickers(leaf);
       var hint = leaf.querySelector('.sticker-hint');
       if (hint) hint.textContent = foodStickerHint();
@@ -982,11 +968,12 @@
       return;
     }
     var here = S.scenes[state.scene].id;
-    var fromFoodChoice = here === 'food' && (mode === 'spread' || state.page === 0);
-    if (here === 'deed' && (mode === 'spread' || state.page === 1)) { showDeedPrompt(); return; }
+    var leavingScene = mode === 'spread' || state.page === 1;
+    if (here === 'deed' && leavingScene) { showDeedPrompt(); return; }
+    // #4 그림을 보여 주기 전에 '음식 고르기' 화면을 먼저 연다
+    if (leavingScene && S.scenes[forwardTarget()] && S.scenes[forwardTarget()].id === 'food') { showFoodChoice(1); return; }
     if (mode === 'single' && state.page === 0) flipPage(1);
     else go(forwardTarget(), 0);
-    if (fromFoodChoice && mode === 'single') spawnFoodSticker(ARC.duration * 0.8);
   }
 
   function forwardTarget() {
@@ -1014,6 +1001,59 @@
       leaveThen(document.getElementById('deed-prompt-card'), 1, function () { enterBook(forwardTarget(), 0, 1); });
     });
   }
+
+  /* ---------- 음식 고르기 화면 (동화 쪽이 아님) ----------
+     #2·3 다음, #4 그림 앞에 나온다. 고른 음식은 #4 첫 쪽(5쪽)에 스티커로 나타난다. */
+  function showFoodChoice(dir) {
+    var leaf = currentLeaf();
+    var show = function () {
+      if (leaf) retire(leaf);
+      paintFoodChoice();
+      showScreen('foodChoice');
+      enterCard(document.getElementById('food-choice-card'), dir);
+    };
+    if (leaf) { stopAnims(leaf); leaveThen(leaf, dir, show); }
+    else if (!switching) { switching = true; show(); }
+  }
+
+  function paintFoodChoice() {
+    var scene = S.scenes[sceneIndex('food')];
+    document.getElementById('food-choice-kicker').textContent = S.acts[scene.act].label + ' · ' + S.acts[scene.act].title + ' #' + scene.no;
+    var q = document.getElementById('food-choice-text');
+    q.replaceChildren.apply(q, paragraphs(scene.text(ctx())));
+    var old = document.getElementById('food-choice-grid');
+    var grid = foodGrid();
+    grid.id = 'food-choice-grid';
+    old.replaceWith(grid);
+    paintFoodChoiceNote();
+  }
+
+  function paintFoodChoiceNote() {
+    var f = ctx().food;
+    document.getElementById('food-choice-note').textContent = f
+      ? f.name + S.josa(f.name, '을/를') + ' 골랐어요. 다음으로 넘기면 책에 스티커로 붙어요.'
+      : '먹고 싶은 음식을 하나 골라 주세요. ‘직접 그리기’로 그리거나 사진을 넣을 수도 있어요.';
+    document.getElementById('btn-food-next').toggleAttribute('data-blocked', !f);
+  }
+
+  document.getElementById('btn-food-next').addEventListener('click', function () {
+    if (switching) return;
+    if (!state.food) {
+      toast(S.scenes[sceneIndex('food')].requireMessage);
+      var g = document.getElementById('food-choice-grid');
+      g.classList.remove('is-shake'); void g.offsetWidth; g.classList.add('is-shake');
+      return;
+    }
+    var target = state.returnTo != null ? state.returnTo : sceneIndex('food');
+    leaveThen(document.getElementById('food-choice-card'), 1, function () {
+      enterBook(target, 0, 1);
+      spawnFoodSticker(ARC.duration * 0.8);
+    });
+  });
+  document.getElementById('btn-food-back').addEventListener('click', function () {
+    if (switching) return;
+    leaveThen(document.getElementById('food-choice-card'), -1, function () { enterBook(sceneIndex('food') - 1, 1, -1); });
+  });
 
   // 착한 일을 적은 뒤 나오는 안내 화면 (동화 쪽이 아님): 가운데 버튼을 눌러야 꾸미기 화면으로 간다
   function showDeedPrompt() {
@@ -1052,6 +1092,8 @@
   function prev() {
     if (switching) return;
     if (mode === 'single' && state.page === 1) { flipPage(0); return; }
+    // #4 첫 쪽에서 뒤로 가면 '음식 고르기' 화면
+    if (S.scenes[state.scene].id === 'food') { showFoodChoice(-1); return; }
     if (state.scene > 0) go(state.scene - 1, 1);
   }
 
@@ -1177,7 +1219,8 @@
     cover: document.getElementById('cover'),
     guide: document.getElementById('guide'),
     book: document.getElementById('stage'),
-    deedPrompt: document.getElementById('deed-prompt')
+    deedPrompt: document.getElementById('deed-prompt'),
+    foodChoice: document.getElementById('food-choice')
   };
   var controlsEl = document.getElementById('controls');
   var stopCoverSparkles = null;

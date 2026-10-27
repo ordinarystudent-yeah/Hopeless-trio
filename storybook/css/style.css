@@ -911,3 +911,33 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .modal-card p { font-size: 0.95rem; }
   .btn { font-size: 1rem; }
 }
+
+/* ---------- 음식 고르기 화면 (#4 앞) ----------
+   책 밖 화면이라 쪽 크기(cqh) 대신 화면 기준 크기를 쓴다 */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.choice-card { width: min(100%, 720px); }
+.choice-text .story { font-size: clamp(1rem, 2.4vw, 1.3rem); line-height: 1.6; text-align: center; }
+.choice-grid { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.choice-grid .tile { border-width: 2px; border-radius: 16px; }
+.choice-grid .tile-emoji { font-size: clamp(1.8rem, 6vw, 2.6rem); transform: translateY(-8px); }
+.choice-grid .tile-label { font-size: clamp(0.72rem, 1.9vw, 0.95rem); line-height: 1.2; padding: 14px 6px 6px; }
+.choice-grid .check { top: 6px; right: 6px; width: 22px; height: 22px; }
+#btn-food-next[data-blocked] { background: var(--night-3); color: var(--soft); box-shadow: none; }
+#food-choice .intro-actions .btn { flex: 1; }
+@media (max-width: 600px) and (orientation: portrait) {
+  .choice-card { padding: 16px 12px 14px; gap: 10px; }
+  .choice-grid { gap: 6px; }
+  .choice-grid .tile { border-radius: 12px; }
+  .choice-grid .tile-label { padding: 12px 4px 4px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #food-choice { flex-direction: column; flex-wrap: nowrap; gap: 8px; }
+  #food-choice .intro-actions { flex-direction: row; width: min(100%, 460px); }
+  .choice-card { padding: 10px 14px; gap: 6px; }
+  .choice-text .story { font-size: 0.9rem; line-height: 1.4; }
+  .choice-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+  .choice-grid .tile-art { aspect-ratio: 1; }
+  .choice-grid .tile-label { font-size: 0.66rem; }
+  #food-choice-note { display: none; }
+  #food-choice .intro-actions .btn { min-height: 40px; }
+}
