@@ -92,7 +92,10 @@
        art      임시 그림 종류 (실제 삽화가 들어오면 자동으로 숨겨짐)
        faint    true면 임시 그림을 입력 도구 뒤에 옅게 깐다
        artPos   임시 그림 위치 top | bottom (기본은 가운데)
-       text     true면 이 쪽에 본문을 놓는다
+       text     true면 장면 본문(text)을 놓고, 함수면 이 쪽만의 본문 (#2·3처럼 한 펼침면에 두 장면일 때)
+       no       글 위에 붙는 장면 번호 (없으면 장면의 no)
+       ink      'dark'면 삽화가 들어왔을 때 글 상자 없이 진한 글씨로 그림 위에 쓴다 (말풍선·밝은 여백용)
+       nameplate 그림 속 이름표 자리 {x, y, w, h, r} (이 쪽 기준 비율). 여기에 바로 이름을 입력한다
        place    본문 세로 위치 top | center | bottom
        widgets  이 쪽에 놓을 입력 도구 (nameplate, name, food-grid, food-result, deed, deed-hint, taste, recap)
      question    입력칸이 있는 쪽 맨 위에 놓이는 질문 (#6)
@@ -100,49 +103,51 @@
      requirePage 그 값을 고르는 쪽 (휴대폰에서 한 쪽씩 넘길 때 이 쪽을 떠나기 전에 확인) */
   var scenes = [
     {
-      id: 'intro', act: 0, tone: 'night',
-      image: 'assets/backgrounds/01-intro.png', alt: '모두가 잠든 밤하늘과 꿈',
-      pages: [{ art: 'moon' }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
+      id: 'intro', act: 0, tone: 'night', no: '1',
+      image: 'assets/backgrounds/01-night.jpg', alt: '모두가 잠든 밤, 달과 별이 걸린 마을',
+      pages: [{ art: 'moon' }, { text: true, place: 'center', art: 'starsky', artPos: 'bottom' }],
       nextLabel: '꿈속으로 들어가기',
       text: function () { return [['모두가 잠이 든 밤.\n아이들의 꿈속에는 특별한 일이 일어나고 있어요.']]; }
     },
     {
-      id: 'table', act: 0, tone: 'table',
-      image: 'assets/backgrounds/02-dream-table.png', alt: '갖가지 음식이 차려진 꿈속 식탁',
-      pages: [{ art: 'table' }, { text: true, place: 'top', art: 'feast', artPos: 'bottom' }],
-      text: function () { return [['아이들의 앞에는 갖가지 음식이 차려진 식탁이 있네요?']]; }
+      // 콘티의 #2와 #3은 펼침면 한 장: 왼쪽 쪽 #2(식탁), 오른쪽 쪽 #3(이름표)
+      id: 'name', act: 0, tone: 'table', no: '2·3',
+      image: 'assets/backgrounds/02-03-dream-table.jpg', alt: '하늘에 떠 있는 꿈속 식탁과 빈 이름표가 놓인 나의 자리',
+      pages: [
+        { no: '2', text: function () { return [['아이들의 앞에는 갖가지 음식이 차려진 식탁이 있네요?']]; }, place: 'bottom', art: 'table' },
+        {
+          no: '3', text: function () { return [['당신의 자리도 있어요.\n당신의 이름은 무엇인가요?']]; },
+          place: 'top', ink: 'dark', art: 'seat', artPos: 'bottom',
+          // 그림 속 이름표 앞면 자리(이 쪽 기준 비율). 앱에서는 여기에 바로 이름을 쓰고, 종이책에서는 빈칸으로 남는다.
+          nameplate: { x: 0.34, y: 0.5, w: 0.46, h: 0.19, r: -2 }
+        }
+      ],
+      nextLabel: function (c) { return c.hasName ? '이 이름으로 앉기' : '이름 없이 앉기'; }
     },
     {
-      id: 'name', act: 0, tone: 'table',
-      image: 'assets/backgrounds/03-nameplate.png', alt: '빈 이름표가 놓인 나의 자리',
-      pages: [{ art: 'seat', widgets: ['nameplate'] }, { text: true, place: 'center', widgets: ['name'], art: 'starsky', faint: true }],
-      nextLabel: function (c) { return c.hasName ? '이 이름으로 앉기' : '이름 없이 앉기'; },
-      text: function () { return [['당신의 자리도 있어요.\n당신의 이름은 무엇인가요?']]; }
-    },
-    {
-      id: 'food', act: 1, tone: 'table',
-      image: 'assets/backgrounds/04-food-choice.png', alt: '맛있는 음식이 잔뜩 놓인 식탁',
+      id: 'food', act: 1, tone: 'table', no: '4',
+      image: 'assets/backgrounds/04-food-choice.jpg', alt: '맛있는 음식이 잔뜩 놓인 식탁에 앉은 주인공',
       pages: [{ text: true, widgets: ['food-grid'] }, { widgets: ['food-result'], art: 'feast', faint: true }],
       require: 'food', requirePage: 0,
       requireMessage: '먹고 싶은 음식을 하나 골라 주세요.',
       text: function () { return [['자리에 앉아 앞을 바라보니 맛있는 음식들이 잔뜩 있어요.\n어떤 것부터 먹고 싶나요?']]; }
     },
     {
-      id: 'fairies', act: 1, tone: 'fairy',
-      image: 'assets/fairies/05-fairies-arrive.png', alt: '특별한 음식을 들고 오는 요정들',
-      pages: [{ art: 'fairies' }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
-      text: function (c) {
-        var ate = c.food ? [{ v: c.food.noun }, josa(c.food.noun, '을/를')] : ['음식을'];
+      id: 'fairies', act: 1, tone: 'fairy', no: '5',
+      image: 'assets/backgrounds/05-fairies-arrive.jpg', alt: '뚜껑 덮인 특별한 음식을 들고 오는 요정들',
+      // 왼쪽 쪽의 큰 구름(말풍선) 안에 글이 들어간다
+      pages: [{ text: true, place: 'center', ink: 'dark', art: 'bubble', artPos: 'bottom' }, { art: 'cloche' }],
+      text: function () {
         return [
-          ['그렇게 '].concat(ate, [' 먹다 보니 요정들이 무언가 음식을 가져오네요.']),
+          ['그렇게 음식을 먹다 보니 요정들이 무언가 음식을 가져오네요.'],
           ['가장 착한 아이에게 주는 음식이래요!']
         ];
       }
     },
     {
-      id: 'deed', act: 2, tone: 'fairy',
-      image: 'assets/fairies/06-fairy-praise.png', alt: '아이들의 착한 일을 하나하나 말해 주는 요정',
-      pages: [{ text: true, place: 'top', art: 'bubble', artPos: 'bottom' }, { widgets: ['deed'], art: 'starsky', faint: true }],
+      id: 'deed', act: 2, tone: 'fairy', no: '6',
+      image: 'assets/backgrounds/06-fairy-praise.jpg', alt: '아이들의 착한 일을 하나하나 말해 주는 요정',
+      pages: [{ text: true, place: 'top', art: 'fairies', artPos: 'bottom' }, { widgets: ['deed'], art: 'starsky', faint: true }],
       text: function (c) {
         return [
           ['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.'],
@@ -153,8 +158,8 @@
       question: function (c) { return [you(c, '이/가').concat([' 한 착한 일은 무엇인가요?'])]; }
     },
     {
-      id: 'serve', act: 2, tone: 'gold',
-      image: 'assets/fairies/07-fairies-serve.png', alt: '박수를 치며 음식을 놓아 주는 요정들',
+      id: 'serve', act: 2, tone: 'gold', no: '7',
+      image: 'assets/backgrounds/07-fairies-serve.jpg', alt: '박수를 치며 음식을 놓아 주는 요정들',
       pages: [{ art: 'cloche', place: 'bottom', widgets: ['deed-hint'] }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
       text: function (c) {
         if (c.deed) {
@@ -171,8 +176,8 @@
       }
     },
     {
-      id: 'soup', act: 2, tone: 'gold', effect: 'sparkles',
-      image: 'assets/backgrounds/08-starlight-soup.png', alt: '별빛이 동동 떠다니는 스프',
+      id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles',
+      image: 'assets/backgrounds/08-starlight-soup.jpg', alt: '별빛이 동동 떠다니는 스프',
       pages: [{ art: 'soup' }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
       text: function (c) {
         return [
@@ -181,8 +186,8 @@
       }
     },
     {
-      id: 'taste', act: 3, tone: 'gold',
-      image: 'assets/backgrounds/09-taste.png', alt: '별빛스프를 맛보는 순간',
+      id: 'taste', act: 3, tone: 'gold', no: '9',
+      image: 'assets/backgrounds/09-taste.jpg', alt: '별빛스프를 맛보는 순간',
       pages: [{ text: true, place: 'top', art: 'soup', artPos: 'bottom' }, { widgets: ['taste'], art: 'starsky', faint: true }],
       require: 'taste', requirePage: 1,
       requireMessage: '스프에서 어떤 맛이 났는지 하나 골라 주세요.',
@@ -190,9 +195,9 @@
       text: function () { return [['무슨 맛이 났나요?']]; }
     },
     {
-      id: 'ending', act: 3, tone: 'dawn',
-      image: 'assets/backgrounds/10-wake-up.png', alt: '아침 햇살 속에서 잠에서 깬 아이',
-      pages: [{ art: 'dawn', artPos: 'top', text: true, place: 'bottom' }, { widgets: ['recap'], art: 'starsky', faint: true }],
+      id: 'ending', act: 3, tone: 'dawn', no: '10',
+      image: 'assets/backgrounds/10-wake-up.jpg', alt: '아침에 잠에서 깬 아이의 방',
+      pages: [{ text: true, place: 'top', art: 'dawn', artPos: 'bottom' }, { widgets: ['recap'], art: 'starsky', faint: true }],
       text: function (c) {
         var taste = c.taste ? [{ v: c.taste.label }, josa(c.taste.label, '이/가')] : ['별빛스프의 맛이'];
         return [
@@ -207,7 +212,7 @@
   var stickerSpots = {
     // 음식 스티커는 음식을 고른 다음 화면에 나타난다
     food: { x: 0.75, y: 0.68, w: 0.12, r: -6 },     // #4 오른쪽 쪽 아래 ('한입 냠' 설명 쪽)
-    serve: { x: 0.3, y: 0.42, w: 0.15, r: 5 }       // 착한 일 종이(그림+메모지): #7 왼쪽 쪽(13쪽)
+    serve: { x: 0.3, y: 0.42, w: 0.15, r: 5 }       // 착한 일 종이(그림+메모지): #7 왼쪽 쪽(11쪽)
   };
 
   /* ---------- 임시 그림 (실제 삽화가 들어오기 전까지만 사용) ---------- */
@@ -303,7 +308,7 @@
   };
 
   window.StarSoup = {
-    version: '1.5',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '1.6',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

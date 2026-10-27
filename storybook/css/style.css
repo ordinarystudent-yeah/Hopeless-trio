@@ -231,6 +231,7 @@ button, input, textarea { font: inherit; color: inherit; }
 /* 카드가 많은 쪽(#4)은 글을 조금 줄여 한 쪽 안에 모두 들어가게 한다 */
 .pg--dense { gap: 2.4cqh; padding-top: 6.5cqh; padding-bottom: 8cqh; }
 .pg--dense .story { font-size: 5.4cqh; line-height: 1.5; }
+.pg--dense .pg-text.is-panel { padding: 2.6cqh 4cqh; gap: 1.4cqh; }
 .page--right .pg { padding-left: 11cqh; }
 
 .pg-art { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
@@ -242,14 +243,27 @@ button, input, textarea { font: inherit; color: inherit; }
 .pg-art.is-faint svg { opacity: 0.22; }
 
 .pg-text, .pg-widget { position: relative; display: flex; flex-direction: column; gap: 2.6cqh; }
+/* 진한 글씨: 말풍선·밝은 여백처럼 글 자리가 그려진 삽화 위에는 상자 없이 바로 쓴다 (삽화가 들어왔을 때만) */
+.has-image .pg-text.is-panel.is-ink {
+  padding: 0 1cqh;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: var(--plate-ink);
+}
+.has-image .pg-text.is-ink .eyebrow { color: #a5671a; }
+.has-image .pg-text.is-ink .eyebrow .no { color: #8a7560; }
+.has-image .pg-text.is-ink .v { color: #c25a14; }
+
 /* 글 상자: 모든 쪽에 삽화가 깔리므로 글은 항상 반투명 상자 위에 놓는다 */
-.pg-text.is-panel {
+.pg-text.is-panel, .pg-widget.is-panel {
   padding: 4cqh 5cqh;
   border-radius: 4cqh;
   background: rgb(17 23 46 / 0.66);
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.05);
 }
-.has-image .pg-text.is-panel {
+.has-image .pg-text.is-panel, .has-image .pg-widget.is-panel {
   background: rgb(17 23 46 / 0.72);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
@@ -337,27 +351,29 @@ textarea.input { resize: none; }
 }
 @media (hover: hover) { .chip:hover { border-color: var(--soup); } }
 
-/* 이름표 (#3) */
-.nameplate {
+/* 이름표 (#3): 그림 속 이름표 앞면에 바로 쓰는 입력칸 */
+.nameplate-input {
   position: absolute;
-  left: 50%;
-  bottom: 16%;
-  transform: translateX(-50%) rotate(-2deg);
-  min-width: 34cqh;
-  max-width: 80%;
-  padding: 2.4cqh 6cqh;
-  border: 0.9cqh solid var(--soup);
-  border-radius: 3cqh;
-  background: var(--milk);
+  z-index: 2;
+  padding: 0 1cqh;
+  border: 0;
+  border-bottom: 0.5cqh dashed rgb(59 44 24 / 0.45);
+  border-radius: 0;
+  background: transparent;
   color: var(--plate-ink);
   font-family: var(--font-display);
-  font-size: 8cqh;
-  line-height: 1.3;
+  font-size: max(15px, 9cqh);
+  line-height: 1.2;
   text-align: center;
-  overflow-wrap: anywhere;
-  box-shadow: 0 3cqh 6cqh -2cqh rgb(0 0 0 / 0.6);
+  transform: rotate(var(--r, 0deg));
+  transition: background 0.2s, border-color 0.2s;
+  -webkit-user-select: text;
+  user-select: text;
 }
-.nameplate.is-empty { color: #a8998a; }
+.nameplate-input::placeholder { color: rgb(59 44 24 / 0.5); font-size: max(11px, 4.6cqh); }
+.nameplate-input:focus { outline: none; background: rgb(255 255 255 / 0.35); border-bottom-color: var(--plate-ink); border-radius: 1.2cqh 1.2cqh 0 0; }
+/* 삽화가 아직 없을 때(어두운 임시 그림 위)에는 밝은 이름표처럼 보이게 */
+.leaf:not(.has-image) .nameplate-input { background: var(--milk); border-radius: 2cqh; border: 0.6cqh solid var(--soup); }
 
 /* ---------- 선택 카드 ---------- */
 .grid { display: grid; gap: 2.4cqh; }

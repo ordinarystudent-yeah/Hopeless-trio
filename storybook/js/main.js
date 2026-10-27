@@ -18,7 +18,7 @@
 
   function freshState() {
     return {
-      version: 2, scene: 0, page: 0, maxScene: 0,
+      version: 2, layout: 2, scene: 0, page: 0, maxScene: 0,
       name: '', food: null, customFoodName: '', deed: '', taste: null,
       stickers: {}, deedMemo: null, returnTo: null
     };
@@ -49,6 +49,7 @@
     if (Array.isArray(child)) { child.forEach(function (c) { append(node, c); }); return; }
     node.append(child instanceof Node ? child : document.createTextNode(String(child)));
   }
+  function sceneIndex(id) { for (var i = 0; i < S.scenes.length; i++) if (S.scenes[i].id === id) return i; return 0; }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   function customFood(c) {
@@ -182,8 +183,10 @@
     s.customFoodName = str(raw.customFoodName, S.limits.foodName);
     s.food = raw.food === 'custom' || S.foods.some(function (f) { return f.id === raw.food; }) ? raw.food : null;
     s.taste = S.tastes.some(function (t) { return t.id === raw.taste; }) ? raw.taste : null;
-    s.maxScene = Number.isInteger(raw.maxScene) ? clamp(raw.maxScene, 0, LAST) : 0;
-    s.scene = Number.isInteger(raw.scene) ? clamp(raw.scene, 0, s.maxScene) : 0;
+    // layout 2: 콘티대로 #2·3을 한 펼침면으로 합친 9장면 구성. 그 전 기록은 장면 번호를 하나씩 당긴다.
+    var move = raw.layout === 2 ? function (i) { return i; } : function (i) { return i >= 2 ? i - 1 : i; };
+    s.maxScene = Number.isInteger(raw.maxScene) ? clamp(move(raw.maxScene), 0, LAST) : 0;
+    s.scene = Number.isInteger(raw.scene) ? clamp(move(raw.scene), 0, s.maxScene) : 0;
     s.page = raw.page === 1 ? 1 : 0;
     // 예전 버전은 PC에서 음식 스티커를 #5에 붙였다 → 이제는 #4 오른쪽 쪽에만 붙으므로 정리
     delete s.stickers.fairies;
@@ -227,11 +230,12 @@
     return box;
   }
 
-  function eyebrow(scene, index) {
+  function eyebrow(scene, index, page) {
     var act = S.acts[scene.act];
+    var no = (page && page.no) || scene.no || String(index + 1);
     return el('p', { class: 'eyebrow' },
       el('span', { text: act.label + ' · ' + act.title }),
-      el('span', { class: 'no', text: '#' + (index + 1) }));
+      el('span', { class: 'no', text: '#' + no }));
   }
 
   /* ---------- 한 장면(펼침면) 만들기 ---------- */
@@ -278,10 +282,11 @@
         pg.append(m);
       }
       if (p.text) {
-        var block = el('div', { class: 'pg-text is-panel' }, eyebrow(scene, index), paragraphs(scene.text(c)));
-        if (index === 0 && pi === 1) block.id = 'scene-title';
+        var body = typeof p.text === 'function' ? p.text(c) : scene.text(c);
+        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') }, eyebrow(scene, index, p), paragraphs(body));
         pg.append(block);
       }
+      if (p.nameplate) page.append(nameplateInput(leaf, p.nameplate));
       (p.widgets || []).forEach(function (w) { append(pg, widget(w, c, leaf, index)); });
       page.append(pg, el('span', { class: 'folio', 'aria-hidden': 'true', text: index * 2 + pi + 1 }));
       spread.append(page);
@@ -310,11 +315,6 @@
   /* ---------- 쪽 위의 입력 도구 ---------- */
   function widget(name, c, leaf, index) {
     switch (name) {
-      case 'nameplate': {
-        var v = c.name;
-        return el('div', { class: 'nameplate' + (v ? '' : ' is-empty'), 'aria-hidden': 'true', text: v || '이름표' });
-      }
-      case 'name': return nameField(leaf);
       case 'food-grid': return foodGrid(leaf);
       case 'food-result': return foodResult(c);
       case 'deed': return deedField(leaf, c, S.scenes[index]);
@@ -327,29 +327,28 @@
     return null;
   }
 
-  function nameField(leaf) {
+  // 그림 속 이름표 앞면에 바로 이름을 쓴다 (종이책에서는 이 자리가 빈칸으로 남아 손으로 쓴다)
+  function nameplateInput(leaf, box) {
     var input = el('input', {
-      class: 'input', id: 'input-name', type: 'text', maxlength: S.limits.name,
-      placeholder: '예: 하늘', autocomplete: 'off', enterkeyhint: 'done'
+      class: 'nameplate-input', id: 'input-name', type: 'text', maxlength: S.limits.name,
+      placeholder: '여기에 이름을 써요', autocomplete: 'off', enterkeyhint: 'done',
+      'aria-label': '나의 이름 (비워 두면 이야기 속에서 ‘당신’이라고 불러요)'
     });
+    input.style.left = box.x * 100 + '%';
+    input.style.top = box.y * 100 + '%';
+    input.style.width = box.w * 100 + '%';
+    input.style.height = box.h * 100 + '%';
+    input.style.setProperty('--r', (box.r || 0) + 'deg');
     input.value = state.name;
     input.addEventListener('input', function () {
       state.name = input.value.slice(0, S.limits.name);
-      var plate = leaf.querySelector('.nameplate');
-      if (plate) {
-        plate.textContent = state.name.trim() || '이름표';
-        plate.classList.toggle('is-empty', !state.name.trim());
-      }
       updateControls();
       saveSoon();
     });
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); input.blur(); }
     });
-    return el('div', { class: 'field' },
-      el('label', { for: 'input-name', text: '나의 이름' }),
-      input,
-      el('p', { class: 'hint', text: '비워 두면 이야기 속에서 ‘당신’이라고 불러요.' }));
+    return input;
   }
 
   function tile(opts) {
@@ -417,7 +416,7 @@
 
   function foodResult(c) {
     var f = c.food;
-    return el('div', { class: 'pg-text reveal' + (f ? '' : ' is-empty'), 'aria-live': 'polite' },
+    return el('div', { class: 'pg-text is-panel reveal' + (f ? '' : ' is-empty'), 'aria-live': 'polite' },
       el('p', { class: 'eyebrow', text: f ? '한입 냠, ' + f.name : '음식을 고르면' }),
       el('p', { class: 'story story--sm', text: f ? f.desc : '왼쪽에서 먹고 싶은 음식을 골라 보세요. 고른 음식은 스티커가 되어 이 책에 붙어요.' }),
       f ? el('p', { class: 'hint sticker-hint', text: foodStickerHint() }) : null);
@@ -490,7 +489,7 @@
     var question = paragraphs(scene.question(c));
     question.forEach(function (p) { p.classList.add('story--q'); p.id = 'deed-question'; });
     area.setAttribute('aria-labelledby', 'deed-question');
-    return el('div', { class: 'pg-widget' },
+    return el('div', { class: 'pg-widget is-panel' },
       question,
       el('div', { class: 'field' },
         area,
@@ -524,13 +523,13 @@
           onclick: function () { state.returnTo = LAST; go(sceneIndex, page); }
         }));
     }
-    return el('div', { class: 'pg-text recap' },
+    return el('div', { class: 'pg-text is-panel recap' },
       el('h2', { text: c.you + '의 별빛스프 이야기' }),
       el('dl', null,
-        row('이름', c.name, 2, 1, '아직 비어 있어요'),
-        row('고른 음식', c.food && c.food.name, 3, 0, '고르지 않았어요'),
-        row('착한 일', c.deed, 5, 1, '비워 두었어요'),
-        row('스프의 맛', c.taste && c.taste.label, 8, 1, '고르지 않았어요')));
+        row('이름', c.name, sceneIndex('name'), 1, '아직 비어 있어요'),
+        row('고른 음식', c.food && c.food.name, sceneIndex('food'), 0, '고르지 않았어요'),
+        row('착한 일', c.deed, sceneIndex('deed'), 1, '비워 두었어요'),
+        row('스프의 맛', c.taste && c.taste.label, sceneIndex('taste'), 1, '고르지 않았어요')));
   }
 
   /* ---------- 스티커 ----------
