@@ -196,7 +196,8 @@
       require: 'taste', requirePage: 1,
       requireMessage: '스프에서 어떤 맛이 났는지 하나 골라 주세요.',
       nextLabel: '잠에서 깨기',
-      text: function () { return [['무슨 맛이 났나요?']]; }
+      text: function () { return [['무슨 맛이 났나요?']]; },
+      hint: '옆으로 넘겨 보고, 가운데 카드를 눌러 골라요.'
     },
     {
       id: 'ending', act: 3, tone: 'dawn', no: '10',
@@ -312,7 +313,7 @@
   };
 
   window.StarSoup = {
-    version: '1.9',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '2.0',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

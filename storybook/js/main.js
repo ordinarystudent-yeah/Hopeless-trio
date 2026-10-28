@@ -282,7 +282,8 @@
       }
       if (p.text) {
         var body = typeof p.text === 'function' ? p.text(c) : scene.text(c);
-        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') }, eyebrow(scene, index, p), paragraphs(body));
+        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') }, eyebrow(scene, index, p), paragraphs(body),
+          p.tight && scene.hint ? el('p', { class: 'hint', text: scene.hint }) : null);
         pg.append(block);
       }
       if (p.nameplate) page.append(nameplateInput(leaf, p.nameplate));
@@ -319,7 +320,7 @@
       case 'deed-hint': return images[IMG_DEED]
         ? el('p', { class: 'hint sticker-hint pg-hint' }, '꾸민 착한 일 종이를 끌어서 원하는 곳에 옮겨 보세요.')
         : null;
-      case 'taste': return tasteList(leaf);
+      case 'taste': return tasteCarousel();
       case 'recap': return recap(c);
     }
     return null;
@@ -485,20 +486,69 @@
       chips, draw);
   }
 
-  function tasteList(leaf) {
-    var grid = el('div', { class: 'grid grid--taste', role: 'group', 'aria-label': '스프의 맛 고르기' });
-    S.tastes.forEach(function (t) {
-      grid.append(tile({
-        id: t.id, label: t.label, image: t.image, emoji: t.emoji, glow: t.glow, pressed: state.taste === t.id,
-        onclick: function () {
-          state.taste = t.id;
-          markPressed(grid, t.id);
-          updateControls();
-          saveSoon();
-        }
-      }));
+  /* ---------- 맛 고르기 회전 카드 (#9 16쪽) ----------
+     가운데 카드는 앞에 크게, 좌우 카드는 살짝 뒤로 비스듬히. 옆으로 밀거나 ‹ › 를 누르면 원을 그리듯 돈다.
+     옆 카드를 누르면 가운데로 오고, 가운데 카드를 누르면 그 맛을 고른다. */
+  function tasteCarousel() {
+    var list = S.tastes, n = list.length;
+    var focus = Math.max(0, list.findIndex(function (t) { return t.id === state.taste; }));
+    var stage = el('div', { class: 'carousel-stage' });
+    var cards = list.map(function (t, i) {
+      var art = el('span', { class: 'c-art', 'aria-hidden': 'true' });
+      art.style.setProperty('--glow', t.glow);
+      var emoji = el('span', { class: 'c-emoji', text: t.emoji });
+      art.append(emoji);
+      if (t.image) {
+        var img = el('img', { alt: '' });
+        img.onload = function () { emoji.remove(); };
+        img.onerror = function () { img.remove(); };
+        img.src = t.image;
+        art.append(img);
+      }
+      var card = el('button', { type: 'button', class: 'c-card', 'data-id': t.id, 'aria-label': t.label },
+        art, el('span', { class: 'c-label', text: t.label }),
+        el('span', { class: 'check', 'aria-hidden': 'true' }, svgCheck()));
+      card.addEventListener('click', function () {
+        if (Date.now() - swipedAt < 350) return;    // 밀어서 돌린 직후의 클릭은 무시
+        if (i !== focus) { focus = i; layout(); return; }
+        state.taste = t.id;
+        layout();
+        card.animate([{ transform: getComputedStyle(card).transform }, { transform: getComputedStyle(card).transform + ' scale(1.06)' }, { transform: getComputedStyle(card).transform }], { duration: 380, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+        updateControls();
+        saveSoon();
+      });
+      stage.append(card);
+      return card;
     });
-    return grid;
+    function layout() {
+      cards.forEach(function (card, i) {
+        var rel = ((i - focus) % n + n) % n;
+        if (rel > n / 2) rel -= n;
+        card.setAttribute('data-pos', rel);
+        card.setAttribute('aria-pressed', state.taste === list[i].id ? 'true' : 'false');
+        card.tabIndex = rel === 0 ? 0 : -1;
+      });
+    }
+    function turn(d) { focus = (focus + d + n) % n; layout(); }
+    var prevBtn = el('button', { type: 'button', class: 'c-nav c-nav--prev', 'aria-label': '이전 맛', onclick: function () { turn(-1); } }, '‹');
+    var nextBtn = el('button', { type: 'button', class: 'c-nav c-nav--next', 'aria-label': '다음 맛', onclick: function () { turn(1); } }, '›');
+    var box = el('div', { class: 'carousel', role: 'group', 'aria-label': '스프의 맛 고르기 (옆으로 넘겨 보고 가운데 카드를 눌러 골라요)' }, stage, prevBtn, nextBtn);
+
+    // 카드 위에서 옆으로 밀면 돈다 (책장은 넘어가지 않음)
+    var swipe = null, swipedAt = 0;
+    box.addEventListener('pointerdown', function (e) { swipe = { id: e.pointerId, x: e.clientX, y: e.clientY }; });
+    box.addEventListener('pointerup', function (e) {
+      if (!swipe || e.pointerId !== swipe.id) return;
+      var dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+      swipe = null;
+      if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) { swipedAt = Date.now(); turn(dx < 0 ? 1 : -1); }
+    });
+    box.addEventListener('pointercancel', function () { swipe = null; });
+    box.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); turn(e.key === 'ArrowLeft' ? -1 : 1); cards[focus].focus(); }
+    });
+    layout();
+    return box;
   }
 
   function recap(c) {
@@ -963,7 +1013,7 @@
     if (blockedHere()) {
       var scene = S.scenes[state.scene];
       toast(scene.requireMessage);
-      var grid = currentLeaf() && currentLeaf().querySelector('.grid');
+      var grid = currentLeaf() && currentLeaf().querySelector('.grid, .carousel');
       if (grid) { grid.classList.remove('is-shake'); void grid.offsetWidth; grid.classList.add('is-shake'); }
       return;
     }
@@ -1102,7 +1152,7 @@
   var swipe = null;
   book.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' || swipe) return;
-    if (e.target.closest('.sticker, input, textarea, .chips')) return;
+    if (e.target.closest('.sticker, input, textarea, .chips, .carousel')) return;
     swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dir: null, leaf: currentLeaf() };
   });
   book.addEventListener('pointermove', function (e) {
@@ -1165,7 +1215,7 @@
     if (app.getAttribute('data-screen') !== 'book') return;
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     var t = e.target;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable || t.classList.contains('sticker'))) return;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable || t.classList.contains('sticker') || (t.closest && t.closest('.carousel')))) return;
     if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
   });
