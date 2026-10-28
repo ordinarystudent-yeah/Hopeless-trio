@@ -88,18 +88,18 @@
               실제 동화책처럼 모든 쪽에 삽화가 들어가며, 글은 삽화 위의 글 상자에 놓인다.
               쪽마다 따로 그린 삽화를 쓰려면 pages의 각 쪽에 image(가로 A4, 297:210)를 넣는다.
      pages  : [왼쪽 쪽, 오른쪽 쪽] 구성
-       image    이 쪽에만 쓰는 삽화 (선택. 있으면 펼침면 삽화 위에 이 쪽을 덮음)
+       image    이 쪽에만 쓰는 삽화 (선택. 있으면 펼침면 삽화 위에 이 쪽을 덮음). 함수면 고른 값에 따라 (#9 16쪽)
        art      임시 그림 종류 (실제 삽화가 들어오면 자동으로 숨겨짐)
        faint    true면 임시 그림을 입력 도구 뒤에 옅게 깐다
        artPos   임시 그림 위치 top | bottom (기본은 가운데)
        text     true면 장면 본문(text)을 놓고, 함수면 이 쪽만의 본문 (#2·3처럼 한 펼침면에 두 장면일 때)
        no       글 위에 붙는 장면 번호 (없으면 장면의 no)
        ink      'dark'면 삽화가 들어왔을 때 글 상자 없이 진한 글씨로 그림 위에 쓴다 (말풍선·밝은 여백용)
-       tight    글과 카드를 한 쪽에 촘촘히 담는다 (#9 오른쪽 쪽)
        nameplate 그림 속 이름표 자리 {x, y, w, h, r} (이 쪽 기준 비율). 여기에 바로 이름을 입력한다
        place    본문 세로 위치 top | center | bottom
-       widgets  이 쪽에 놓을 입력 도구 (food-result, deed, deed-hint, taste, recap)
-     question    입력칸이 있는 쪽 맨 위에 놓이는 질문 (#6)
+       widgets  이 쪽에 놓을 것 (food-result, deed-hint, recap)
+     ask         이 장면 앞에 따로 묻는 화면 food | deed | taste (입력 도구가 그림을 가리지 않게)
+     question    묻는 화면에 나오는 질문 (#6)
      require     다음 장면으로 가기 전에 꼭 골라야 하는 값
      requirePage 그 값을 고르는 쪽 (휴대폰에서 한 쪽씩 넘길 때 이 쪽을 떠나기 전에 확인) */
   var scenes = [
@@ -126,7 +126,7 @@
       nextLabel: function (c) { return c.hasName ? '이 이름으로 앉기' : '이름 없이 앉기'; }
     },
     {
-      id: 'food', act: 1, tone: 'table', no: '4',
+      id: 'food', act: 1, tone: 'table', no: '4', ask: 'food',
       image: 'assets/backgrounds/04-food-choice.jpg', alt: '맛있는 음식이 잔뜩 놓인 식탁에 앉은 주인공',
       // 음식 카드는 이 펼침면 앞의 '음식 고르기' 화면에서 고른다 (그림을 가리지 않게).
       // 이 펼침면에는 글과 고른 음식의 설명, 그리고 첫 쪽(5쪽)에 붙는 음식 스티커만 있다.
@@ -147,17 +147,18 @@
       }
     },
     {
-      id: 'deed', act: 2, tone: 'fairy', no: '6',
+      id: 'deed', act: 2, tone: 'fairy', no: '6', ask: 'deed',
       image: 'assets/backgrounds/06-fairy-praise.jpg', alt: '요정의 큰 말풍선과 별이 담긴 그릇',
-      // 왼쪽 쪽의 큰 구름(말풍선) 안에 요정이 하는 말이 들어간다 / 오른쪽 쪽 위에 착한 일 입력
-      pages: [{ text: true, place: 'center', ink: 'dark', art: 'bubble', artPos: 'bottom' }, { widgets: ['deed'], place: 'top', art: 'starsky', faint: true }],
+      // 착한 일은 이 펼침면 앞의 묻는 화면에서 적는다 (입력칸이 그림을 가리지 않게).
+      // 왼쪽 쪽의 큰 구름(말풍선) 안에 요정이 하는 말 / 오른쪽 쪽은 삽화만
+      pages: [{ text: true, place: 'center', ink: 'dark', art: 'bubble', artPos: 'bottom' }, { art: 'soup' }],
       text: function (c) {
         return [
           ['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.'],
           you(c, '이/가').concat([' 한 착한 일도 말해주네요?'])
         ];
       },
-      // 입력칸이 있는 오른쪽 쪽 맨 위에 놓이는 질문
+      // 펼침면 앞의 묻는 화면에 나오는 질문
       question: function (c) { return [you(c, '이/가').concat([' 한 착한 일은 무엇인가요?'])]; }
     },
     {
@@ -189,11 +190,18 @@
       }
     },
     {
-      id: 'taste', act: 3, tone: 'gold', no: '9',
+      id: 'taste', act: 3, tone: 'gold', no: '9', ask: 'taste',
       image: 'assets/backgrounds/09-taste.jpg', alt: '별빛스프의 맛이 소용돌이처럼 퍼지는 순간',
-      // 왼쪽 쪽은 삽화만, 오른쪽 쪽(16쪽)에 질문과 맛 고르기 카드
-      pages: [{ art: 'soup' }, { text: true, place: 'top', widgets: ['taste'], tight: true, art: 'starsky', faint: true }],
-      require: 'taste', requirePage: 1,
+      // '무슨 맛이 났나요?'는 이 펼침면 앞의 묻는 화면에서 회전 카드로 고른다.
+      // 왼쪽 쪽은 삽화, 오른쪽 쪽(16쪽)에는 고른 맛에 맞춘 그림(assets/backgrounds/09-taste-<맛>.jpg)과 그 맛의 이름
+      pages: [
+        { art: 'soup' },
+        {
+          image: function (c) { return c.taste ? 'assets/backgrounds/09-taste-' + c.taste.id + '.jpg' : null; },
+          text: function (c) { return c.taste ? [[{ v: c.taste.label }]] : [['아직 맛을 고르지 않았어요.']]; },
+          place: 'bottom', art: 'starsky'
+        }
+      ],
       requireMessage: '스프에서 어떤 맛이 났는지 하나 골라 주세요.',
       nextLabel: '잠에서 깨기',
       text: function () { return [['무슨 맛이 났나요?']]; },
@@ -313,7 +321,7 @@
   };
 
   window.StarSoup = {
-    version: '2.0',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '2.1',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

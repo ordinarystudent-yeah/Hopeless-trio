@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
-<link rel="stylesheet" href="css/style.css?v=2.0">
-<link rel="stylesheet" href="css/editor.css?v=2.0">
+<link rel="stylesheet" href="css/style.css?v=2.1">
+<link rel="stylesheet" href="css/editor.css?v=2.1">
 </head>
 <body>
 <div class="app" id="app" data-screen="cover">
@@ -59,18 +59,17 @@
     </div>
   </section>
 
-  <!-- 음식 고르기 화면 (동화 쪽이 아님): #2·3 다음, #4 그림 앞 -->
-  <section class="intro" id="food-choice" aria-labelledby="food-choice-title" hidden>
-    <div class="guide-card prompt-card choice-card" id="food-choice-card">
-      <p class="prompt-kicker" id="food-choice-kicker"></p>
-      <h1 id="food-choice-title" class="visually-hidden">음식 고르기</h1>
-      <div class="choice-text" id="food-choice-text"></div>
-      <div id="food-choice-grid"></div>
-      <p class="prompt-text" id="food-choice-note"></p>
+  <!-- 묻는 화면 (동화 쪽이 아님): 음식(#4 앞) · 착한 일(#6 앞) · 맛(#9 앞) -->
+  <section class="intro" id="ask" aria-labelledby="ask-text" hidden>
+    <div class="guide-card prompt-card choice-card" id="ask-card">
+      <p class="prompt-kicker" id="ask-kicker"></p>
+      <div class="choice-text" id="ask-text"></div>
+      <div class="ask-body" id="ask-body"></div>
+      <p class="prompt-text" id="ask-note"></p>
     </div>
     <div class="intro-actions">
-      <button type="button" class="btn btn-ghost" id="btn-food-back">이전</button>
-      <button type="button" class="btn btn-primary" id="btn-food-next">다음</button>
+      <button type="button" class="btn btn-ghost" id="btn-ask-back">이전</button>
+      <button type="button" class="btn btn-primary" id="btn-ask-next">다음</button>
     </div>
   </section>
 
@@ -202,9 +201,9 @@
   </div>
 </div>
 
-<script src="js/storage.js?v=2.0"></script>
-<script src="js/story.js?v=2.0"></script>
-<script src="js/drawing.js?v=2.0"></script>
-<script src="js/main.js?v=2.0"></script>
+<script src="js/storage.js?v=2.1"></script>
+<script src="js/story.js?v=2.1"></script>
+<script src="js/drawing.js?v=2.1"></script>
+<script src="js/main.js?v=2.1"></script>
 </body>
 </html>

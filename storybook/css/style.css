@@ -877,12 +877,12 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .brand { font-size: 1.1rem; }
   .act-label { font-size: 0.72rem; }
 
-  .story { font-size: 5.6cqh; line-height: 1.55; }
+  .story { font-size: 5.4cqh; line-height: 1.5; }
   .pg--dense .story { font-size: 4.9cqh; line-height: 1.45; }
   .pg--dense { gap: 2cqh; }
   .story--sm { font-size: 5cqh; }
   .story--q { font-size: 5.2cqh; }
-  .story.is-coda { font-size: 5.8cqh; }
+  .story.is-coda { font-size: 5.3cqh; line-height: 1.4; }
   .eyebrow { font-size: max(9px, 3.3cqh); }
   .hint, .counter { font-size: max(9.5px, 3.1cqh); }
   .field label { font-size: max(9.5px, 3.3cqh); }
@@ -893,8 +893,9 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .grid--food { gap: 2cqh; }
   .grid--taste .tile-label { font-size: 4.3cqh; }
 
-  .recap h2 { font-size: 5.4cqh; }
-  .recap-row { padding: 2cqh 0; }
+  .recap h2 { font-size: 5cqh; }
+  .recap-row { padding: 1.5cqh 0; }
+  .recap .pg-text, .pg-text.recap { gap: 1.6cqh; }
   .recap-row dt, .link-btn { font-size: max(9.5px, 3.1cqh); }
   .recap-row dd { font-size: max(10.5px, 4cqh); }
   .pg .btn-small { min-height: 34px; font-size: 12.5px; }
@@ -922,8 +923,8 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .choice-grid .tile-emoji { font-size: clamp(1.8rem, 6vw, 2.6rem); transform: translateY(-8px); }
 .choice-grid .tile-label { font-size: clamp(0.72rem, 1.9vw, 0.95rem); line-height: 1.2; padding: 14px 6px 6px; }
 .choice-grid .check { top: 6px; right: 6px; width: 22px; height: 22px; }
-#btn-food-next[data-blocked] { background: var(--night-3); color: var(--soft); box-shadow: none; }
-#food-choice .intro-actions .btn { flex: 1; }
+#btn-ask-next[data-blocked] { background: var(--night-3); color: var(--soft); box-shadow: none; }
+#ask .intro-actions .btn { flex: 1; }
 @media (max-width: 600px) and (orientation: portrait) {
   .choice-card { padding: 16px 12px 14px; gap: 10px; }
   .choice-grid { gap: 6px; }
@@ -931,15 +932,15 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .choice-grid .tile-label { padding: 12px 4px 4px; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
-  #food-choice { flex-direction: column; flex-wrap: nowrap; gap: 8px; }
-  #food-choice .intro-actions { flex-direction: row; width: min(100%, 460px); }
+  #ask { flex-direction: column; flex-wrap: nowrap; gap: 8px; }
+  #ask .intro-actions { flex-direction: row; width: min(100%, 460px); }
   .choice-card { padding: 10px 14px; gap: 6px; }
   .choice-text .story { font-size: 0.9rem; line-height: 1.4; }
   .choice-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
   .choice-grid .tile-art { aspect-ratio: 1; }
   .choice-grid .tile-label { font-size: 0.66rem; }
-  #food-choice-note { display: none; }
-  #food-choice .intro-actions .btn { min-height: 40px; }
+  #ask-note { display: none; }
+  #ask .intro-actions .btn { min-height: 40px; }
 }
 
 /* #9 오른쪽 쪽: 질문 + 맛 카드 세 장을 한 쪽에 */
@@ -1013,3 +1014,45 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .c-nav--prev { left: 0; }
 .c-nav--next { right: 0; }
 @media (hover: hover) { .c-nav:hover { border-color: var(--soup); } }
+
+/* ---------- 묻는 화면 공용 ---------- */
+.ask-body { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.ask-body > * { width: 100%; }
+#ask .choice-text .story { text-wrap: balance; word-break: keep-all; }
+/* 착한 일: 책 밖 화면이라 화면 기준 크기 */
+.ask-deed { display: flex; flex-direction: column; gap: 10px; max-width: 520px; }
+.ask-body .input { font-size: 16px; padding: 12px 14px; border-radius: 14px; line-height: 1.5; min-height: 84px; }
+.ask-body .counter, .ask-body .hint { font-size: 0.82rem; }
+.ask-body .chips { gap: 8px; margin: 0; padding: 2px 0; flex-wrap: wrap; justify-content: center; overflow: visible; }
+.ask-body .chip { font-size: 0.88rem; padding: 7px 12px; }
+.ask-body .field { gap: 6px; }
+
+/* 맛: 회전 카드를 화면 크기에 맞춘 상자 안에 (상자 크기 기준 cqw·cqh) */
+.ask-carousel { container-type: size; width: 100%; height: clamp(200px, 40vh, 340px); }
+.ask-carousel .carousel { position: absolute; inset: 0; min-height: 0; }
+.ask-carousel .carousel-stage { perspective: 900px; }
+.ask-carousel .c-card {
+  left: 50%;
+  top: 50%;
+  margin: 0;
+  width: min(34cqw, 66cqh);
+  height: min(46cqw, 92cqh);
+  padding: 3cqh 2cqw;
+  gap: 2cqh;
+  border-width: 3px;
+  border-radius: min(4cqw, 7cqh);
+}
+.ask-carousel .c-card[data-pos="0"] { transform: translate(-50%, -50%); }
+.ask-carousel .c-card[data-pos="-1"] { transform: translate(-50%, -50%) translateX(-30cqw) translateZ(-60px) rotateY(32deg) scale(0.86); }
+.ask-carousel .c-card[data-pos="1"] { transform: translate(-50%, -50%) translateX(30cqw) translateZ(-60px) rotateY(-32deg) scale(0.86); }
+.ask-carousel .c-art { width: 62%; }
+.ask-carousel .c-emoji { font-size: min(9cqw, 18cqh); }
+.ask-carousel .c-label { font-size: clamp(11px, min(3.2cqw, 6cqh), 18px); }
+.ask-carousel .c-card .check { width: 24px; height: 24px; top: 8px; right: 8px; }
+.ask-carousel .c-nav { width: 40px; height: 40px; margin-top: -20px; font-size: 24px; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .ask-carousel { height: clamp(150px, 46vh, 220px); }
+  .ask-body .input { min-height: 52px; padding: 8px 12px; }
+  .ask-deed { gap: 6px; }
+  .ask-body .chip { padding: 5px 10px; font-size: 0.8rem; }
+}
