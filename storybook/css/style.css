@@ -782,6 +782,7 @@ textarea.input { resize: none; }
   box-shadow: var(--shadow);
   transform: translateX(-50%);
   animation: toast-in 0.3s var(--ease-out);
+  pointer-events: none; /* 안내가 떠 있어도 아래 버튼을 누를 수 있게 */
 }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translateX(-50%); } }
 
@@ -953,7 +954,9 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* ---------- 맛 고르기 회전 카드 (#9 16쪽) ----------
    가운데 카드가 앞에, 좌우 카드가 살짝 뒤로 비스듬히. 위치가 바뀔 때 원을 그리듯 미끄러진다 */
 .carousel { position: relative; flex: 1; min-height: 54cqh; touch-action: pan-y; }
-.carousel-stage { position: absolute; inset: 0; perspective: 120cqh; transform-style: preserve-3d; }
+.carousel-stage { position: absolute; inset: 0; perspective: 120cqh; transform-style: preserve-3d; pointer-events: none; }
+/* 3D 무대는 터치를 받지 않고 카드만 받는다 (무대가 카드 앞에 놓여 터치를 가로채지 않게) */
+.carousel-stage .c-card { pointer-events: auto; }
 .c-card {
   position: absolute;
   left: 50%;
@@ -1028,7 +1031,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .ask-body .field { gap: 6px; }
 
 /* 맛: 회전 카드를 화면 크기에 맞춘 상자 안에 (상자 크기 기준 cqw·cqh) */
-.ask-carousel { container-type: size; width: 100%; height: clamp(200px, 40vh, 340px); }
+.ask-carousel { position: relative; container-type: size; width: 100%; height: clamp(200px, 40vh, 340px); }
 .ask-carousel .carousel { position: absolute; inset: 0; min-height: 0; }
 .ask-carousel .carousel-stage { perspective: 900px; }
 .ask-carousel .c-card {
