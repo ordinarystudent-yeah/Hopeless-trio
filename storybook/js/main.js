@@ -264,7 +264,7 @@
         class: 'page page--' + (pi ? 'right' : 'left'),
         'aria-label': (pi ? '오른쪽' : '왼쪽') + ' 쪽'
       });
-      var pg = el('div', { class: 'pg', 'data-place': p.place || 'top' });
+      var pg = el('div', { class: 'pg' + (p.tight ? ' pg--tight' : ''), 'data-place': p.place || 'top' });
       if (p.image) {
         var pimg = new Image();
         pimg.alt = '';

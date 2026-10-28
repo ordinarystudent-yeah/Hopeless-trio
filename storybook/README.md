@@ -62,7 +62,7 @@ storybook/
 | 5 | 9–10 | #6 착한 일 | `assets/backgrounds/06-fairy-praise.jpg` | 스케치 | 왼쪽 큰 구름(말풍선) 안, 오른쪽 위(입력) |
 | 6 | 11–12 | #7 음식 받기 | `assets/backgrounds/07-fairies-serve.jpg` | 아직 없음 | 오른쪽 위 (왼쪽에 착한 일 종이) |
 | 7 | 13–14 | #8 별빛스프 | `assets/backgrounds/08-starlight-soup.jpg` | 아직 없음 | 오른쪽 위 |
-| 8 | 15–16 | #9 맛 고르기 | `assets/backgrounds/09-taste.jpg` | 스케치 (왼쪽) | 왼쪽 위(글), 오른쪽(맛 카드) |
+| 8 | 15–16 | #9 맛 고르기 | `assets/backgrounds/09-taste.jpg` | 스케치 (왼쪽) | 왼쪽은 삽화만, 오른쪽(16쪽)에 질문과 맛 카드 |
 | 9 | 17–18 | #10 엔딩 | `assets/backgrounds/10-wake-up.jpg` | 왼쪽 채색 완료 | 왼쪽 위(글), 오른쪽(나의 기록) |
 
 - 콘티의 #2와 #3은 펼침면 한 장(3–4쪽)입니다. 그래서 책은 모두 9개 펼침면, 18쪽입니다.

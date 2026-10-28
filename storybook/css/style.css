@@ -941,3 +941,10 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   #food-choice-note { display: none; }
   #food-choice .intro-actions .btn { min-height: 40px; }
 }
+
+/* #9 오른쪽 쪽: 질문 + 맛 카드 세 장을 한 쪽에 */
+.pg--tight { gap: 2.4cqh; padding-top: 6cqh; padding-bottom: 8cqh; }
+.pg--tight .pg-text.is-panel { padding: 2.6cqh 4cqh; gap: 1cqh; }
+.pg--tight .grid--taste { gap: 2cqh; }
+.pg--tight .grid--taste .tile-art { width: 18cqh; }
+.pg--tight .grid--taste .tile-label { font-size: 4.3cqh; }

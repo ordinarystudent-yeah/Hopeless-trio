@@ -95,6 +95,7 @@
        text     true면 장면 본문(text)을 놓고, 함수면 이 쪽만의 본문 (#2·3처럼 한 펼침면에 두 장면일 때)
        no       글 위에 붙는 장면 번호 (없으면 장면의 no)
        ink      'dark'면 삽화가 들어왔을 때 글 상자 없이 진한 글씨로 그림 위에 쓴다 (말풍선·밝은 여백용)
+       tight    글과 카드를 한 쪽에 촘촘히 담는다 (#9 오른쪽 쪽)
        nameplate 그림 속 이름표 자리 {x, y, w, h, r} (이 쪽 기준 비율). 여기에 바로 이름을 입력한다
        place    본문 세로 위치 top | center | bottom
        widgets  이 쪽에 놓을 입력 도구 (food-result, deed, deed-hint, taste, recap)
@@ -190,7 +191,8 @@
     {
       id: 'taste', act: 3, tone: 'gold', no: '9',
       image: 'assets/backgrounds/09-taste.jpg', alt: '별빛스프의 맛이 소용돌이처럼 퍼지는 순간',
-      pages: [{ text: true, place: 'top', art: 'soup', artPos: 'bottom' }, { widgets: ['taste'], art: 'starsky', faint: true }],
+      // 왼쪽 쪽은 삽화만, 오른쪽 쪽(16쪽)에 질문과 맛 고르기 카드
+      pages: [{ art: 'soup' }, { text: true, place: 'top', widgets: ['taste'], tight: true, art: 'starsky', faint: true }],
       require: 'taste', requirePage: 1,
       requireMessage: '스프에서 어떤 맛이 났는지 하나 골라 주세요.',
       nextLabel: '잠에서 깨기',
@@ -310,7 +312,7 @@
   };
 
   window.StarSoup = {
-    version: '1.8',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '1.9',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
