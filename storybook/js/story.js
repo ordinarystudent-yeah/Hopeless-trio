@@ -135,9 +135,9 @@
     },
     {
       id: 'fairies', act: 1, tone: 'fairy', no: '5',
-      image: 'assets/backgrounds/05-fairies-arrive.jpg', alt: '뚜껑 덮인 특별한 음식을 들고 오는 요정들',
-      // 왼쪽 쪽의 큰 구름(말풍선) 안에 글이 들어간다
-      pages: [{ text: true, place: 'center', ink: 'dark', art: 'bubble', artPos: 'bottom' }, { art: 'cloche' }],
+      image: 'assets/backgrounds/05-fairies-arrive.jpg', alt: '뚜껑 덮인 음식을 트레이에 끌고 오는 요정과 그 모습을 바라보는 주인공',
+      // 왼쪽 쪽: 위에 트레이를 끌고 오는 요정, 그 아래 빈 자리에 글 / 오른쪽 쪽: 다 먹은 식탁에서 요정을 보는 주인공
+      pages: [{ text: true, place: 'center', ink: 'dark', art: 'fairies', artPos: 'top' }, { art: 'cloche' }],
       text: function () {
         return [
           ['그렇게 음식을 먹다 보니 요정들이 무언가 음식을 가져오네요.'],
@@ -147,8 +147,9 @@
     },
     {
       id: 'deed', act: 2, tone: 'fairy', no: '6',
-      image: 'assets/backgrounds/06-fairy-praise.jpg', alt: '아이들의 착한 일을 하나하나 말해 주는 요정',
-      pages: [{ text: true, place: 'top', art: 'fairies', artPos: 'bottom' }, { widgets: ['deed'], art: 'starsky', faint: true }],
+      image: 'assets/backgrounds/06-fairy-praise.jpg', alt: '요정의 큰 말풍선과 별이 담긴 그릇',
+      // 왼쪽 쪽의 큰 구름(말풍선) 안에 요정이 하는 말이 들어간다 / 오른쪽 쪽 위에 착한 일 입력
+      pages: [{ text: true, place: 'center', ink: 'dark', art: 'bubble', artPos: 'bottom' }, { widgets: ['deed'], place: 'top', art: 'starsky', faint: true }],
       text: function (c) {
         return [
           ['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.'],
@@ -188,7 +189,7 @@
     },
     {
       id: 'taste', act: 3, tone: 'gold', no: '9',
-      image: 'assets/backgrounds/09-taste.jpg', alt: '별빛스프를 맛보는 순간',
+      image: 'assets/backgrounds/09-taste.jpg', alt: '별빛스프의 맛이 소용돌이처럼 퍼지는 순간',
       pages: [{ text: true, place: 'top', art: 'soup', artPos: 'bottom' }, { widgets: ['taste'], art: 'starsky', faint: true }],
       require: 'taste', requirePage: 1,
       requireMessage: '스프에서 어떤 맛이 났는지 하나 골라 주세요.',
@@ -309,7 +310,7 @@
   };
 
   window.StarSoup = {
-    version: '1.7',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '1.8',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

@@ -58,11 +58,11 @@ storybook/
 | 1 | 1–2 | #1 도입 | `assets/backgrounds/01-night.jpg` | 채색 완료 | 오른쪽 가운데 |
 | 2 | 3–4 | #2 식탁 + #3 이름표 | `assets/backgrounds/02-03-dream-table.jpg` | 채색 완료 | 왼쪽 아래(#2), 오른쪽 위 흰 여백(#3). 이름은 그림 속 이름표에 바로 씀 |
 | 3 | 5–6 | #4 음식 | `assets/backgrounds/04-food-choice.jpg` | 스케치 | 왼쪽 위(글, 5쪽에 음식 스티커), 오른쪽 위(고른 음식 설명) |
-| 4 | 7–8 | #5 요정의 등장 | `assets/backgrounds/05-fairies-arrive.jpg` | 스케치 | 왼쪽 큰 구름(말풍선) 안 |
-| 5 | 9–10 | #6 착한 일 | `assets/backgrounds/06-fairy-praise.jpg` | 스케치 | 왼쪽 위(글), 오른쪽(입력) |
+| 4 | 7–8 | #5 요정의 등장 | `assets/backgrounds/05-fairies-arrive.jpg` | 스케치 | 왼쪽 가운데 빈 자리(요정 아래) |
+| 5 | 9–10 | #6 착한 일 | `assets/backgrounds/06-fairy-praise.jpg` | 스케치 | 왼쪽 큰 구름(말풍선) 안, 오른쪽 위(입력) |
 | 6 | 11–12 | #7 음식 받기 | `assets/backgrounds/07-fairies-serve.jpg` | 아직 없음 | 오른쪽 위 (왼쪽에 착한 일 종이) |
 | 7 | 13–14 | #8 별빛스프 | `assets/backgrounds/08-starlight-soup.jpg` | 아직 없음 | 오른쪽 위 |
-| 8 | 15–16 | #9 맛 고르기 | `assets/backgrounds/09-taste.jpg` | 아직 없음 | 왼쪽(글), 오른쪽(카드) |
+| 8 | 15–16 | #9 맛 고르기 | `assets/backgrounds/09-taste.jpg` | 스케치 (왼쪽) | 왼쪽 위(글), 오른쪽(맛 카드) |
 | 9 | 17–18 | #10 엔딩 | `assets/backgrounds/10-wake-up.jpg` | 왼쪽 채색 완료 | 왼쪽 위(글), 오른쪽(나의 기록) |
 
 - 콘티의 #2와 #3은 펼침면 한 장(3–4쪽)입니다. 그래서 책은 모두 9개 펼침면, 18쪽입니다.
