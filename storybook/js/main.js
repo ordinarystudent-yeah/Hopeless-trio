@@ -1161,7 +1161,7 @@
   function askScene(id) { return sceneIndex(ASK[id].scene || id); }
   function askList(id) { return S.scenes[askScene(id)].asks || [id]; }
 
-  // 오늘의 날씨를 직접 그린다 → 그 그림이 #1 가장 위층에 떠다닌다
+  // 오늘의 날씨를 직접 그린다 → 그 그림이 #1 가장 위층에 그대로 놓인다 (움직이지 않음)
   function drawWeather() {
     window.StarSoupEditor.open({
       title: '오늘의 날씨 그리기', image: images[IMG_WEATHER], askName: true, name: state.customWeatherName,

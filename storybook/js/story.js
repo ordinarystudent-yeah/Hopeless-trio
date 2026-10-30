@@ -340,7 +340,7 @@
       sky: 'linear-gradient(180deg, #0b1030 0%, #1d2452 60%, #2d2f6c 100%)' }
   ];
 
-  // 날씨: #1의 가장 위층에 움직이는 효과(js/weather.js). 직접 그리기를 고르면 그린 그림이 그 층에 떠다닌다.
+  // 날씨: #1의 가장 위층에 움직이는 효과(js/weather.js). 직접 그리기를 고르면 그린 그림이 그 층에 그대로 놓인다(움직이지 않음).
   var weathers = [
     { id: 'sunny', label: '화창한 날', day: '화창한', emoji: '☀️', glow: '#d9a23a', feel: '맑고 청명한 기분이 들었어요.' },
     { id: 'rain', label: '비 오는 날', day: '비가 내리는', emoji: '🌧️', glow: '#4a6f9a', feel: '톡톡 떨어지는 빗소리에 마음이 차분해졌어요.' },
@@ -377,7 +377,7 @@
   };
 
   window.StarSoup = {
-    version: '2.4',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '2.5',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
