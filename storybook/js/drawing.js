@@ -1,5 +1,5 @@
 /* 별빛스프 — 그림 편집기
-   StarSoupEditor.open({ title, image, askName, name }) → Promise<{ image, name } | null>
+   StarSoupEditor.open({ title, image, askName, name, nameLabel, namePlaceholder }) → Promise<{ image, name } | null>
    - image: 이어서 그릴 기존 그림 (data URL)
    꾸미기 모드: open({ title, base, memo: { text, x, y }, doneLabel })
      → Promise<{ image, base, memo } | null>
@@ -129,6 +129,8 @@
     root.classList.toggle('is-decorate', !!opts.memo);
     setMemo(opts.memo || null);
     $('ed-name-field').hidden = !opts.askName;
+    $('ed-name-field').querySelector('label').textContent = opts.nameLabel || '무슨 음식인가요? (안 써도 돼요)';
+    nameInput.placeholder = opts.namePlaceholder || '음식 이름 (안 써도 돼요)';
     nameInput.value = opts.name || '';
     g.clearRect(0, 0, SIZE, SIZE);
     undo = [];

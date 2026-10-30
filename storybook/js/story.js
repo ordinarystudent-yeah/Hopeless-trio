@@ -98,17 +98,25 @@
        nameplate 그림 속 이름표 자리 {x, y, w, h, r} (이 쪽 기준 비율). 여기에 바로 이름을 입력한다
        place    본문 세로 위치 top | center | bottom
        widgets  이 쪽에 놓을 것 (food-result, deed-hint, recap)
-     ask         이 장면 앞에 따로 묻는 화면 food | deed | taste (입력 도구가 그림을 가리지 않게)
+     asks        이 장면 앞에 차례로 묻는 화면들 time | weather | food | deed | taste (입력 도구가 그림을 가리지 않게)
+     sky         true면 가장 아래층에 고른 때의 하늘색을 깐다 (#1)
+     weatherFx   true면 가장 위층에 고른 날씨의 움직이는 효과를 얹는다 (#1)
      question    묻는 화면에 나오는 질문 (#6)
      require     다음 장면으로 가기 전에 꼭 골라야 하는 값
      requirePage 그 값을 고르는 쪽 (휴대폰에서 한 쪽씩 넘길 때 이 쪽을 떠나기 전에 확인) */
   var scenes = [
     {
-      id: 'intro', act: 0, tone: 'night', no: '1',
-      image: 'assets/backgrounds/01-night.jpg', alt: '모두가 잠든 밤, 달과 별이 걸린 마을',
-      pages: [{ art: 'moon' }, { text: true, place: 'center', art: 'starsky', artPos: 'bottom' }],
+      // #1 앞에서 '때'와 '날씨'를 묻는다. 층 순서: 위) 날씨 효과 / 중간) 삽화 / 아래) 하늘색
+      // 삽화는 하늘 부분을 뚫어서(투명하게) 다시 넣을 예정이라 지금은 뺀다.
+      //   예) image: 'assets/backgrounds/01-window.png'  (하늘이 투명한 PNG)
+      id: 'intro', act: 0, tone: 'night', no: '1', asks: ['time', 'weather'], sky: true, weatherFx: true,
+      image: null, alt: '창문 밖 하늘',
+      pages: [
+        { text: function (c) { return introOpening(c); }, place: 'top' },
+        { text: function (c) { return introSky(c); }, place: 'bottom' }
+      ],
       nextLabel: '꿈속으로 들어가기',
-      text: function () { return [['모두가 잠이 든 밤.\n아이들의 꿈속에는 특별한 일이 일어나고 있어요.']]; }
+      text: function () { return []; }
     },
     {
       // 콘티의 #2와 #3은 펼침면 한 장: 왼쪽 쪽 #2(식탁), 오른쪽 쪽 #3(이름표)
@@ -126,7 +134,7 @@
       nextLabel: function (c) { return c.hasName ? '이 이름으로 앉기' : '이름 없이 앉기'; }
     },
     {
-      id: 'food', act: 1, tone: 'table', no: '4', ask: 'food',
+      id: 'food', act: 1, tone: 'table', no: '4', asks: ['food'],
       image: 'assets/backgrounds/04-food-choice.jpg', alt: '맛있는 음식이 잔뜩 놓인 식탁에 앉은 주인공',
       // 음식 카드는 이 펼침면 앞의 '음식 고르기' 화면에서 고른다 (그림을 가리지 않게).
       // 이 펼침면에는 글과 고른 음식의 설명, 그리고 첫 쪽(5쪽)에 붙는 음식 스티커만 있다.
@@ -147,7 +155,7 @@
       }
     },
     {
-      id: 'deed', act: 2, tone: 'fairy', no: '6', ask: 'deed',
+      id: 'deed', act: 2, tone: 'fairy', no: '6', asks: ['deed'],
       image: 'assets/backgrounds/06-fairy-praise.jpg', alt: '요정의 큰 말풍선과 별이 담긴 그릇',
       // 착한 일은 이 펼침면 앞의 묻는 화면에서 적는다 (입력칸이 그림을 가리지 않게).
       // 왼쪽 쪽의 큰 구름(말풍선) 안에 요정이 하는 말 / 오른쪽 쪽은 삽화만
@@ -190,7 +198,7 @@
       }
     },
     {
-      id: 'taste', act: 3, tone: 'gold', no: '9', ask: 'taste',
+      id: 'taste', act: 3, tone: 'gold', no: '9', asks: ['taste'],
       image: 'assets/backgrounds/09-taste.jpg', alt: '별빛스프의 맛이 소용돌이처럼 퍼지는 순간',
       // '무슨 맛이 났나요?'는 이 펼침면 앞의 묻는 화면에서 회전 카드로 고른다.
       // 왼쪽 쪽은 삽화, 오른쪽 쪽(16쪽)에는 고른 맛에 맞춘 그림(assets/backgrounds/09-taste-<맛>.jpg)과 그 맛의 이름
@@ -312,6 +320,54 @@
       stars([[180, 70, 4], [120, 24, 3]], '#fff3cf') + '</svg>'
   };
 
+  /* ---------- #1 앞: 때와 날씨 ----------
+     때는 그날의 기분에 빗댄다. sky는 #1의 가장 아래층에 깔리는 하늘색. */
+  var times = [
+    { id: 'dawn', label: '어스름한 새벽', word: '새벽', mood: '아직 잠이 덜 깬 기분',
+      say: '어스름한 새벽이에요.', after: '집들이 하나 둘 깨기 시작했지만, 역시 아직 자고 싶어요.',
+      sky: 'linear-gradient(180deg, #232a66 0%, #6d5fa6 55%, #e9a4a0 100%)' },
+    { id: 'morning', label: '밝은 아침', word: '아침', mood: '막 눈을 뜬 상쾌한 기분',
+      say: '밝은 아침이에요.', after: '밝은 아침에도 아직 피곤해요... 더 자고 싶은 당신은 꾸벅꾸벅 눈이 감겨요.',
+      sky: 'linear-gradient(180deg, #8cc6f0 0%, #cfe7f6 55%, #fde6c4 100%)' },
+    { id: 'day', label: '환한 낮', word: '낮', mood: '햇살처럼 들뜬 기분',
+      say: '환한 낮이에요.', after: '낮이지만, 꿈뻑꿈뻑 졸려요.',
+      sky: 'linear-gradient(180deg, #3b8de0 0%, #7cc0f2 55%, #cdeafb 100%)' },
+    { id: 'evening', label: '노을이 진 저녁', word: '저녁', mood: '노곤노곤 지친 기분',
+      say: '노을이 진 저녁이네요.', after: '잠을 자기에는 이르지만, 노곤노곤 몸이 피곤해지는 시간이에요.',
+      sky: 'linear-gradient(180deg, #3a2f6b 0%, #b85c7c 55%, #f6a65a 100%)' },
+    { id: 'night', label: '깜깜한 밤', word: '밤', mood: '고요하고 졸린 기분',
+      say: '깜깜한 밤이에요.', pre: '모두가 잠이 든 시간이에요.', after: '불 꺼진 밖을 보니 저절로 잠이 와요.',
+      sky: 'linear-gradient(180deg, #0b1030 0%, #1d2452 60%, #2d2f6c 100%)' }
+  ];
+
+  // 날씨: #1의 가장 위층에 움직이는 효과(js/weather.js). 직접 그리기를 고르면 그린 그림이 그 층에 떠다닌다.
+  var weathers = [
+    { id: 'sunny', label: '화창한 날', day: '화창한', emoji: '☀️', glow: '#d9a23a', feel: '맑고 청명한 기분이 들었어요.' },
+    { id: 'rain', label: '비 오는 날', day: '비가 내리는', emoji: '🌧️', glow: '#4a6f9a', feel: '톡톡 떨어지는 빗소리에 마음이 차분해졌어요.' },
+    { id: 'snow', label: '눈 오는 날', day: '눈이 내리는', emoji: '❄️', glow: '#8aa6c8', feel: '소복소복 내리는 눈에 마음이 포근해졌어요.' },
+    { id: 'cloudy', label: '흐린 날', day: '흐린', emoji: '☁️', glow: '#6b7390', feel: '구름이 잔뜩 낀 하늘처럼 마음이 몽글몽글했어요.' }
+  ];
+  var customWeather = { label: '직접 그리기', day: '특별한', feel: '내가 그린 하늘처럼 특별한 기분이 들었어요.' };
+
+  // #1 왼쪽 쪽: (선택한 하루)를 보내고 창문을 여니 하늘이…
+  function introOpening(c) {
+    var w = c.weather;
+    return [w ? [{ v: w.day }, ' 하루를 보내고 창문을 여니 하늘이…'] : ['하루를 보내고 창문을 여니 하늘이…']];
+  }
+  // #1 오른쪽 쪽: 때 문장 + 날씨 문장 + 잠이 들었던 (선택한 시간)…
+  function introSky(c) {
+    var t = c.time, w = c.weather;
+    var first = [];
+    if (t) first.push({ v: t.say });
+    if (t && t.pre) first.push(' ' + t.pre);
+    if (w) first.push((first.length ? ' ' : '') + w.feel);
+    if (t) first.push(' ' + t.after);
+    var out = [];
+    if (first.length) out.push(first);
+    out.push(t ? ['잠이 들었던 ', { v: t.word }, '. 당신의 꿈속에는 특별한 일이 일어나고 있어요.'] : ['모두가 잠이 든 밤. 당신의 꿈속에는 특별한 일이 일어나고 있어요.']);
+    return out;
+  }
+
   /* ---------- 표지 ---------- */
   var cover = {
     image: 'assets/backgrounds/00-cover.png',   // 표지 그림 (가로 A4, 297:210)
@@ -321,18 +377,21 @@
   };
 
   window.StarSoup = {
-    version: '2.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '2.3',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
     tastes: tastes,
+    times: times,
+    weathers: weathers,
+    customWeather: customWeather,
     scenes: scenes,
     deedExamples: deedExamples,
     stickerSpots: stickerSpots,
     customFood: { label: '직접 그리기', fallbackName: '내가 그린 음식' },
     motifs: motifs,
     josa: josa,
-    limits: { name: 12, deed: 80, foodName: 12 },
+    limits: { name: 12, deed: 80, foodName: 12, weatherName: 12 },
     // 삽화 자리에 "어떤 파일을 넣으면 되는지" 경로를 표시한다. 실제 삽화를 다 넣은 뒤에는 false로 바꾼다.
     showAssetNotes: true
   };
