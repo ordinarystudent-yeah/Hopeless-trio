@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
-<link rel="stylesheet" href="css/style.css?v=2.5">
-<link rel="stylesheet" href="css/editor.css?v=2.5">
+<link rel="stylesheet" href="css/style.css?v=2.6">
+<link rel="stylesheet" href="css/editor.css?v=2.6">
 </head>
 <body>
 <div class="app" id="app" data-screen="cover">
@@ -189,6 +189,13 @@
   </div>
 </div>
 
+<!-- 아이패드를 세로로 들었을 때: 가로로 돌려 달라는 안내 -->
+<div class="rotate-hint" aria-live="polite">
+  <svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true"><rect x="14" y="6" width="36" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8 40a24 24 0 0 0 24 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M28 54l4 4-4 4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <p>아이패드를 가로로 돌려 주세요</p>
+  <span>별빛스프는 펼친 책처럼 가로 화면에서 봐요.</span>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <div class="modal" id="modal" hidden>
@@ -202,10 +209,10 @@
   </div>
 </div>
 
-<script src="js/storage.js?v=2.5"></script>
-<script src="js/story.js?v=2.5"></script>
-<script src="js/drawing.js?v=2.5"></script>
-<script src="js/weather.js?v=2.5"></script>
-<script src="js/main.js?v=2.5"></script>
+<script src="js/storage.js?v=2.6"></script>
+<script src="js/story.js?v=2.6"></script>
+<script src="js/drawing.js?v=2.6"></script>
+<script src="js/weather.js?v=2.6"></script>
+<script src="js/main.js?v=2.6"></script>
 </body>
 </html>

@@ -216,16 +216,26 @@
       hint: '옆으로 넘겨 보고, 가운데 카드를 눌러 골라요.'
     },
     {
+      // #10 ① 잠에서 깬다
       id: 'ending', act: 3, tone: 'dawn', no: '10',
       image: 'assets/backgrounds/10-wake-up.jpg', alt: '아침에 잠에서 깬 아이의 방',
-      pages: [{ text: true, place: 'top', art: 'dawn', artPos: 'bottom' }, { widgets: ['recap'], art: 'starsky', faint: true }],
+      pages: [{ text: true, place: 'top', art: 'dawn', artPos: 'bottom' }, { art: 'starsky', faint: true }],
       text: function (c) {
         var taste = c.taste ? [{ v: c.taste.label }, josa(c.taste.label, '이/가')] : ['별빛스프의 맛이'];
         return [
-          you(c, '은/는').concat([' 우물거리며 잠에서 깼어요.\n']).concat(you(c), ['의 입 안에는 아직 ']).concat(taste, [' 느껴지는 것 같아요.']),
-          { coda: true, parts: ['오늘도, 먹을 수 있을까요?\n착한 아이에게 주는 별빛 스프를!'] }
+          you(c, '은/는').concat([' 우물거리며 잠에서 깼어요.\n']).concat(you(c), ['의 입 안에는 아직 ']).concat(taste, [' 느껴지는 것 같아요.'])
         ];
       }
+    },
+    {
+      // #10 ② 앞에서 다시 날씨를 묻고, 창 밖을 본다. 하늘은 화창한 아침으로 고정, 위층에 방금 고른 날씨.
+      id: 'window', act: 3, tone: 'dawn', no: '10', asks: ['wake'], sky: 'morning', weatherFx: 'wake',
+      image: null, alt: '창 밖 아침 하늘',
+      pages: [
+        { text: function (c) { return windowText(c); }, place: 'top' },
+        { widgets: ['recap'] }
+      ],
+      text: function () { return []; }
     }
   ];
 
@@ -342,12 +352,12 @@
 
   // 날씨: #1의 가장 위층에 움직이는 효과(js/weather.js). 직접 그리기를 고르면 그린 그림이 그 층에 그대로 놓인다(움직이지 않음).
   var weathers = [
-    { id: 'sunny', label: '화창한 날', day: '화창한', emoji: '☀️', glow: '#d9a23a', feel: '맑고 청명한 기분이 들었어요.' },
-    { id: 'rain', label: '비 오는 날', day: '비가 내리는', emoji: '🌧️', glow: '#4a6f9a', feel: '톡톡 떨어지는 빗소리에 마음이 차분해졌어요.' },
-    { id: 'snow', label: '눈 오는 날', day: '눈이 내리는', emoji: '❄️', glow: '#8aa6c8', feel: '소복소복 내리는 눈에 마음이 포근해졌어요.' },
-    { id: 'cloudy', label: '흐린 날', day: '흐린', emoji: '☁️', glow: '#6b7390', feel: '구름이 잔뜩 낀 하늘처럼 마음이 몽글몽글했어요.' }
+    { id: 'sunny', label: '화창한 날', day: '화창한', emoji: '☀️', glow: '#d9a23a', feel: '맑고 청명한 기분이 들었어요.', seen: '맑은 햇살이 반짝반짝 쏟아지고 있었어요.' },
+    { id: 'rain', label: '비 오는 날', day: '비가 내리는', emoji: '🌧️', glow: '#4a6f9a', feel: '톡톡 떨어지는 빗소리에 마음이 차분해졌어요.', seen: '보슬보슬 비가 내리고 있었어요.' },
+    { id: 'snow', label: '눈 오는 날', day: '눈이 내리는', emoji: '❄️', glow: '#8aa6c8', feel: '소복소복 내리는 눈에 마음이 포근해졌어요.', seen: '하얀 눈이 소복소복 내리고 있었어요.' },
+    { id: 'cloudy', label: '흐린 날', day: '흐린', emoji: '☁️', glow: '#6b7390', feel: '구름이 잔뜩 낀 하늘처럼 마음이 몽글몽글했어요.', seen: '몽실몽실 구름이 하늘을 덮고 있었어요.' }
   ];
-  var customWeather = { label: '직접 그리기', day: '특별한', feel: '내가 그린 하늘처럼 특별한 기분이 들었어요.' };
+  var customWeather = { label: '직접 그리기', day: '특별한', feel: '내가 그린 하늘처럼 특별한 기분이 들었어요.', seen: '내가 그린 하늘이 펼쳐져 있었어요.' };
 
   // #1 왼쪽 쪽: (선택한 하루)를 보내고 창문을 여니 하늘이…
   function introOpening(c) {
@@ -368,6 +378,15 @@
     return out;
   }
 
+  // #10 ②: 창 밖을 봤어요 + 그 날씨 + 오늘도, 먹을 수 있을까요?
+  function windowText(c) {
+    var w = c.wakeWeather;
+    return [
+      ['창 밖을 봤어요.'].concat(w ? [' ', { v: w.seen }] : []),
+      { coda: true, parts: ['오늘도, 먹을 수 있을까요?\n착한 아이에게 주는 별빛 스프를!'] }
+    ];
+  }
+
   /* ---------- 표지 ---------- */
   var cover = {
     image: 'assets/backgrounds/00-cover.png',   // 표지 그림 (가로 A4, 297:210)
@@ -377,7 +396,7 @@
   };
 
   window.StarSoup = {
-    version: '2.5',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '2.6',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

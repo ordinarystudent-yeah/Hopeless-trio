@@ -1097,3 +1097,48 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 @media (max-width: 600px) and (orientation: portrait) {
   .choice-grid--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* ---------- 아이패드: 가로 고정 ----------
+   웹페이지는 화면 방향을 잠글 수 없어서, 세로로 들면 돌려 달라는 안내로 덮는다 */
+.rotate-hint { display: none; }
+@media (orientation: portrait) {
+  .is-tablet .rotate-hint {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 24px;
+    background: var(--night);
+    color: var(--soup);
+    text-align: center;
+  }
+  .is-tablet .rotate-hint svg { animation: rotate-nudge 2.4s ease-in-out infinite; }
+  .is-tablet .rotate-hint p { margin: 0; font-family: var(--font-display); font-size: 1.6rem; }
+  .is-tablet .rotate-hint span { color: var(--soft); }
+}
+@keyframes rotate-nudge { 0%, 30% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+
+/* 나의 기록: 때·날씨까지 여섯 줄이 한 쪽에 들어가도록 촘촘히 */
+.pg-text.recap { gap: 1.6cqh; }
+.recap h2 { font-size: 5.2cqh; }
+.recap .recap-row { padding: 1.3cqh 0; gap: 2.4cqh; }
+.recap .recap-row dd { font-size: max(11px, 3.9cqh); line-height: 1.3; }
+.recap .recap-row dt, .recap .link-btn { font-size: max(10px, 3.1cqh); }
+@media (max-width: 600px) and (orientation: portrait), (max-height: 500px) and (orientation: landscape) {
+  /* 휴대폰: 나의 기록을 두 칸으로 (항목 이름·고치기 / 그 아래 값) */
+  .recap dl { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 3cqh; }
+  .recap .recap-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "dt fix" "dd dd";
+    row-gap: 0.4cqh;
+    padding: 1.4cqh 0;
+  }
+  .recap .recap-row dt { grid-area: dt; }
+  .recap .recap-row dd { grid-area: dd; }
+  .recap .recap-row .link-btn { grid-area: fix; padding: 0; }
+  .recap h2 { font-size: max(12px, 4.8cqh); }
+}

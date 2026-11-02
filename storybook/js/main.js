@@ -9,6 +9,7 @@
   var IMG_DEED = 'deed-art';        // 착한 일 꾸미기 완성 그림 (메모지 포함)
   var IMG_DEED_BASE = 'deed-base';  // 메모지 없는 그림만 (다시 꾸밀 때)
   var IMG_WEATHER = 'weather-custom'; // #1 날씨를 직접 그린 그림
+  var IMG_WAKE = 'wake-weather-custom'; // #10 깨어나 본 창 밖 날씨를 직접 그린 그림
 
   var book = document.getElementById('book');
   var progress = document.getElementById('progress');
@@ -20,7 +21,7 @@
   function freshState() {
     return {
       version: 2, layout: 2, scene: 0, page: 0, maxScene: 0,
-      time: null, weather: null, customWeatherName: '',
+      time: null, weather: null, customWeatherName: '', wakeWeather: null, wakeWeatherName: '',
       name: '', food: null, customFoodName: '', deed: '', taste: null,
       stickers: {}, deedMemo: null, returnTo: null
     };
@@ -70,14 +71,18 @@
     c.food = state.food === 'custom' ? customFood(c) : (S.foods.find(function (f) { return f.id === state.food; }) || null);
     c.taste = S.tastes.find(function (t) { return t.id === state.taste; }) || null;
     c.time = S.times.find(function (t) { return t.id === state.time; }) || null;
-    if (state.weather === 'custom') {
-      var wn = state.customWeatherName.trim();
-      c.weather = { id: 'custom', label: wn || S.customWeather.label, day: S.customWeather.day,
-        feel: wn ? '내가 그린 ‘' + wn + '’ 하늘처럼 특별한 기분이 들었어요.' : S.customWeather.feel };
-    } else {
-      c.weather = S.weathers.find(function (w) { return w.id === state.weather; }) || null;
-    }
+    c.weather = weatherOf(state.weather, state.customWeatherName);
+    c.wakeWeather = weatherOf(state.wakeWeather, state.wakeWeatherName);
     return c;
+  }
+
+  // 고른 날씨 → 문장에 쓸 정보 (직접 그린 날씨는 적은 이름으로)
+  function weatherOf(id, customName) {
+    if (id !== 'custom') return S.weathers.find(function (w) { return w.id === id; }) || null;
+    var wn = (customName || '').trim();
+    return { id: 'custom', label: wn || S.customWeather.label, day: S.customWeather.day,
+      feel: wn ? '내가 그린 ‘' + wn + '’ 하늘처럼 특별한 기분이 들었어요.' : S.customWeather.feel,
+      seen: wn ? '내가 그린 ‘' + wn + '’ 하늘이 펼쳐져 있었어요.' : S.customWeather.seen };
   }
 
   // 문단 배열 → <p>들. 사용자 값은 textContent로만 넣는다.
@@ -196,6 +201,8 @@
     s.time = S.times.some(function (t) { return t.id === raw.time; }) ? raw.time : null;
     s.weather = raw.weather === 'custom' || S.weathers.some(function (w) { return w.id === raw.weather; }) ? raw.weather : null;
     s.customWeatherName = str(raw.customWeatherName, S.limits.weatherName);
+    s.wakeWeather = raw.wakeWeather === 'custom' || S.weathers.some(function (w) { return w.id === raw.wakeWeather; }) ? raw.wakeWeather : null;
+    s.wakeWeatherName = str(raw.wakeWeatherName, S.limits.weatherName);
     // layout 2: 콘티대로 #2·3을 한 펼침면으로 합친 9장면 구성. 그 전 기록은 장면 번호를 하나씩 당긴다.
     var move = raw.layout === 2 ? function (i) { return i; } : function (i) { return i >= 2 ? i - 1 : i; };
     s.maxScene = Number.isInteger(raw.maxScene) ? clamp(move(raw.maxScene), 0, LAST) : 0;
@@ -224,7 +231,18 @@
   }
 
   /* ---------- 화면 모드: 넓은 가로 화면은 펼침면, 그 밖은 한 쪽씩 ---------- */
+  // 아이패드·태블릿: 컴퓨터처럼 항상 펼침면 (세로로 들면 가로로 돌려 달라는 안내가 덮는다)
+  var isTablet = (function () {
+    // 손가락이 주된 입력이고(마우스가 아닌) 화면의 짧은 쪽이 600px 이상이면 태블릿으로 본다 (휴대폰은 짧은 쪽이 500px 안팎)
+    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    var touch = (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
+    var shortSide = Math.min(window.screen.width, window.screen.height);
+    return touch && coarse && shortSide >= 600;
+  })();
+  if (isTablet) document.documentElement.classList.add('is-tablet');
+
   function pickMode() {
+    if (isTablet) return 'spread';
     var chrome = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--chrome')) || 172;
     var w = (document.getElementById('app').clientWidth || window.innerWidth - 32);
     var h = window.innerHeight - chrome;
@@ -272,20 +290,25 @@
     }
     // #1: 가장 아래층에 고른 때의 하늘색
     if (scene.sky) {
-      var t = S.times.find(function (x) { return x.id === state.time; });
+      // sky가 때 id면 그 때로 고정 (#10 창 밖은 화창한 아침), true면 #1 앞에서 고른 때
+      var skyId = typeof scene.sky === 'string' ? scene.sky : state.time;
+      var t = S.times.find(function (x) { return x.id === skyId; });
       bg.style.background = t ? t.sky : S.times[S.times.length - 1].sky;
       bg.setAttribute('data-sky', t ? t.id : 'night');
     }
     spread.append(bg);
     // #1: 가장 위층에 고른 날씨의 움직이는 효과 (글 상자는 그 위에 놓여 읽기 쉽게)
-    if (scene.weatherFx && state.weather) {
+    var wKey = scene.weatherFx === 'wake' ? 'wake' : 'weather';
+    var wId = wKey === 'wake' ? state.wakeWeather : state.weather;
+    if (scene.weatherFx && wId) {
       var fx = el('div', { class: 'weather-fx', 'aria-hidden': 'true' });
-      if (state.weather === 'custom') {
-        if (images[IMG_WEATHER]) fx.append(el('img', { class: 'weather-art', src: images[IMG_WEATHER], alt: '' }));
+      var wImg = images[wKey === 'wake' ? IMG_WAKE : IMG_WEATHER];
+      if (wId === 'custom') {
+        if (wImg) fx.append(el('img', { class: 'weather-art', src: wImg, alt: '' }));
       } else if (window.StarSoupWeather) {
         var cvs = el('canvas', { class: 'weather-canvas' });
         fx.append(cvs);
-        leaf._teardown.push(window.StarSoupWeather.start(cvs, state.weather));
+        leaf._teardown.push(window.StarSoupWeather.start(cvs, wId));
       }
       spread.append(fx);
     }
@@ -1103,34 +1126,10 @@
       ready: function () { return !!state.time; },
       requireMessage: '지금 기분과 닮은 때를 하나 골라 주세요.'
     },
-    weather: {
-      scene: 'intro',
-      text: function () { return [['오늘의 날씨는 어떤가요?']]; },
-      body: function () {
-        var g = el('div', { class: 'grid grid--food choice-grid choice-grid--5', role: 'group', 'aria-label': '날씨 고르기' });
-        S.weathers.forEach(function (w) {
-          g.append(tile({ id: w.id, label: w.label, emoji: w.emoji, glow: w.glow, pressed: state.weather === w.id,
-            onclick: function () { state.weather = w.id; markPressed(g, w.id); paintAskNote(); saveSoon(); } }));
-        });
-        var has = !!images[IMG_WEATHER];
-        g.append(tile({
-          id: 'custom', extra: 'tile--draw' + (has ? ' has-art' : ''),
-          label: has ? (state.customWeatherName.trim() || '내가 그린 날씨') : S.customWeather.label,
-          image: images[IMG_WEATHER], emoji: '✏️', glow: '#3a4a7a', pressed: state.weather === 'custom',
-          onclick: function () {
-            if (!images[IMG_WEATHER] || state.weather === 'custom') drawWeather();
-            else { state.weather = 'custom'; markPressed(g, 'custom'); paintAskNote(); saveSoon(); }
-          }
-        }));
-        return g;
-      },
-      note: function () {
-        var w = ctx().weather;
-        return w ? w.label + S.josa(w.label, '을/를') + ' 골랐어요. #1 하늘에 그 날씨가 펼쳐져요.' : '‘직접 그리기’로 오늘의 날씨를 그려도 좋아요.';
-      },
-      ready: function () { return !!state.weather; },
-      requireMessage: '오늘의 날씨를 하나 골라 주세요.'
-    },
+    weather: weatherAsk({ key: 'weather', scene: 'intro', field: 'weather', nameField: 'customWeatherName', img: IMG_WEATHER,
+      question: '오늘의 날씨는 어떤가요?', where: '#1 하늘에 그 날씨가 펼쳐져요.' }),
+    wake: weatherAsk({ key: 'wake', scene: 'window', field: 'wakeWeather', nameField: 'wakeWeatherName', img: IMG_WAKE,
+      question: '오늘의 날씨는 어떤가요?', where: '창 밖에 그 날씨가 펼쳐져요.' }),
     food: {
       text: function (sc, c) { return sc.text(c); },
       body: function () { var g = foodGrid(); g.id = 'food-choice-grid'; return g; },
@@ -1158,20 +1157,54 @@
       ready: function () { return !!state.taste; }
     }
   };
+  // 날씨 묻는 화면 만들기 (#1 앞의 오늘 날씨, #10 깨어나서 본 창 밖 날씨)
+  function weatherAsk(o) {
+    return {
+      scene: o.scene,
+      text: function () { return [[o.question]]; },
+      body: function () {
+        var g = el('div', { class: 'grid grid--food choice-grid choice-grid--5', role: 'group', 'aria-label': '날씨 고르기' });
+        var pick = function (id) { state[o.field] = id; markPressed(g, id); paintAskNote(); saveSoon(); };
+        S.weathers.forEach(function (w) {
+          g.append(tile({ id: w.id, label: w.label, emoji: w.emoji, glow: w.glow, pressed: state[o.field] === w.id,
+            onclick: function () { pick(w.id); } }));
+        });
+        var has = !!images[o.img];
+        g.append(tile({
+          id: 'custom', extra: 'tile--draw' + (has ? ' has-art' : ''),
+          label: has ? (state[o.nameField].trim() || '내가 그린 날씨') : S.customWeather.label,
+          image: images[o.img], emoji: '✏️', glow: '#3a4a7a', pressed: state[o.field] === 'custom',
+          onclick: function () {
+            if (!images[o.img] || state[o.field] === 'custom') drawWeather(o);
+            else pick('custom');
+          }
+        }));
+        return g;
+      },
+      note: function () {
+        var w = weatherOf(state[o.field], state[o.nameField]);
+        return w ? w.label + S.josa(w.label, '을/를') + ' 골랐어요. ' + o.where : '‘직접 그리기’로 오늘의 날씨를 그려도 좋아요.';
+      },
+      ready: function () { return !!state[o.field]; },
+      requireMessage: '오늘의 날씨를 하나 골라 주세요.'
+    };
+  }
+
   function askScene(id) { return sceneIndex(ASK[id].scene || id); }
   function askList(id) { return S.scenes[askScene(id)].asks || [id]; }
 
   // 오늘의 날씨를 직접 그린다 → 그 그림이 #1 가장 위층에 그대로 놓인다 (움직이지 않음)
-  function drawWeather() {
+  // 날씨를 직접 그린다 → 그 그림이 하늘 위층에 그대로 놓인다 (움직이지 않음)
+  function drawWeather(o) {
     window.StarSoupEditor.open({
-      title: '오늘의 날씨 그리기', image: images[IMG_WEATHER], askName: true, name: state.customWeatherName,
+      title: '오늘의 날씨 그리기', image: images[o.img], askName: true, name: state[o.nameField],
       nameLabel: '어떤 날씨인가요? (안 써도 돼요)', namePlaceholder: '예: 무지개 뜬 날'
     }).then(function (res) {
       if (!res) return;
-      state.customWeatherName = res.name.slice(0, S.limits.weatherName);
-      saveImage(IMG_WEATHER, res.image);
-      state.weather = 'custom';
-      if (askId === 'weather') paintAsk();
+      state[o.nameField] = res.name.slice(0, S.limits.weatherName);
+      saveImage(o.img, res.image);
+      state[o.field] = 'custom';
+      if (askId === o.key) paintAsk();
       saveNow();
     });
   }
@@ -1563,7 +1596,7 @@
   /* ---------- 시작 ---------- */
   var saved = { scene: 0, page: 0 };
   function loadImages() {
-    var keys = [IMG_FOOD, IMG_DEED, IMG_DEED_BASE, IMG_WEATHER];
+    var keys = [IMG_FOOD, IMG_DEED, IMG_DEED_BASE, IMG_WEATHER, IMG_WAKE];
     return Promise.all(keys.map(function (k) {
       return store.getImage(k).then(function (v) { if (typeof v === 'string') images[k] = v; }, function () {});
     }));
