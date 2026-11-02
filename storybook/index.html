@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
-<link rel="stylesheet" href="css/style.css?v=2.6">
-<link rel="stylesheet" href="css/editor.css?v=2.6">
+<link rel="stylesheet" href="css/style.css?v=2.7">
+<link rel="stylesheet" href="css/editor.css?v=2.7">
 </head>
 <body>
 <div class="app" id="app" data-screen="cover">
@@ -101,7 +101,8 @@
     </button>
     <button type="button" class="btn btn-primary" id="btn-next">다음</button>
     <div class="end-actions" id="end-actions" hidden>
-      <button type="button" class="btn btn-primary" id="btn-reread">동화 다시 보기</button>
+      <button type="button" class="btn btn-primary" id="btn-recap">나의 기록</button>
+      <button type="button" class="btn btn-ghost" id="btn-reread">동화 다시 보기</button>
       <button type="button" class="btn btn-ghost" id="btn-restart">처음부터 하기</button>
       <button type="button" class="btn btn-soft" id="btn-pdf" disabled title="PDF 저장은 다음 단계에서 열려요">PDF로 저장하기 · 준비 중</button>
     </div>
@@ -189,6 +190,14 @@
   </div>
 </div>
 
+<!-- 나의 기록: 마지막 쪽의 하늘을 가리지 않도록 버튼으로 연다 -->
+<div class="modal recap-modal" id="recap-modal" hidden>
+  <div class="modal-card recap-card" role="dialog" aria-modal="true" aria-label="나의 별빛스프 이야기">
+    <div id="recap-body"></div>
+    <button type="button" class="btn btn-primary" id="btn-recap-close">닫기</button>
+  </div>
+</div>
+
 <!-- 아이패드를 세로로 들었을 때: 가로로 돌려 달라는 안내 -->
 <div class="rotate-hint" aria-live="polite">
   <svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true"><rect x="14" y="6" width="36" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8 40a24 24 0 0 0 24 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M28 54l4 4-4 4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -209,10 +218,10 @@
   </div>
 </div>
 
-<script src="js/storage.js?v=2.6"></script>
-<script src="js/story.js?v=2.6"></script>
-<script src="js/drawing.js?v=2.6"></script>
-<script src="js/weather.js?v=2.6"></script>
-<script src="js/main.js?v=2.6"></script>
+<script src="js/storage.js?v=2.7"></script>
+<script src="js/story.js?v=2.7"></script>
+<script src="js/drawing.js?v=2.7"></script>
+<script src="js/weather.js?v=2.7"></script>
+<script src="js/main.js?v=2.7"></script>
 </body>
 </html>

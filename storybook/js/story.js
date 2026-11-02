@@ -99,7 +99,8 @@
        place    본문 세로 위치 top | center | bottom
        widgets  이 쪽에 놓을 것 (food-result, deed-hint, recap)
      asks        이 장면 앞에 차례로 묻는 화면들 time | weather | food | deed | taste (입력 도구가 그림을 가리지 않게)
-     sky         true면 가장 아래층에 고른 때의 하늘색을 깐다 (#1)
+     askAt       한 쪽씩 보기에서 묻는 화면을 이 쪽 앞에 둔다 (#10: 17쪽과 18쪽 사이)
+     sky         true면 가장 아래층에 고른 때의 하늘색을 깐다 (#1). 쪽(pages)에 쓰면 그 쪽만, 때 id면 그 때로 고정
      weatherFx   true면 가장 위층에 고른 날씨의 움직이는 효과를 얹는다 (#1)
      question    묻는 화면에 나오는 질문 (#6)
      require     다음 장면으로 가기 전에 꼭 골라야 하는 값
@@ -188,9 +189,14 @@
       }
     },
     {
-      id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles',
-      image: 'assets/backgrounds/08-starlight-soup.jpg', alt: '별빛이 동동 떠다니는 스프',
-      pages: [{ art: 'soup' }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
+      // 이 펼침면 앞의 '요리' 화면에서 별빛스프에 넣을 재료(최대 5개)를 이름을 적고 그린다.
+      // 왼쪽 쪽(13쪽)은 위에서 내려다본 스프 그릇(임시 아트워크, tools/soup_top.py), 그 위에 재료 스티커.
+      id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles', asks: ['soup'],
+      image: null, alt: '위에서 내려다본 별빛스프',
+      pages: [
+        { image: 'assets/backgrounds/08-soup-top.jpg', widgets: ['soup-ingredients'] },
+        { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }
+      ],
       text: function (c) {
         return [
           ['뚜껑을 여니, 별빛이 동동 떠다니는 스프가 있어요.\n'].concat(you(c, '은/는'), [' 한입 스프를 입에 넣었어요.'])
@@ -201,13 +207,12 @@
       id: 'taste', act: 3, tone: 'gold', no: '9', asks: ['taste'],
       image: 'assets/backgrounds/09-taste.jpg', alt: '별빛스프의 맛이 소용돌이처럼 퍼지는 순간',
       // '무슨 맛이 났나요?'는 이 펼침면 앞의 묻는 화면에서 회전 카드로 고른다.
-      // 왼쪽 쪽은 삽화, 오른쪽 쪽(16쪽)에는 고른 맛에 맞춘 그림(assets/backgrounds/09-taste-<맛>.jpg)과 그 맛의 이름
+      // 왼쪽 쪽은 삽화, 오른쪽 쪽(16쪽)에는 고른 맛에 맞춘 그림(assets/backgrounds/09-taste-<맛>.jpg)만 (글 없음)
       pages: [
         { art: 'soup' },
         {
           image: function (c) { return c.taste ? 'assets/backgrounds/09-taste-' + c.taste.id + '.jpg' : null; },
-          text: function (c) { return c.taste ? [[{ v: c.taste.label }]] : [['아직 맛을 고르지 않았어요.']]; },
-          place: 'bottom', art: 'starsky'
+          art: 'starsky'
         }
       ],
       requireMessage: '스프에서 어떤 맛이 났는지 하나 골라 주세요.',
@@ -216,26 +221,20 @@
       hint: '옆으로 넘겨 보고, 가운데 카드를 눌러 골라요.'
     },
     {
-      // #10 ① 잠에서 깬다
-      id: 'ending', act: 3, tone: 'dawn', no: '10',
+      // #10: 17쪽 잠에서 깸 / 18쪽 창 밖 (삽화를 빼고 화창한 아침 하늘 + '창 밖을 보니…'에서 고른 날씨)
+      // 날씨는 '창 밖을 보니…' 묻는 화면에서 고른다: 한 쪽씩 보기는 17쪽과 18쪽 사이, 펼침면은 이 장면 앞.
+      id: 'ending', act: 3, tone: 'dawn', no: '10', asks: ['wake'], askAt: 1,
       image: 'assets/backgrounds/10-wake-up.jpg', alt: '아침에 잠에서 깬 아이의 방',
-      pages: [{ text: true, place: 'top', art: 'dawn', artPos: 'bottom' }, { art: 'starsky', faint: true }],
+      pages: [
+        { text: true, place: 'top', art: 'dawn', artPos: 'bottom' },
+        { sky: 'morning', weatherFx: 'wake', text: function (c) { return windowText(c); }, place: 'top' }
+      ],
       text: function (c) {
         var taste = c.taste ? [{ v: c.taste.label }, josa(c.taste.label, '이/가')] : ['별빛스프의 맛이'];
         return [
           you(c, '은/는').concat([' 우물거리며 잠에서 깼어요.\n']).concat(you(c), ['의 입 안에는 아직 ']).concat(taste, [' 느껴지는 것 같아요.'])
         ];
       }
-    },
-    {
-      // #10 ② 앞에서 다시 날씨를 묻고, 창 밖을 본다. 하늘은 화창한 아침으로 고정, 위층에 방금 고른 날씨.
-      id: 'window', act: 3, tone: 'dawn', no: '10', asks: ['wake'], sky: 'morning', weatherFx: 'wake',
-      image: null, alt: '창 밖 아침 하늘',
-      pages: [
-        { text: function (c) { return windowText(c); }, place: 'top' },
-        { widgets: ['recap'] }
-      ],
-      text: function () { return []; }
     }
   ];
 
@@ -378,11 +377,11 @@
     return out;
   }
 
-  // #10 ②: 창 밖을 봤어요 + 그 날씨 + 오늘도, 먹을 수 있을까요?
+  // #10 18쪽: 창 밖을 보니, (날씨) + 오늘도, 먹을 수 있을까요?
   function windowText(c) {
     var w = c.wakeWeather;
     return [
-      ['창 밖을 봤어요.'].concat(w ? [' ', { v: w.seen }] : []),
+      ['창 밖을 보니, '].concat(w ? [{ v: w.seen }] : ['밝은 아침이 와 있었어요.']),
       { coda: true, parts: ['오늘도, 먹을 수 있을까요?\n착한 아이에게 주는 별빛 스프를!'] }
     ];
   }
@@ -396,7 +395,7 @@
   };
 
   window.StarSoup = {
-    version: '2.6',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '2.7',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -410,7 +409,7 @@
     customFood: { label: '직접 그리기', fallbackName: '내가 그린 음식' },
     motifs: motifs,
     josa: josa,
-    limits: { name: 12, deed: 80, foodName: 12, weatherName: 12 },
+    limits: { name: 12, deed: 80, foodName: 12, weatherName: 12, ingredient: 10, ingredients: 5 },
     // 삽화 자리에 "어떤 파일을 넣으면 되는지" 경로를 표시한다. 실제 삽화를 다 넣은 뒤에는 false로 바꾼다.
     showAssetNotes: true
   };

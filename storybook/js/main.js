@@ -22,6 +22,7 @@
     return {
       version: 2, layout: 2, scene: 0, page: 0, maxScene: 0,
       time: null, weather: null, customWeatherName: '', wakeWeather: null, wakeWeatherName: '',
+      soup: [],   // 별빛스프 재료 (최대 5개) { id, name, u, v, w, r }: u·v·w는 스프 그림 기준 비율
       name: '', food: null, customFoodName: '', deed: '', taste: null,
       stickers: {}, deedMemo: null, returnTo: null
     };
@@ -203,6 +204,10 @@
     s.customWeatherName = str(raw.customWeatherName, S.limits.weatherName);
     s.wakeWeather = raw.wakeWeather === 'custom' || S.weathers.some(function (w) { return w.id === raw.wakeWeather; }) ? raw.wakeWeather : null;
     s.wakeWeatherName = str(raw.wakeWeatherName, S.limits.weatherName);
+    s.soup = Array.isArray(raw.soup) ? raw.soup.filter(function (g) { return g && typeof g.id === 'string' && /^[a-z0-9]+$/.test(g.id); })
+      .slice(0, S.limits.ingredients).map(function (g) {
+        return { id: g.id, name: str(g.name, S.limits.ingredient), u: num(g.u, 0, 1, 0.5), v: num(g.v, 0, 1, 0.5), w: num(g.w, 0.06, 0.4, 0.16), r: num(g.r, -180, 180, 0) };
+      }) : [];
     // layout 2: 콘티대로 #2·3을 한 펼침면으로 합친 9장면 구성. 그 전 기록은 장면 번호를 하나씩 당긴다.
     var move = raw.layout === 2 ? function (i) { return i; } : function (i) { return i >= 2 ? i - 1 : i; };
     s.maxScene = Number.isInteger(raw.maxScene) ? clamp(move(raw.maxScene), 0, LAST) : 0;
@@ -319,6 +324,26 @@
         'aria-label': (pi ? '오른쪽' : '왼쪽') + ' 쪽'
       });
       var pg = el('div', { class: 'pg' + (p.tight ? ' pg--tight' : ''), 'data-place': p.place || 'top' });
+      // 이 쪽만의 하늘(아래층)과 날씨(위층): 펼침면 삽화를 덮는다
+      if (p.sky) {
+        var pt = S.times.find(function (x) { return x.id === (typeof p.sky === 'string' ? p.sky : state.time); }) || S.times[1];
+        page.append(el('div', { class: 'page-sky', 'data-sky': pt.id, 'aria-hidden': 'true', style: 'background:' + pt.sky }));
+        page.classList.add('has-image');
+      }
+      if (p.weatherFx) {
+        var pwId = p.weatherFx === 'wake' ? state.wakeWeather : state.weather;
+        var pwImg = images[p.weatherFx === 'wake' ? IMG_WAKE : IMG_WEATHER];
+        if (pwId) {
+          var pfx = el('div', { class: 'weather-fx', 'aria-hidden': 'true' });
+          if (pwId === 'custom') { if (pwImg) pfx.append(el('img', { class: 'weather-art', src: pwImg, alt: '' })); }
+          else if (window.StarSoupWeather) {
+            var pcv = el('canvas', { class: 'weather-canvas' });
+            pfx.append(pcv);
+            leaf._teardown.push(window.StarSoupWeather.start(pcv, pwId));
+          }
+          page.append(pfx);
+        }
+      }
       var pageImage = typeof p.image === 'function' ? p.image(c) : p.image;
       if (pageImage) {
         var pimg = new Image();
@@ -374,6 +399,7 @@
         ? el('p', { class: 'hint sticker-hint pg-hint' }, '꾸민 착한 일 종이를 끌어서 원하는 곳에 옮겨 보세요.')
         : null;
       case 'taste': return tasteCarousel();
+      case 'soup-ingredients': return soupIngredients(false);
       case 'recap': return recap(c);
     }
     return null;
@@ -597,6 +623,72 @@
     return box;
   }
 
+  // 별빛스프 재료 스티커들. editable이면 요리 화면에서 끌어 옮기고 뗄 수 있다.
+  function soupIngredients(editable) {
+    var box = el('div', { class: 'soup-ings' + (editable ? ' is-editable' : ''), 'aria-label': '별빛스프에 넣은 재료' });
+    state.soup.forEach(function (g) {
+      var src = images['soup-' + g.id];
+      var item = el('div', { class: 'soup-ing', 'data-id': g.id },
+        el('div', { class: 'soup-ing-art' }, src ? el('img', { src: src, alt: '', draggable: 'false' }) : el('span', { text: '✨' })),
+        el('span', { class: 'soup-ing-name', text: g.name || '비밀 재료' }));
+      item.style.left = g.u * 100 + '%';
+      item.style.top = g.v * 100 + '%';
+      item.style.width = g.w * 100 + '%';
+      item.style.setProperty('--r', g.r + 'deg');
+      if (editable) {
+        var del = el('button', { type: 'button', class: 'st-del', 'aria-label': (g.name || '재료') + ' 빼기' }, '×');
+        del.addEventListener('click', function (e) {
+          e.stopPropagation();
+          state.soup = state.soup.filter(function (x) { return x.id !== g.id; });
+          delete images['soup-' + g.id];
+          store.deleteImage('soup-' + g.id).catch(function () {});
+          saveNow();
+          paintAsk();
+        });
+        item.append(del);
+        var drag = null;
+        item.addEventListener('pointerdown', function (e) {
+          if (e.target.closest('.st-del')) return;
+          e.preventDefault();
+          var r = box.getBoundingClientRect();
+          drag = { id: e.pointerId, r: r, dx: e.clientX - (r.left + g.u * r.width), dy: e.clientY - (r.top + g.v * r.height) };
+          try { item.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
+          item.classList.add('is-dragging');
+        });
+        item.addEventListener('pointermove', function (e) {
+          if (!drag || e.pointerId !== drag.id) return;
+          g.u = clamp((e.clientX - drag.dx - drag.r.left) / drag.r.width, 0.05, 0.95);
+          g.v = clamp((e.clientY - drag.dy - drag.r.top) / drag.r.height, 0.06, 0.94);
+          item.style.left = g.u * 100 + '%';
+          item.style.top = g.v * 100 + '%';
+        });
+        var end = function () { if (drag) { drag = null; item.classList.remove('is-dragging'); saveSoon(); } };
+        item.addEventListener('pointerup', end);
+        item.addEventListener('pointercancel', end);
+      }
+      box.append(item);
+    });
+    return box;
+  }
+
+  // 재료를 하나 더 넣는다: 이름을 적고 직접 그린다 (최대 5개)
+  function addIngredient() {
+    if (state.soup.length >= S.limits.ingredients) { toast('재료는 다섯 개까지 넣을 수 있어요.'); return; }
+    window.StarSoupEditor.open({
+      title: '별빛스프 재료 그리기', askName: true, name: '',
+      nameLabel: '어떤 재료인가요?', namePlaceholder: '예: 별사탕'
+    }).then(function (res) {
+      if (!res) return;
+      var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      // 그릇 안 빈자리에 놓는다 (스프 그림의 그릇은 가운데, 반지름 약 0.33)
+      var n = state.soup.length, a = n * 2.4 + 0.6, rr = n ? 0.2 : 0.05;
+      state.soup.push({ id: id, name: res.name.slice(0, S.limits.ingredient), u: 0.5 + Math.cos(a) * rr * 0.72, v: 0.51 + Math.sin(a) * rr, w: 0.15, r: Math.round(Math.random() * 24 - 12) });
+      saveImage('soup-' + id, res.image);
+      saveNow();
+      paintAsk();
+    });
+  }
+
   function recap(c) {
     function row(label, value, sceneIndex, page, emptyText, open) {
       return el('div', { class: 'recap-row' },
@@ -615,6 +707,7 @@
         row('이름', c.name, sceneIndex('name'), 1, '아직 비어 있어요'),
         row('고른 음식', c.food && c.food.name, sceneIndex('food'), 0, '고르지 않았어요', function () { showAsk('food', -1); }),
         row('착한 일', c.deed, sceneIndex('deed'), 1, '비워 두었어요', function () { showAsk('deed', -1); }),
+        row('스프 재료', state.soup.map(function (g) { return g.name || '비밀 재료'; }).join(', '), sceneIndex('soup'), 0, '넣지 않았어요', function () { showAsk('soup', -1); }),
         row('스프의 맛', c.taste && c.taste.label, sceneIndex('taste'), 1, '고르지 않았어요', function () { showAsk('taste', -1); })));
   }
 
@@ -1070,7 +1163,10 @@
     if (here === 'deed' && leavingScene) { showDeedPrompt(); return; }
     // 다음 장면의 그림을 보여 주기 전에 묻는 화면(음식·착한 일·맛)을 먼저 연다
     var upcoming = S.scenes[forwardTarget()];
-    if (leavingScene && upcoming && upcoming.asks) { showAsk(upcoming.asks[0], 1); return; }
+    if (leavingScene && upcoming && upcoming.asks && !askPage(upcoming)) { showAsk(upcoming.asks[0], 1); return; }
+    // 한 쪽씩 보기: 이 장면 안의 그 쪽 앞에서 묻는다 (#10: 17쪽 → 창 밖을 보니… → 18쪽)
+    var curSc = S.scenes[state.scene];
+    if (curSc.asks && askPage(curSc) && state.page === askPage(curSc) - 1) { showAsk(curSc.asks[0], 1); return; }
     if (mode === 'single' && state.page === 0) flipPage(1);
     else go(forwardTarget(), 0);
   }
@@ -1128,8 +1224,26 @@
     },
     weather: weatherAsk({ key: 'weather', scene: 'intro', field: 'weather', nameField: 'customWeatherName', img: IMG_WEATHER,
       question: '오늘의 날씨는 어떤가요?', where: '#1 하늘에 그 날씨가 펼쳐져요.' }),
-    wake: weatherAsk({ key: 'wake', scene: 'window', field: 'wakeWeather', nameField: 'wakeWeatherName', img: IMG_WAKE,
-      question: '오늘의 날씨는 어떤가요?', where: '창 밖에 그 날씨가 펼쳐져요.' }),
+    wake: weatherAsk({ key: 'wake', scene: 'ending', field: 'wakeWeather', nameField: 'wakeWeatherName', img: IMG_WAKE,
+      question: '창 밖을 보니…', where: '창 밖에 그 날씨가 펼쳐져요.' }),
+    soup: {
+      text: function () { return [['별빛스프에 무엇을 넣을까요?']]; },
+      body: function () {
+        var full = state.soup.length >= S.limits.ingredients;
+        var pot = el('div', { class: 'soup-pot' }, el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '위에서 내려다본 별빛스프' }), soupIngredients(true));
+        var add = el('button', {
+          type: 'button', class: 'btn btn-soft btn-small soup-add', disabled: full,
+          text: full ? '재료를 다섯 개 다 넣었어요' : '+ 재료 넣기 (' + state.soup.length + '/' + S.limits.ingredients + ')',
+          onclick: addIngredient
+        });
+        return el('div', { class: 'soup-cook' }, pot, add);
+      },
+      note: function () {
+        return state.soup.length ? '재료를 끌어서 스프 안 원하는 곳에 띄워 보세요. ×를 누르면 뺄 수 있어요.'
+          : '재료 이름을 적고 직접 그려서 넣어요. 다섯 개까지 넣을 수 있고, 안 넣어도 괜찮아요.';
+      },
+      ready: function () { return true; }
+    },
     food: {
       text: function (sc, c) { return sc.text(c); },
       body: function () { var g = foodGrid(); g.id = 'food-choice-grid'; return g; },
@@ -1189,6 +1303,9 @@
       requireMessage: '오늘의 날씨를 하나 골라 주세요.'
     };
   }
+
+  // 한 쪽씩 보기에서 이 장면의 몇 번째 쪽 앞에 묻는지 (0이면 장면 앞)
+  function askPage(sc) { return mode === 'single' && sc.askAt ? sc.askAt : 0; }
 
   function askScene(id) { return sceneIndex(ASK[id].scene || id); }
   function askList(id) { return S.scenes[askScene(id)].asks || [id]; }
@@ -1257,8 +1374,9 @@
     if (pos >= 0 && pos < list.length - 1 && state.returnTo == null) { showAsk(list[pos + 1], 1, card); return; }
     var target = state.returnTo != null ? state.returnTo : askScene(askId);
     var after = cfg.after;
+    var landPage = target === askScene(askId) ? askPage(S.scenes[target]) : 0;
     leaveThen(card, 1, function () {
-      enterBook(target, 0, 1);
+      enterBook(target, landPage, 1);
       if (after) after();
     });
   });
@@ -1267,6 +1385,8 @@
     var card = document.getElementById('ask-card');
     var list = askList(askId), pos = list.indexOf(askId);
     if (pos > 0) { showAsk(list[pos - 1], -1, card); return; }
+    var here = S.scenes[askScene(askId)];
+    if (askPage(here)) { leaveThen(card, -1, function () { enterBook(askScene(askId), askPage(here) - 1, -1); }); return; }
     var back = askScene(askId) - 1;
     if (back < 0) {
       // #1 앞의 첫 질문에서 뒤로 → 표지
@@ -1312,10 +1432,12 @@
 
   function prev() {
     if (switching) return;
+    var cur = S.scenes[state.scene];
+    if (cur.asks && askPage(cur) && state.page === askPage(cur)) { showAsk(cur.asks[cur.asks.length - 1], -1); return; }
     if (mode === 'single' && state.page === 1) { flipPage(0); return; }
     // 묻는 화면이 있는 장면의 첫 쪽에서 뒤로 가면 그 화면으로
     var asks = S.scenes[state.scene].asks;
-    if (asks) { showAsk(asks[asks.length - 1], -1); return; }
+    if (asks && !askPage(S.scenes[state.scene])) { showAsk(asks[asks.length - 1], -1); return; }
     if (state.scene > 0) go(state.scene - 1, 1);
   }
 
@@ -1363,6 +1485,18 @@
   btnNext.addEventListener('click', next);
   btnPrev.addEventListener('click', prev);
   document.getElementById('btn-reread').addEventListener('click', function () { state.returnTo = null; go(0, 0); });
+  var recapModal = document.getElementById('recap-modal');
+  function closeRecap() { recapModal.hidden = true; }
+  document.getElementById('btn-recap').addEventListener('click', function () {
+    var body = document.getElementById('recap-body');
+    body.replaceChildren(recap(ctx()));
+    // '고치기'를 누르면 기록 창을 닫고 그 화면으로
+    body.querySelectorAll('.link-btn').forEach(function (b) { b.addEventListener('click', closeRecap, true); });
+    recapModal.hidden = false;
+    document.getElementById('btn-recap-close').focus();
+  });
+  document.getElementById('btn-recap-close').addEventListener('click', closeRecap);
+  recapModal.addEventListener('click', function (e) { if (e.target === recapModal) closeRecap(); });
   document.getElementById('btn-restart').addEventListener('click', function () {
     ask({
       title: '처음부터 다시 할까요?',
@@ -1596,7 +1730,7 @@
   /* ---------- 시작 ---------- */
   var saved = { scene: 0, page: 0 };
   function loadImages() {
-    var keys = [IMG_FOOD, IMG_DEED, IMG_DEED_BASE, IMG_WEATHER, IMG_WAKE];
+    var keys = [IMG_FOOD, IMG_DEED, IMG_DEED_BASE, IMG_WEATHER, IMG_WAKE].concat(state.soup.map(function (g) { return 'soup-' + g.id; }));
     return Promise.all(keys.map(function (k) {
       return store.getImage(k).then(function (v) { if (typeof v === 'string') images[k] = v; }, function () {});
     }));

@@ -762,7 +762,7 @@ textarea.input { resize: none; }
 }
 .controls > .btn-primary { flex: 1; }
 .btn-prev { padding: 0 18px 0 14px; }
-.end-actions { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.end-actions { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .end-actions .btn { padding: 0 10px; font-size: 1rem; min-width: 0; text-align: center; }
 
 /* ---------- 알림·확인창 ---------- */
@@ -1141,4 +1141,54 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .recap .recap-row dd { grid-area: dd; }
   .recap .recap-row .link-btn { grid-area: fix; padding: 0; }
   .recap h2 { font-size: max(12px, 4.8cqh); }
+}
+
+/* ---------- 쪽 하나에만 깔리는 하늘 (#10 18쪽: 삽화를 빼고 창 밖 하늘) ---------- */
+.page-sky { position: absolute; inset: 0; }
+.page .weather-fx { z-index: 0; }
+
+/* ---------- 나의 기록 창 ---------- */
+.recap-card { max-width: 520px; max-height: calc(100dvh - 32px); overflow: auto; container-type: inline-size; }
+.recap-card .pg-text.recap { background: none; box-shadow: none; padding: 0; }
+.recap-card .recap h2 { font-size: 1.3rem; }
+.recap-card .recap .recap-row { grid-template-columns: 6.5em minmax(0, 1fr) auto; grid-template-areas: none; padding: 10px 0; gap: 10px; }
+.recap-card .recap .recap-row dt, .recap-card .recap .recap-row dd, .recap-card .recap .link-btn { grid-area: auto; }
+.recap-card .recap dl { grid-template-columns: minmax(0, 1fr); }
+.recap-card .recap .recap-row dt { font-size: 0.85rem; }
+.recap-card .recap .recap-row dd { font-size: 1rem; }
+.recap-card .recap .link-btn { font-size: 0.85rem; padding: 4px 2px; }
+
+/* ---------- 별빛스프 요리 (#8 앞) ----------
+   위에서 내려다본 그릇 그림 위에 재료 스티커. 위치는 그림 기준 비율이라 #8 13쪽에도 같은 자리에 놓인다 */
+.soup-cook { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.soup-pot { position: relative; width: min(100%, 520px, calc((100dvh - 330px) * 1.414)); aspect-ratio: 1.414; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); container-type: inline-size; }
+.soup-pot-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.soup-ings { position: absolute; inset: 0; container-type: inline-size; }
+.page .soup-ings { z-index: 2; pointer-events: none; }
+.soup-ing {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(var(--r, 0deg));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4cqw;
+}
+.soup-ing-art { width: 100%; display: grid; place-items: center; filter: drop-shadow(0.4cqw 0 0 #fff) drop-shadow(-0.4cqw 0 0 #fff) drop-shadow(0 0.4cqw 0 #fff) drop-shadow(0 -0.4cqw 0 #fff) drop-shadow(0 1cqw 1.4cqw rgb(0 0 0 / 0.4)); }
+.soup-ing-art img { display: block; width: 100%; height: auto; pointer-events: none; }
+.soup-ing-art span { font-size: 6cqw; }
+.soup-ing-name {
+  padding: 0.3cqw 1.4cqw;
+  border-radius: 99px;
+  background: rgb(17 23 46 / 0.78);
+  color: var(--milk);
+  font-family: var(--font-display);
+  font-size: max(9px, 2.4cqw);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.soup-ings.is-editable .soup-ing { touch-action: none; cursor: grab; }
+.soup-ings.is-editable .soup-ing.is-dragging { cursor: grabbing; }
+.soup-ings.is-editable .st-del { display: grid; top: -10px; left: -10px; width: 28px; height: 28px; font-size: 18px; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .soup-pot { width: min(100%, calc((100dvh - 190px) * 1.414)); }
 }
