@@ -310,6 +310,8 @@
       var t = S.times.find(function (x) { return x.id === skyId; });
       bg.style.background = t ? t.sky : S.times[S.times.length - 1].sky;
       bg.setAttribute('data-sky', t ? t.id : 'night');
+      // 삽화가 있으면 그 위에 고른 때의 하늘빛을 살짝 물들인다 (밤 그림이라 밤이면 그대로)
+      if (scene.image && t && t.id !== 'night') bg.append(el('div', { class: 'sky-tint', 'data-sky': t.id, style: 'background:' + t.sky }));
     }
     spread.append(bg);
     // #1: 가장 위층에 고른 날씨의 움직이는 효과 (글 상자는 그 위에 놓여 읽기 쉽게)

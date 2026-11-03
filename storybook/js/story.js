@@ -18,6 +18,14 @@
     return (last - 0xac00) % 28 > 0 ? forms[0] : forms[1];
   }
 
+  // '(으)로': 받침이 없거나 ㄹ이면 '로', 그 밖의 받침은 '으로'
+  function ro(word) {
+    var last = word.charCodeAt(word.length - 1);
+    if (isNaN(last) || last < 0xac00 || last > 0xd7a3) return '(으)로';
+    var j = (last - 0xac00) % 28;
+    return j === 0 || j === 8 ? '로' : '으로';
+  }
+
   // 사용자 이름(없으면 "당신") + 조사. 이름을 입력했을 때만 강조한다.
   function you(c, pair) {
     var seg = c.hasName ? { v: c.you } : c.you;
@@ -108,10 +116,9 @@
   var scenes = [
     {
       // #1 앞에서 '때'와 '날씨'를 묻는다. 층 순서: 위) 날씨 효과 / 중간) 삽화 / 아래) 하늘색
-      // 삽화는 하늘 부분을 뚫어서(투명하게) 다시 넣을 예정이라 지금은 뺀다.
-      //   예) image: 'assets/backgrounds/01-window.png'  (하늘이 투명한 PNG)
+      // 삽화 위에 고른 때의 하늘빛을 살짝 물들이고(sky-tint), 그 위에 날씨 효과가 움직인다.
       id: 'intro', act: 0, tone: 'night', no: '1', asks: ['time', 'weather'], sky: true, weatherFx: true,
-      image: null, alt: '창문 밖 하늘',
+      image: 'assets/backgrounds/01-intro.jpg', alt: '초승달과 별이 걸린 밤하늘 아래 알록달록한 마을',
       pages: [
         { text: function (c) { return introOpening(c); }, place: 'top' },
         { text: function (c) { return introSky(c); }, place: 'bottom' }
@@ -161,11 +168,8 @@
       // 착한 일은 이 펼침면 앞의 묻는 화면에서 적는다 (입력칸이 그림을 가리지 않게).
       // 왼쪽 쪽의 큰 구름(말풍선) 안에 요정이 하는 말 / 오른쪽 쪽은 삽화만
       pages: [{ text: true, place: 'center', ink: 'dark', art: 'bubble', artPos: 'bottom' }, { art: 'soup' }],
-      text: function (c) {
-        return [
-          ['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.'],
-          you(c, '이/가').concat([' 한 착한 일도 말해주네요?'])
-        ];
+      text: function () {
+        return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']];
       },
       // 펼침면 앞의 묻는 화면에 나오는 질문
       question: function (c) { return [you(c, '이/가').concat([' 한 착한 일은 무엇인가요?'])]; }
@@ -174,17 +178,13 @@
       id: 'serve', act: 2, tone: 'gold', no: '7',
       image: 'assets/backgrounds/07-fairies-serve.jpg', alt: '박수를 치며 음식을 놓아 주는 요정들',
       pages: [{ art: 'cloche', place: 'bottom', widgets: ['deed-hint'] }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
+      // 와! 당신이 한 (착한 일)로 요정들은 박수를 보내며 당신의 앞에 그 음식을 놓아주었어요.
       text: function (c) {
-        if (c.deed) {
-          return [
-            [{ v: '“' + c.deed + '”', quote: true }],
-            ['와!\n'].concat(you(c, '이/가'), [' 한 이 착한 일로 요정들은 박수를 보내며 ']).concat(you(c), ['의 앞에 그 음식을 놓아주었어요.'])
-          ];
-        }
-        // 착한 일을 비워 두었을 때의 기본 문장
+        // 문장으로 끝나는 착한 일(…했어요)은 '‘…’라는 착한 일로', 짧은 말(설거지 돕기)은 '…로'
+        var d = (c.deed || '').replace(/[.!?。]+$/, '');
+        var deed = !d ? ['착한 일로'] : /[요다]$/.test(d) ? [{ v: '‘' + d + '’' }, '라는 착한 일로'] : [{ v: d }, ro(d)];
         return [
-          ['와! 요정들은 '].concat(you(c, '이/가'), [' 한 착한 일들을 떠올리며 박수를 보냈어요.']),
-          ['그리고 '].concat(you(c), ['의 앞에 그 음식을 놓아주었어요.'])
+          ['와! '].concat(you(c, '이/가'), [' 한 '], deed, [' 요정들은 박수를 보내며 ']).concat(you(c), ['의 앞에 그 음식을 놓아주었어요.'])
         ];
       }
     },
@@ -199,7 +199,7 @@
       ],
       text: function (c) {
         return [
-          ['뚜껑을 여니, 별빛이 동동 떠다니는 스프가 있어요.\n'].concat(you(c, '은/는'), [' 한입 스프를 입에 넣었어요.'])
+          ['뚜껑을 여니, 별빛이 동동 떠다니는 스프가 있어요. '].concat(you(c, '은/는'), [' 한입 스프를 입에 넣었어요.'])
         ];
       }
     },
@@ -399,7 +399,7 @@
   };
 
   window.StarSoup = {
-    version: '4.9',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '5.0',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
