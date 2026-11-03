@@ -380,12 +380,12 @@
     return out;
   }
 
-  // #10 18쪽: 창 밖을 보니, (날씨) + 오늘도, 먹을 수 있을까요?
+  // #10 18쪽: 한결 달라진 기분으로 창문을 여니, (날씨) + 오늘도, 먹을 수 있을까요?
   function windowText(c) {
     var w = c.wakeWeather;
     if (!w) return null;   // 창을 열기 전에는 글 없이 창문만
     return [
-      ['창 밖을 보니, '].concat(w ? [{ v: w.seen }] : ['밝은 아침이 와 있었어요.']),
+      ['한결 달라진 기분으로 창문을 여니, '].concat(w ? [{ v: w.seen }] : ['밝은 아침이 와 있었어요.']),
       { coda: true, parts: ['오늘도, 먹을 수 있을까요?\n착한 아이에게 주는 별빛 스프를!'] }
     ];
   }
@@ -399,7 +399,7 @@
   };
 
   window.StarSoup = {
-    version: '4.8',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '4.9',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

@@ -1442,3 +1442,21 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .page.has-window .pg { padding-bottom: 4cqh; }
   .page.has-window .pg-text.is-panel { padding: 2.4cqh 3.4cqh; gap: 1.2cqh; }
 }
+
+/* 맛 고르기: '직접 그리기' 카드일 때 카드 아래에 맛 이름 칸 (다른 카드일 때도 자리는 잡아 둔다) */
+.ask-taste { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ask-taste .ask-carousel { height: clamp(190px, 34vh, 300px); }
+.taste-name-field { width: min(100%, 420px); visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity 0.25s, transform 0.25s, visibility 0.25s; }
+.taste-name-field.is-on { visibility: visible; opacity: 1; transform: none; }
+.taste-name-field label { font-size: 0.82rem; color: var(--soft); text-align: center; }
+.taste-name-field .input { text-align: center; }
+
+/* 가로로 돌린 휴대폰: 그림 도구는 책 옆 세로 줄 (책을 크게) */
+.stage.has-side-dock { flex-direction: row; align-items: center; gap: 10px; }
+.stage.has-side-dock .book { width: min(calc(100% - var(--dock-w, 0px)), max(220px, calc((100dvh - var(--chrome)) * var(--ratio)))); }
+@media (max-height: 500px) and (orientation: landscape) {
+  .ask-taste { gap: 4px; }
+  .ask-taste .ask-carousel { height: clamp(120px, 34vh, 190px); }
+  .taste-name-field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .taste-name-field .input { padding: 6px 12px; min-height: 0; font-size: 14px; }
+}

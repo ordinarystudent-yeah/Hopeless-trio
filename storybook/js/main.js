@@ -413,7 +413,7 @@
   }
 
   /* ---------- #10 18쪽: 방 창문 ----------
-     닫혀 있으면 살짝 반짝이며 눌러 보라고 알려 준다. 누르면 두 창이 바깥으로 열리고 '창 밖을 보니…' 화면으로.
+     닫혀 있으면 살짝 반짝이며 눌러 보라고 알려 준다. 누르면 두 창이 바깥으로 열리고 '한결 달라진 기분으로 창문을 여니…' 화면으로.
      고른 뒤에는 열린 창 너머로 아침 하늘과 그 날씨(움직이는 효과, 직접 그렸다면 그 그림)가 보인다. 다시 누르면 바꿀 수 있다. */
   function roomWindow(leaf) {
     var chosen = !!state.wakeWeather;
@@ -684,6 +684,13 @@
         card.setAttribute('aria-pressed', state.taste === list[i].id ? 'true' : 'false');
         card.tabIndex = rel === 0 ? 0 : -1;
       });
+      var nameField = document.querySelector('#ask-body .taste-name-field');
+      if (nameField) {
+        var on = t.id === 'custom';
+        nameField.classList.toggle('is-on', on);
+        nameField.setAttribute('aria-hidden', on ? 'false' : 'true');
+        nameField.querySelector('input').tabIndex = on ? 0 : -1;
+      }
       paintAskNote();
       saveSoon();
     }
@@ -745,11 +752,18 @@
       mounted = true;
       // 쪽 전체가 그림판, 도구는 캔버스 밖(책 아래)으로. 세로 화면은 여러 줄, 펼침 화면은 가로 한 줄로.
       // 도구가 차지하는 높이만큼 책을 줄여 한 화면에 함께 들어가게 한다
-      dock = el('div', { class: 'tdraw-dock' + (mode === 'spread' ? ' is-row' : ''), role: 'toolbar', 'aria-label': '그리기 도구' });
+      // 가로로 돌린 휴대폰(높이가 낮은 화면)은 아래에 두면 책이 너무 작아지므로 책 옆에 세로 줄로 (아이패드처럼 책을 크게)
+      var side = mode === 'spread' && window.innerHeight < 520;
+      dock = el('div', { class: 'tdraw-dock' + (side ? ' is-side' : mode === 'spread' ? ' is-row' : ''), role: 'toolbar', 'aria-label': '그리기 도구' });
       var stageEl = book.parentNode;
       stageEl.insertBefore(dock, book.nextSibling);
       stageEl.classList.add('has-dock');
-      var fitDock = function () { if (dock.isConnected) stageEl.style.setProperty('--dock-h', (dock.offsetHeight + 12) + 'px'); };
+      stageEl.classList.toggle('has-side-dock', side);
+      var fitDock = function () {
+        if (!dock.isConnected) return;
+        if (side) stageEl.style.setProperty('--dock-w', (dock.offsetWidth + 12) + 'px');
+        else stageEl.style.setProperty('--dock-h', (dock.offsetHeight + 12) + 'px');
+      };
       if (window.ResizeObserver) { var dro = new ResizeObserver(fitDock); dro.observe(dock); leaf._teardown.push(function () { dro.disconnect(); }); }
       requestAnimationFrame(fitDock);
       window.StarSoupEditor.open({
@@ -765,7 +779,11 @@
       if (mounted) window.StarSoupEditor.unmount(host);
       if (dock) {
         dock.remove();
-        if (!document.querySelector('.tdraw-dock')) { book.parentNode.classList.remove('has-dock'); book.parentNode.style.removeProperty('--dock-h'); }
+        if (!document.querySelector('.tdraw-dock')) {
+          book.parentNode.classList.remove('has-dock', 'has-side-dock');
+          book.parentNode.style.removeProperty('--dock-h');
+          book.parentNode.style.removeProperty('--dock-w');
+        }
       }
     });
     return host;
@@ -1428,7 +1446,7 @@
     weather: weatherAsk({ key: 'weather', scene: 'intro', field: 'weather', nameField: 'customWeatherName', img: IMG_WEATHER,
       question: '오늘의 날씨는 어떤가요?', where: '#1 하늘에 그 날씨가 펼쳐져요.' }),
     wake: weatherAsk({ key: 'wake', scene: 'ending', field: 'wakeWeather', nameField: 'wakeWeatherName', img: IMG_WAKE,
-      question: '창 밖을 보니…', where: '창 밖에 그 날씨가 펼쳐져요.', landPage: 1 }),
+      question: '한결 달라진 기분으로 창문을 여니…', where: '열린 창 너머로 그 날씨가 펼쳐져요.', landPage: 1 }),
     soup: {
       text: function () {
         return [
@@ -1713,7 +1731,20 @@
     },
     taste: {
       text: function (sc, c) { return sc.text(c); },
-      body: function () { return el('div', { class: 'ask-carousel' }, tasteCarousel()); },
+      body: function () {
+        // '직접 그리기'를 고르면 그 맛의 이름을 적는 칸이 카드 아래에 나온다 (자리는 늘 잡아 두어 화면이 움직이지 않게)
+        var input = el('input', { type: 'text', class: 'input input-sm', id: 'taste-name', maxlength: String(S.limits.tasteName),
+          placeholder: '어떤 맛이었나요? 예: 무지개 맛 (안 써도 돼요)', autocomplete: 'off', value: state.customTasteName || '' });
+        input.addEventListener('input', function () { state.customTasteName = input.value.slice(0, S.limits.tasteName); saveSoon(); });
+        var field = el('div', { class: 'field taste-name-field' },
+          el('label', { for: 'taste-name', text: '내가 고른 맛의 이름' }), input);
+        var on = state.taste === 'custom';
+        field.classList.toggle('is-on', on);
+        field.setAttribute('aria-hidden', on ? 'false' : 'true');
+        input.tabIndex = on ? 0 : -1;
+        var wrap = el('div', { class: 'ask-taste' }, el('div', { class: 'ask-carousel' }, tasteCarousel()), field);
+        return wrap;
+      },
       note: function () {
         var t = ctx().taste;
         if (t && t.id === 'custom') return S.customTaste.hint;

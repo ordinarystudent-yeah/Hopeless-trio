@@ -307,3 +307,19 @@
   .tdraw-dock.is-row .ed-actions .btn { min-height: 28px; font-size: 0.66rem; padding: 0 8px; }
   .tdraw-dock.is-row #ed-undo { width: 30px; height: 30px; }
 }
+
+/* 가로 휴대폰: 책 옆 세로 줄 */
+.tdraw-dock.is-side { width: 156px; flex: none; max-height: calc(100dvh - var(--chrome) - 10px); overflow-y: auto; padding: 8px; border-radius: 14px; scrollbar-width: none; }
+.tdraw-dock.is-side #ed-undo { position: static; display: grid; place-items: center; width: 30px; height: 30px; margin: 0 0 6px auto; }
+.tdraw-dock.is-side .ed-panel { gap: 6px; }
+.tdraw-dock.is-side .ed-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; gap: 4px; }
+.tdraw-dock.is-side .tool { min-height: 36px; padding: 3px 0; font-size: 0.56rem; border-radius: 10px; }
+.tdraw-dock.is-side .tool svg { width: 15px; height: 15px; }
+.tdraw-dock.is-side .ed-size { grid-template-columns: minmax(0, 1fr) 24px; gap: 6px; }
+.tdraw-dock.is-side .ed-size label { display: none; }
+.tdraw-dock.is-side .ed-size-preview { width: 24px; height: 24px; border-radius: 8px; }
+.tdraw-dock.is-side .ed-colors { gap: 4px; }
+.tdraw-dock.is-side .swatch { width: 19px; height: 19px; border-width: 1.5px; }
+.tdraw-dock.is-side .ed-actions { grid-template-columns: 1fr 1fr; gap: 4px; }
+.tdraw-dock.is-side .ed-actions .ed-clear { grid-column: 1 / -1; }
+.tdraw-dock.is-side .ed-actions .btn { min-height: 26px; font-size: 0.62rem; padding: 0 4px; }
