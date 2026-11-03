@@ -73,12 +73,12 @@ for k in range(3):
 img.alpha_composite(sw.filter(ImageFilter.GaussianBlur(1.5)))
 # 동동 떠다니는 별빛
 st = layer(); std = ImageDraw.Draw(st)
-for i in range(16):
+for i in range(5):     # 별은 몇 개만 (너무 많으면 어지러움)
     a = rng.uniform(0, math.tau); rr = rng.uniform(30, R_IN - 40)
     x, y = CX + math.cos(a) * rr, CY + math.sin(a) * rr
     r = rng.uniform(9, 22)
     std.polygon(star(x, y, r, rot=rng.uniform(-110, -70)), fill=(255, 252, 228, 230))
-for i in range(160):
+for i in range(45):
     a = rng.uniform(0, math.tau); rr = rng.uniform(0, R_IN - 20)
     x, y = CX + math.cos(a) * rr, CY + math.sin(a) * rr
     s = rng.uniform(1.5, 3.5)

@@ -11,7 +11,8 @@
 (function () {
   'use strict';
 
-  var SIZE = 800;          // 캔버스 내부 해상도 (정사각형)
+  var SIZE = 800;          // 캔버스 내부 해상도 (보통은 정사각형)
+  var CW = SIZE, CH = SIZE; // 지금 캔버스 크기. 쪽 안 그림판은 삽화와 같은 가로 비율(aspect)로 바뀐다
   var MAX_UNDO = 15;       // 실행 취소 단계 (한 단계당 약 2.5MB)
   var EXPORT_MAX = 640;    // 스티커로 내보낼 때 최대 변 길이
   var FILL_TOLERANCE = 72; // 페인트 통 색 허용 오차 (0~1020)
@@ -47,7 +48,7 @@
     ready = true;
     root = $('editor');
     canvas = $('ed-canvas');
-    canvas.width = canvas.height = SIZE;
+    canvas.width = CW; canvas.height = CH;
     g = canvas.getContext('2d', { willReadFrequently: true });
     wrap = $('ed-canvas-wrap');
     sizeInput = $('ed-size');
@@ -143,7 +144,11 @@
     $('ed-name-field').querySelector('label').textContent = opts.nameLabel || '무슨 음식인가요? (안 써도 돼요)';
     nameInput.placeholder = opts.namePlaceholder || '음식 이름 (안 써도 돼요)';
     nameInput.value = opts.name || '';
-    g.clearRect(0, 0, SIZE, SIZE);
+    // 캔버스 비율: 쪽 안 그림판은 삽화 크기(가로:세로)와 같게, 창으로 열 때는 정사각형
+    var nw = opts.aspect ? 1000 : SIZE, nh = opts.aspect ? Math.round(1000 / opts.aspect) : SIZE;
+    if (nw !== CW || nh !== CH) { CW = nw; CH = nh; canvas.width = CW; canvas.height = CH; g = canvas.getContext('2d', { willReadFrequently: true }); }
+    wrap.style.aspectRatio = CW + ' / ' + CH;
+    g.clearRect(0, 0, CW, CH);
     undo = [];
     dirty = false;
     cancelPhoto();
@@ -155,10 +160,17 @@
     root.hidden = false;
     if (opts.inline) {
       // 쪽 안에 붙이기: 그림판 전체를 그 자리로 옮긴다 (닫을 때 원래 자리로)
-      inline = { host: opts.inline, onChange: opts.onChange, home: root.parentNode, next: root.nextSibling, timer: 0 };
+      inline = { host: opts.inline, onChange: opts.onChange, home: root.parentNode, next: root.nextSibling, timer: 0, dock: opts.dock || null };
       root.classList.add('is-inline');
+      root.classList.toggle('is-docked', !!opts.dock);
       root.removeAttribute('aria-modal');
       opts.inline.append(root);
+      // 도구를 쪽 밖(예: 세로 화면에서 책 아래)으로 내려놓기. 떼어 낼 때 제자리로
+      if (opts.dock) {
+        var panel = root.querySelector('.ed-panel');
+        opts.dock.classList.add('ed-dock');
+        opts.dock.append(undoBtn, panel);
+      }
     } else {
       document.documentElement.classList.add('is-editing');
       $('ed-back').focus({ preventScroll: true });
@@ -167,14 +179,14 @@
     if (opts.base) {
       // 꾸미기 모드: 지난번 그림을 원래 자리·크기 그대로
       var bim = new Image();
-      bim.onload = function () { g.drawImage(bim, 0, 0, SIZE, SIZE); };
+      bim.onload = function () { g.drawImage(bim, 0, 0, CW, CH); };
       bim.onerror = function () { ui().toast('지난번 그림을 불러오지 못했어요. 새로 그려 주세요.'); };
       bim.src = opts.base;
     } else if (opts.image) {
       var im = new Image();
       im.onload = function () {
-        var s = Math.min(SIZE * 0.86 / im.width, SIZE * 0.86 / im.height, 1.6);
-        g.drawImage(im, (SIZE - im.width * s) / 2, (SIZE - im.height * s) / 2, im.width * s, im.height * s);
+        var s = Math.min(CW * 0.86 / im.width, CH * 0.86 / im.height, 1.6);
+        g.drawImage(im, (CW - im.width * s) / 2, (CH - im.height * s) / 2, im.width * s, im.height * s);
       };
       im.onerror = function () { ui().toast('지난번 그림을 불러오지 못했어요. 새로 그려 주세요.'); };
       im.src = opts.image;
@@ -189,7 +201,11 @@
     if (it.timer) { clearTimeout(it.timer); if (dirty && it.onChange) it.onChange(canvas.toDataURL('image/png')); }
     if (photo) cancelPhoto();
     inline = null;
-    root.classList.remove('is-inline');
+    if (it.dock) {
+      root.querySelector('.ed-top').insertBefore(undoBtn, $('ed-done'));
+      root.querySelector('.ed-main').append(it.dock.querySelector('.ed-panel'));
+    }
+    root.classList.remove('is-inline', 'is-docked');
     root.setAttribute('aria-modal', 'true');
     root.hidden = true;
     if (it.home) it.home.insertBefore(root, it.next && it.next.parentNode === it.home ? it.next : null);
@@ -253,7 +269,7 @@
   function paintSize() {
     sizeOut.textContent = size;
     // 실제 화면에서 보이는 굵기로 미리보기
-    var shown = Math.max(3, size * (TOOL_SCALE[tool] || 1) * (canvas.getBoundingClientRect().width || SIZE) / SIZE);
+    var shown = Math.max(3, size * (TOOL_SCALE[tool] || 1) * (canvas.getBoundingClientRect().width || CW) / CW);
     sizeDot.style.width = sizeDot.style.height = Math.min(44, shown) + 'px';
     sizeDot.style.background = tool === 'eraser' ? 'transparent' : color;
     sizeDot.classList.toggle('is-eraser', tool === 'eraser');
@@ -262,7 +278,7 @@
 
   /* ---------- 실행 취소 ---------- */
   function pushUndo() {
-    undo.push(g.getImageData(0, 0, SIZE, SIZE));
+    undo.push(g.getImageData(0, 0, CW, CH));
     if (undo.length > MAX_UNDO) undo.shift();
     paintUndo();
   }
@@ -282,7 +298,7 @@
     }).then(function (yes) {
       if (!yes) return;
       pushUndo();
-      g.clearRect(0, 0, SIZE, SIZE);
+      g.clearRect(0, 0, CW, CH);
       markDirty();
     });
   }
@@ -290,7 +306,7 @@
   /* ---------- 그리기 ---------- */
   function point(e) {
     var r = canvas.getBoundingClientRect();
-    return { x: (e.clientX - r.left) * SIZE / r.width, y: (e.clientY - r.top) * SIZE / r.height };
+    return { x: (e.clientX - r.left) * CW / r.width, y: (e.clientY - r.top) * CH / r.height };
   }
 
   function onDown(e) {
@@ -428,8 +444,8 @@
      가장자리의 반투명 픽셀은 채우는 색 위에 겹쳐서 하얀 틈이 남지 않게 한다. */
   function fill(p) {
     var x = Math.floor(p.x), y = Math.floor(p.y);
-    if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return false;
-    var W = SIZE, H = SIZE;
+    if (x < 0 || y < 0 || x >= CW || y >= CH) return false;
+    var W = CW, H = CH;
     var img = g.getImageData(0, 0, W, H), d = img.data;
     var fc = hexToRgb(color);
     var i0 = (y * W + x) * 4;
@@ -497,8 +513,8 @@
     var url = URL.createObjectURL(file);
     var im = new Image();
     im.onload = function () {
-      var fit = Math.min(SIZE * 0.8 / im.naturalWidth, SIZE * 0.8 / im.naturalHeight);
-      photo = { img: im, url: url, x: SIZE / 2, y: SIZE / 2, fit: fit, s: fit, drag: null };
+      var fit = Math.min(CW * 0.8 / im.naturalWidth, CH * 0.8 / im.naturalHeight);
+      photo = { img: im, url: url, x: CW / 2, y: CH / 2, fit: fit, s: fit, drag: null };
       photoImg.src = url;
       photoScale.value = 100;
       photoLayer.hidden = false;
@@ -515,9 +531,9 @@
 
   function placePhoto() {
     var w = photo.img.naturalWidth * photo.s, h = photo.img.naturalHeight * photo.s;
-    photoImg.style.width = (w / SIZE * 100) + '%';
-    photoImg.style.left = ((photo.x - w / 2) / SIZE * 100) + '%';
-    photoImg.style.top = ((photo.y - h / 2) / SIZE * 100) + '%';
+    photoImg.style.width = (w / CW * 100) + '%';
+    photoImg.style.left = ((photo.x - w / 2) / CW * 100) + '%';
+    photoImg.style.top = ((photo.y - h / 2) / CH * 100) + '%';
   }
 
   function onPhotoDown(e) {
@@ -553,11 +569,11 @@
 
   /* ---------- 내보내기: 그림이 있는 부분만 잘라 투명 PNG로 ---------- */
   function exportTrimmed() {
-    var d = g.getImageData(0, 0, SIZE, SIZE).data;
-    var minX = SIZE, minY = SIZE, maxX = -1, maxY = -1;
-    for (var y = 0; y < SIZE; y++) {
-      for (var x = 0; x < SIZE; x++) {
-        if (d[(y * SIZE + x) * 4 + 3] > 8) {
+    var d = g.getImageData(0, 0, CW, CH).data;
+    var minX = CW, minY = CH, maxX = -1, maxY = -1;
+    for (var y = 0; y < CH; y++) {
+      for (var x = 0; x < CW; x++) {
+        if (d[(y * CW + x) * 4 + 3] > 8) {
           if (x < minX) minX = x;
           if (x > maxX) maxX = x;
           if (y < minY) minY = y;
@@ -568,7 +584,7 @@
     if (maxX < 0) return null;
     var pad = 10;
     minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
-    maxX = Math.min(SIZE - 1, maxX + pad); maxY = Math.min(SIZE - 1, maxY + pad);
+    maxX = Math.min(CW - 1, maxX + pad); maxY = Math.min(CH - 1, maxY + pad);
     var w = maxX - minX + 1, h = maxY - minY + 1;
     var s = Math.min(1, EXPORT_MAX / Math.max(w, h));
     var out = document.createElement('canvas');
@@ -671,7 +687,7 @@
 
   // 꾸미기 결과: 종이 바탕 + 그림 + 메모지 (정사각형). 그린 것도 메모도 없으면 image는 null
   function exportDecorated() {
-    var d = g.getImageData(0, 0, SIZE, SIZE).data, drawn = false;
+    var d = g.getImageData(0, 0, CW, CH).data, drawn = false;
     for (var i = 3; i < d.length; i += 16) { if (d[i] > 8) { drawn = true; break; } }
     var base = drawn ? canvas.toDataURL('image/png') : null;
     if (!drawn && !memo.text) return { image: null, base: null, memo: { x: memo.x, y: memo.y } };

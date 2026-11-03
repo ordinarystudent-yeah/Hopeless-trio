@@ -878,13 +878,13 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .brand { font-size: 1.1rem; }
   .act-label { font-size: 0.72rem; }
 
-  .story { font-size: 5.4cqh; line-height: 1.5; }
-  .pg--dense .story { font-size: 4.9cqh; line-height: 1.45; }
+  .story { font-size: 4.6cqh; line-height: 1.5; }
+  .pg--dense .story { font-size: 4.2cqh; line-height: 1.45; }
   .pg--dense { gap: 2cqh; }
-  .story--sm { font-size: 5cqh; }
-  .story--q { font-size: 5.2cqh; }
-  .story.is-coda { font-size: 5.3cqh; line-height: 1.4; }
-  .eyebrow { font-size: max(9px, 3.3cqh); }
+  .story--sm { font-size: 4.3cqh; }
+  .story--q { font-size: 4.5cqh; }
+  .story.is-coda { font-size: 4.6cqh; line-height: 1.4; }
+  .eyebrow { font-size: max(8px, 3cqh); }
   .hint, .counter { font-size: max(9.5px, 3.1cqh); }
   .field label { font-size: max(9.5px, 3.3cqh); }
   .input { font-size: max(13px, 4.9cqh); padding: 1.8cqh 3cqh; border-radius: 3cqh; }
@@ -1425,3 +1425,18 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 
 .win.is-open { width: 74cqh; height: 54cqh; top: 6cqh; margin: 0 0 0 -37cqh; }
 .win.is-open .win-hint { display: none; }
+
+/* 세로 화면에서 #9 16쪽 그림 도구를 책 아래에 둘 때 */
+.stage.has-dock { flex-direction: column; justify-content: center; gap: 10px; }
+
+/* 휴대폰 글씨 한 단계 더 작게 (묻는 화면·안내·버튼) */
+@media (max-width: 600px) and (orientation: portrait) {
+  #ask .choice-text .story { font-size: 0.92rem; }
+  #ask .prompt-text { font-size: 0.84rem; }
+}
+@media (max-width: 600px) and (orientation: portrait), (max-height: 500px) and (orientation: landscape) {
+  /* #10 창: 열린 뒤 글 상자가 창 너머를 가리지 않게 창을 위로, 글은 아래에 작게 */
+  .win.is-open { height: 50cqh; top: 4cqh; }
+  .page.has-window .pg { padding-bottom: 4cqh; }
+  .page.has-window .pg-text.is-panel { padding: 2.4cqh 3.4cqh; gap: 1.2cqh; }
+}
