@@ -1370,3 +1370,52 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 
 /* #9 16쪽: 직접 그리기 맛 — 음식 그리기와 같은 그림판이 이 쪽 안에 들어온다 (css/editor.css의 .editor.is-inline) */
 .tdraw-host { position: absolute; inset: 0; z-index: 4; }
+
+/* ---------- #10 18쪽: 방 벽과 창문 ---------- */
+.page.has-window {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.18) 0 2.2cqh, transparent 2.2cqh 6cqh),
+    linear-gradient(180deg, #f3dcc0 0%, #ecc9a6 100%);
+}
+.page.has-window .pg { padding-right: 66cqh; }
+.win {
+  position: absolute;
+  right: 8cqh;
+  top: 50%;
+  width: 52cqh;
+  height: 64cqh;
+  margin-top: -34cqh;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  z-index: 2;
+  -webkit-tap-highlight-color: transparent;
+}
+.win-glow { position: absolute; inset: -2cqh; border-radius: 4cqh; background: radial-gradient(closest-side, rgb(255 214 120 / 0.85), rgb(255 198 90 / 0) 100%); opacity: 0; pointer-events: none; }
+.win-view { position: absolute; inset: 3cqh; overflow: hidden; border-radius: 1cqh; }
+.win-view .weather-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.win-art { position: absolute; inset: 6%; width: 88%; height: 88%; object-fit: contain; }
+.win-frame {
+  position: absolute; inset: 0; border: 3cqh solid #fbf1dc; border-radius: 2cqh;
+  box-shadow: inset 0 0 0 0.6cqh #d6bf94, 0 2.4cqh 4cqh -1.6cqh rgb(70 40 10 / 0.45), 0 0 0 0.5cqh #d6bf94;
+  pointer-events: none;
+}
+.win-pane {
+  position: absolute; top: 3cqh; bottom: 3cqh; width: calc(50% - 3cqh);
+  border: 1.4cqh solid #fbf1dc;
+  background:
+    linear-gradient(0deg, transparent calc(50% - 0.6cqh), #fbf1dc calc(50% - 0.6cqh) calc(50% + 0.6cqh), transparent calc(50% + 0.6cqh)),
+    linear-gradient(125deg, rgb(255 255 255 / 0) 30%, rgb(255 255 255 / 0.55) 38%, rgb(255 255 255 / 0) 46%, rgb(255 255 255 / 0) 60%, rgb(255 255 255 / 0.35) 64%, rgb(255 255 255 / 0) 68%),
+    linear-gradient(180deg, rgb(190 222 246 / 0.92), rgb(150 186 228 / 0.92));
+  box-shadow: inset 0 0 0 0.4cqh #d6bf94;
+  will-change: transform;
+}
+.win-pane--l { left: 3cqh; transform-origin: 0 50%; }
+.win-pane--r { right: 3cqh; transform-origin: 100% 50%; }
+.win-sill { position: absolute; left: -3cqh; right: -3cqh; bottom: -2.4cqh; height: 3.6cqh; border-radius: 1cqh; background: linear-gradient(180deg, #f6e4c2, #dcc196); box-shadow: 0 1.4cqh 2cqh -1cqh rgb(70 40 10 / 0.4); }
+.win-hint {
+  position: absolute; left: -10cqh; right: -10cqh; top: calc(100% + 3.6cqh);
+  font-family: var(--font-display); font-size: max(10px, 3.6cqh); color: #7a5330; text-align: center; white-space: nowrap;
+}
+.win.is-open .win-hint { opacity: 0.7; }

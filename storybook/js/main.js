@@ -341,6 +341,7 @@
         return;
       }
       var pg = el('div', { class: 'pg' + (p.tight ? ' pg--tight' : ''), 'data-place': p.place || 'top' });
+      if (p.window) { page.classList.add('has-image', 'has-window'); page.append(roomWindow(leaf)); }
       // 이 쪽만의 하늘(아래층)과 날씨(위층): 펼침면 삽화를 덮는다
       if (p.sky) {
         var pt = S.times.find(function (x) { return x.id === (typeof p.sky === 'string' ? p.sky : state.time); }) || S.times[1];
@@ -407,6 +408,59 @@
       if (!e.target.closest('.sticker')) selectSticker(leaf, null);
     });
     return leaf;
+  }
+
+  /* ---------- #10 18쪽: 방 창문 ----------
+     닫혀 있으면 살짝 반짝이며 눌러 보라고 알려 준다. 누르면 두 창이 바깥으로 열리고 '창 밖을 보니…' 화면으로.
+     고른 뒤에는 열린 창 너머로 아침 하늘과 그 날씨(움직이는 효과, 직접 그렸다면 그 그림)가 보인다. 다시 누르면 바꿀 수 있다. */
+  function roomWindow(leaf) {
+    var chosen = !!state.wakeWeather;
+    var view = el('div', { class: 'win-view', 'aria-hidden': 'true' });
+    var morning = S.times.find(function (x) { return x.id === 'morning'; });
+    view.style.background = morning ? morning.sky : '#bfe0f5';
+    if (chosen) {
+      if (state.wakeWeather === 'custom') {
+        if (images[IMG_WAKE]) view.append(el('img', { class: 'win-art', src: images[IMG_WAKE], alt: '' }));
+      } else if (window.StarSoupWeather) {
+        var cv = el('canvas', { class: 'weather-canvas' });
+        view.append(cv);
+        leaf._teardown.push(window.StarSoupWeather.start(cv, state.wakeWeather));
+      }
+    }
+    var paneL = el('span', { class: 'win-pane win-pane--l' }), paneR = el('span', { class: 'win-pane win-pane--r' });
+    var hint = el('span', { class: 'win-hint', 'aria-hidden': 'true', text: chosen ? '눌러서 바꿀 수 있어요' : '창문을 눌러 열어 보세요' });
+    var glow = el('span', { class: 'win-glow', 'aria-hidden': 'true' });
+    var btn = el('button', { type: 'button', class: 'win' + (chosen ? ' is-open' : ' is-closed'),
+      'aria-label': chosen ? '창 밖 날씨 바꾸기' : '창문 열기' },
+      glow, view, el('span', { class: 'win-frame', 'aria-hidden': 'true' }), paneL, paneR, el('span', { class: 'win-sill', 'aria-hidden': 'true' }), hint);
+    // 움직임은 JS로 (기기의 '움직임 줄이기'에도 멈추지 않게)
+    var OPEN_L = 'perspective(80cqh) rotateY(76deg)', OPEN_R = 'perspective(80cqh) rotateY(-76deg)';
+    if (chosen) { paneL.style.transform = OPEN_L; paneR.style.transform = OPEN_R; }
+    else if (glow.animate) {
+      // 닫힌 창: 금빛이 천천히 숨 쉬듯 번지고, 창이 살짝 들썩여 눌러 보고 싶게
+      glow.animate([{ opacity: 0.15, transform: 'scale(0.98)' }, { opacity: 0.9, transform: 'scale(1.03)' }, { opacity: 0.15, transform: 'scale(0.98)' }],
+        { duration: 2000, iterations: Infinity, easing: 'ease-in-out' });
+      [paneL, paneR].forEach(function (pn, i) {
+        pn.animate([{ transform: 'none' }, { transform: 'perspective(80cqh) rotateY(' + (i ? -7 : 7) + 'deg)', offset: 0.12 }, { transform: 'none', offset: 0.24 }, { transform: 'none' }],
+          { duration: 3200, delay: 900, iterations: Infinity, easing: 'ease-in-out' });
+      });
+      hint.animate([{ opacity: 0.55 }, { opacity: 1 }, { opacity: 0.55 }], { duration: 2000, iterations: Infinity });
+    }
+    btn.addEventListener('click', function () {
+      if (switching) return;
+      if (chosen || !paneL.animate) { showAsk('wake', 1); return; }
+      // 두 창이 바깥으로 활짝 열리는 걸 보여 준 다음 묻는다
+      btn.classList.remove('is-closed');
+      [glow, paneL, paneR, hint].forEach(function (n) { n.getAnimations().forEach(function (a) { a.cancel(); }); });
+      hint.style.opacity = '0';
+      paneL.animate([{ transform: 'none' }, { transform: OPEN_L }], { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+      paneR.animate([{ transform: 'none' }, { transform: OPEN_R }], { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' })
+        .finished.then(function () {
+          paneL.style.transform = OPEN_L; paneR.style.transform = OPEN_R;   // 화면이 넘어가는 동안에도 열린 모습 그대로
+          setTimeout(function () { if (btn.isConnected) showAsk('wake', 1); }, 250);
+        });
+    });
+    return btn;
   }
 
   /* ---------- 쪽 위의 입력 도구 ---------- */
@@ -1097,15 +1151,17 @@
       g.shadowBlur = 10;
       for (var i = 0; i < list.length; i++) {
         var s = list[i];
-        s.life++;
-        s.y -= s.vy;
-        s.x += Math.sin(t / 900 + s.ph) * 0.22;
+        var sp = reduceMotion ? 0.5 : 1;
+        s.life += sp;
+        s.y -= s.vy * sp;
+        s.x += Math.sin(t / 900 + s.ph) * 0.22 * sp;
         if (s.life > s.max || s.y < -10) { list[i] = spawn(false); continue; }
         var fade = Math.max(0, Math.min(1, s.life / 40, (s.max - s.life) / 60));
         drawStar(s.x, s.y, s.r, fade * (0.55 + 0.45 * Math.sin(t / 280 + s.ph)));
       }
       g.globalAlpha = 1;
-      if (!reduceMotion) raf = requestAnimationFrame(frame);
+      // 반짝이는 별은 표지의 핵심 장면이라 '움직임 줄이기'가 켜져 있어도 멈추지 않는다 (그때는 천천히)
+      raf = requestAnimationFrame(frame);
     }
 
     var ro = window.ResizeObserver ? new ResizeObserver(resize) : null;
@@ -1148,7 +1204,7 @@
   }
 
   function atLastStep() {
-    return state.scene === LAST && leavingNow();
+    return state.scene === LAST && leavingNow() && !missing(S.scenes[LAST]);
   }
 
   // 이 장면을 떠날 차례인지: 한 쪽씩 보기는 두 번째 쪽, 펼침 보기는 보통 바로.
@@ -1282,7 +1338,7 @@
     if (blockedHere()) {
       var scene = S.scenes[state.scene];
       toast(scene.requireMessage);
-      var grid = currentLeaf() && currentLeaf().querySelector('.grid, .carousel');
+      var grid = currentLeaf() && currentLeaf().querySelector('.grid, .carousel, .win');
       if (grid) { grid.classList.remove('is-shake'); void grid.offsetWidth; grid.classList.add('is-shake'); }
       return;
     }
@@ -1354,7 +1410,7 @@
     weather: weatherAsk({ key: 'weather', scene: 'intro', field: 'weather', nameField: 'customWeatherName', img: IMG_WEATHER,
       question: '오늘의 날씨는 어떤가요?', where: '#1 하늘에 그 날씨가 펼쳐져요.' }),
     wake: weatherAsk({ key: 'wake', scene: 'ending', field: 'wakeWeather', nameField: 'wakeWeatherName', img: IMG_WAKE,
-      question: '창 밖을 보니…', where: '창 밖에 그 날씨가 펼쳐져요.' }),
+      question: '창 밖을 보니…', where: '창 밖에 그 날씨가 펼쳐져요.', landPage: 1 }),
     soup: {
       text: function () {
         return [
@@ -1684,6 +1740,7 @@
         return w ? w.label + S.josa(w.label, '을/를') + ' 골랐어요. ' + o.where : '‘직접 그리기’로 오늘의 날씨를 그려도 좋아요.';
       },
       ready: function () { return !!state[o.field]; },
+      landPage: o.landPage,
       requireMessage: '오늘의 날씨를 하나 골라 주세요.'
     };
   }
@@ -1779,7 +1836,7 @@
     if (pos >= 0 && pos < list.length - 1 && state.returnTo == null) { showAsk(list[pos + 1], 1, card); return; }
     var target = state.returnTo != null ? state.returnTo : askScene(askId);
     var after = cfg.after;
-    var landPage = target === askScene(askId) ? askPage(S.scenes[target]) : 0;
+    var landPage = target === askScene(askId) ? (cfg.landPage != null ? cfg.landPage : askPage(S.scenes[target])) : 0;
     leaveThen(card, 1, function () {
       enterBook(target, landPage, 1);
       if (after) after();
@@ -1793,6 +1850,8 @@
     var list = askList(askId), pos = list.indexOf(askId);
     if (pos > 0) { showAsk(list[pos - 1], -1, card); return; }
     var here = S.scenes[askScene(askId)];
+    // 쪽 안에서 연 화면(#10 창 밖)은 그 쪽으로 돌아간다
+    if (ASK[askId].landPage != null) { var lp = ASK[askId].landPage, sc0 = askScene(askId); leaveThen(card, -1, function () { enterBook(sc0, lp, -1); }); return; }
     if (askPage(here)) { leaveThen(card, -1, function () { enterBook(askScene(askId), askPage(here) - 1, -1); }); return; }
     var back = askScene(askId) - 1;
     if (back < 0) {
@@ -1890,7 +1949,7 @@
   var swipe = null;
   book.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' || swipe || switching) return;
-    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw-host')) return;
+    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw-host, .win')) return;
     swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dir: null, leaf: currentLeaf() };
   });
   book.addEventListener('pointermove', function (e) {

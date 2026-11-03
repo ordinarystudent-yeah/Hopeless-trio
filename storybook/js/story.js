@@ -225,11 +225,13 @@
     {
       // #10: 17쪽 잠에서 깸 / 18쪽 창 밖 (삽화를 빼고 화창한 아침 하늘 + '창 밖을 보니…'에서 고른 날씨)
       // 날씨는 '창 밖을 보니…' 묻는 화면에서 고른다: 한 쪽씩 보기는 17쪽과 18쪽 사이, 펼침면은 이 장면 앞.
-      id: 'ending', act: 3, tone: 'dawn', no: '10', asks: ['wake'], askAt: 1,
+      // 18쪽: 닫힌 창문 그림. 창문을 누르면 열리며 '창 밖을 보니…'를 묻고, 고르면 열린 창 너머에 그 날씨가 보인다
+      id: 'ending', act: 3, tone: 'dawn', no: '10',
+      require: 'wakeWeather', requirePage: 1, requireMessage: '창문을 눌러 창 밖을 봐 주세요.',
       image: 'assets/backgrounds/10-wake-up.jpg', alt: '아침에 잠에서 깬 아이의 방',
       pages: [
         { text: true, place: 'top', art: 'dawn', artPos: 'bottom' },
-        { sky: 'morning', weatherFx: 'wake', text: function (c) { return windowText(c); }, place: 'top' }
+        { window: true, text: function (c) { return windowText(c); }, place: 'top' }
       ],
       text: function (c) {
         var taste = c.taste ? [{ v: c.taste.label }, josa(c.taste.label, '이/가')] : ['별빛스프의 맛이'];
@@ -381,6 +383,7 @@
   // #10 18쪽: 창 밖을 보니, (날씨) + 오늘도, 먹을 수 있을까요?
   function windowText(c) {
     var w = c.wakeWeather;
+    if (!w) return [['창문 너머에는 무엇이 보일까요?']];
     return [
       ['창 밖을 보니, '].concat(w ? [{ v: w.seen }] : ['밝은 아침이 와 있었어요.']),
       { coda: true, parts: ['오늘도, 먹을 수 있을까요?\n착한 아이에게 주는 별빛 스프를!'] }
@@ -396,7 +399,7 @@
   };
 
   window.StarSoup = {
-    version: '4.4',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '4.5',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
