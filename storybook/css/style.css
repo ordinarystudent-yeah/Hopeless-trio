@@ -1200,7 +1200,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* ---------- 스프 젓기 (재료를 넣은 다음) ----------
    그릇 그림은 그대로, 스프 위(소용돌이 + 재료)만 그릇 가운데를 축으로 돈다. 10번 × 36° = 한 바퀴 */
 .stir-pot { display: block; padding: 0; border: 0; cursor: pointer; font: inherit; color: inherit; touch-action: manipulation; }
-.stir-spin { position: absolute; inset: 0; transform-origin: 50% 51%; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); pointer-events: none; }
+.stir-spin { position: absolute; inset: 0; transform-origin: 50% 51%; pointer-events: none; will-change: transform; }
 .stir-swirl {
   position: absolute;
   left: 50%;

@@ -1301,27 +1301,70 @@
       body: function () {
         var galaxy = el('div', { class: 'soup-galaxy' });
         var swirl = el('div', { class: 'stir-swirl' });
-        var spin = el('div', { class: 'stir-spin' }, galaxy, swirl, soupIngredients(false));
+        // 스프(액체)와 그 위에 뜬 재료를 따로 돌린다: 재료는 액체에 끌려 조금 늦게 따라온다
+        var liquid = el('div', { class: 'stir-spin' }, galaxy, swirl);
+        var floats = el('div', { class: 'stir-spin' }, soupIngredients(false));
         var count = el('div', { class: 'stir-count', 'aria-live': 'polite' });
         var pot = el('button', { type: 'button', class: 'soup-pot stir-pot', 'aria-label': '스프 젓기 (눌러서 저어요)' },
-          el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '' }), spin, count);
+          el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '' }), liquid, floats, count);
+        // 물성: 걸쭉한 스프를 숟가락으로 미는 느낌
+        //  - 힘이 서서히 실려 천천히 출발(슬로우 인), 관성으로 살짝 지나쳤다가 되돌아와 멈춤
+        //  - 재료는 액체보다 늦게, 더 크게 흔들리며 따라옴
+        //  - 누를 때마다 표면이 말랑하게 출렁임
+        var phy = { a: state.soupStirs * 36, v: 0, b: state.soupStirs * 36, bv: 0, w: 0, wv: 0, sw: 0, tap: -1, raf: 0, last: 0 };
+        var draw = function () {
+          var sq = phy.w;
+          liquid.style.transform = 'rotate(' + phy.a.toFixed(2) + 'deg) scale(' + (1 + sq).toFixed(4) + ',' + (1 - sq * 0.6).toFixed(4) + ')';
+          floats.style.transform = 'rotate(' + phy.b.toFixed(2) + 'deg) scale(' + (1 + sq * 0.5).toFixed(4) + ')';
+          swirl.style.transform = 'translate(-50%, -50%) rotate(' + phy.sw.toFixed(1) + 'deg)';
+          swirl.style.opacity = String(Math.min(1, 0.35 + Math.abs(phy.v) / 90));
+        };
+        var step = function (now) {
+          var dt = Math.min(0.033, (now - (phy.last || now)) / 1000);
+          phy.last = now;
+          var target = state.soupStirs * 36;
+          // 슬로우 인: 누른 직후엔 미는 힘이 약하다가 0.45초에 걸쳐 부드럽게 다 실린다
+          var t = phy.tap < 0 ? 1 : Math.min(1, (now - phy.tap) / 450);
+          var ramp = t * t * (3 - 2 * t);
+          var k = 38 * (0.08 + 0.92 * ramp), c = 2 * 0.62 * Math.sqrt(38);
+          phy.v += (k * (target - phy.a) - c * phy.v) * dt;
+          phy.a += phy.v * dt;
+          // 재료: 액체 각도를 느슨한 용수철로 따라감 (더 늦고 더 출렁)
+          phy.bv += (22 * (phy.a - phy.b) - 2 * 0.42 * Math.sqrt(22) * phy.bv) * dt;
+          phy.b += phy.bv * dt;
+          // 표면 출렁임: 빠르게 떨리다 잦아드는 말랑한 진동
+          phy.wv += (-520 * phy.w - 9 * phy.wv) * dt;
+          phy.w += phy.wv * dt;
+          // 소용돌이 결은 액체보다 빠르게 흐른다
+          phy.sw += phy.v * 2.2 * dt;
+          draw();
+          var calm = Math.abs(target - phy.a) < 0.05 && Math.abs(phy.v) < 0.05 && Math.abs(phy.a - phy.b) < 0.05 &&
+            Math.abs(phy.bv) < 0.05 && Math.abs(phy.w) < 0.0005 && Math.abs(phy.wv) < 0.005;
+          if (calm || !pot.isConnected) { phy.raf = 0; phy.last = 0; return; }
+          phy.raf = requestAnimationFrame(step);
+        };
+        var kick = function () { if (!phy.raf) { phy.last = 0; phy.raf = requestAnimationFrame(step); } };
         var paint = function () {
           count.textContent = state.soupStirs >= 10 ? '완성!' : state.soupStirs + ' / 10';
           count.classList.toggle('is-done', state.soupStirs >= 10);
-          spin.style.transform = 'rotate(' + state.soupStirs * 36 + 'deg)';
           // 푸른 은하빛이 한 번 저을 때마다 10%씩 걷히고 아래의 금빛이 드러난다
           galaxy.style.opacity = String(Math.max(0, 1 - state.soupStirs / 10));
         };
         paint();
+        draw();
         pot.addEventListener('pointerdown', function (e) {
           if (state.soupStirs >= 10) return;
           state.soupStirs++;
           paint();
-          // 휘익: 소용돌이가 한 바퀴 돌고, 가운데에서 물결이 퍼지고, 스프가 살짝 출렁인다
-          if (swirl.animate) {
-            swirl.animate([{ transform: 'translate(-50%, -50%) rotate(0deg) scale(1)' }, { transform: 'translate(-50%, -50%) rotate(300deg) scale(1.06)' }, { transform: 'translate(-50%, -50%) rotate(360deg) scale(1)' }],
-              { duration: 750, easing: 'cubic-bezier(.3,.7,.3,1)' });
-            spin.animate([{ scale: '1' }, { scale: '0.97' }, { scale: '1.02' }, { scale: '1' }], { duration: 600, easing: 'ease-out' });
+          phy.tap = performance.now();
+          phy.wv += 1.1; // 누르는 순간 표면이 톡 눌렸다 출렁
+          kick();
+          // 그릇도 누른 쪽으로 아주 살짝 밀렸다 돌아온다
+          var pr = pot.getBoundingClientRect();
+          var nx = (e.clientX - pr.left) / pr.width - 0.5, ny = (e.clientY - pr.top) / pr.height - 0.5;
+          if (pot.animate) {
+            pot.animate([{ translate: '0 0' }, { translate: (nx * 6).toFixed(1) + 'px ' + (ny * 6).toFixed(1) + 'px' }, { translate: (nx * -2).toFixed(1) + 'px ' + (ny * -2).toFixed(1) + 'px' }, { translate: '0 0' }],
+              { duration: 420, easing: 'ease-out' });
           }
           var ripple = el('span', { class: 'stir-ripple', 'aria-hidden': 'true' });
           pot.append(ripple);
