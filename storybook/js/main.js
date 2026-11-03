@@ -1280,7 +1280,7 @@
       },
       body: function () {
         var full = state.soup.length >= S.limits.ingredients;
-        var pot = el('div', { class: 'soup-pot' }, el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '위에서 내려다본 별빛스프' }), soupIngredients(true));
+        var pot = el('div', { class: 'soup-pot' }, el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '위에서 내려다본 별빛스프' }), el('div', { class: 'soup-galaxy' }), soupIngredients(true));
         var add = el('button', {
           type: 'button', class: 'btn btn-soft btn-small soup-add', disabled: full,
           text: full ? '재료를 다섯 개 다 넣었어요' : '+ 재료 넣기 (' + state.soup.length + '/' + S.limits.ingredients + ')',
@@ -1299,7 +1299,9 @@
       scene: 'soup',
       text: function () { return [['이제 별빛스프를 휘휘 저어 볼까요?'], ['스프를 10번 톡톡 눌러서 저어 주세요.']]; },
       body: function () {
-        var spin = el('div', { class: 'stir-spin' }, el('div', { class: 'stir-swirl' }), soupIngredients(false));
+        var galaxy = el('div', { class: 'soup-galaxy' });
+        var swirl = el('div', { class: 'stir-swirl' });
+        var spin = el('div', { class: 'stir-spin' }, galaxy, swirl, soupIngredients(false));
         var count = el('div', { class: 'stir-count', 'aria-live': 'polite' });
         var pot = el('button', { type: 'button', class: 'soup-pot stir-pot', 'aria-label': '스프 젓기 (눌러서 저어요)' },
           el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '' }), spin, count);
@@ -1307,12 +1309,23 @@
           count.textContent = state.soupStirs >= 10 ? '완성!' : state.soupStirs + ' / 10';
           count.classList.toggle('is-done', state.soupStirs >= 10);
           spin.style.transform = 'rotate(' + state.soupStirs * 36 + 'deg)';
+          // 푸른 은하빛이 한 번 저을 때마다 10%씩 걷히고 아래의 금빛이 드러난다
+          galaxy.style.opacity = String(Math.max(0, 1 - state.soupStirs / 10));
         };
         paint();
         pot.addEventListener('pointerdown', function (e) {
           if (state.soupStirs >= 10) return;
           state.soupStirs++;
           paint();
+          // 휘익: 소용돌이가 한 바퀴 돌고, 가운데에서 물결이 퍼지고, 스프가 살짝 출렁인다
+          if (swirl.animate) {
+            swirl.animate([{ transform: 'translate(-50%, -50%) rotate(0deg) scale(1)' }, { transform: 'translate(-50%, -50%) rotate(300deg) scale(1.06)' }, { transform: 'translate(-50%, -50%) rotate(360deg) scale(1)' }],
+              { duration: 750, easing: 'cubic-bezier(.3,.7,.3,1)' });
+            spin.animate([{ scale: '1' }, { scale: '0.97' }, { scale: '1.02' }, { scale: '1' }], { duration: 600, easing: 'ease-out' });
+          }
+          var ripple = el('span', { class: 'stir-ripple', 'aria-hidden': 'true' });
+          pot.append(ripple);
+          setTimeout(function () { ripple.remove(); }, 900);
           // 누른 자리에 별빛이 톡
           var r = pot.getBoundingClientRect();
           for (var k = 0; k < 5; k++) {

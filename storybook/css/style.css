@@ -1081,12 +1081,13 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .spread-bg[data-sky="dawn"]::after { opacity: 0.4; }
 .weather-fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .weather-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* #1: 직접 그린 날씨는 왼쪽 쪽 가운데에 (휴대폰에서 한 쪽씩 볼 때도 잘리지 않게, 위쪽 글 상자 아래) */
 .weather-art {
   position: absolute;
-  left: 50%;
-  top: 6%;
-  width: 34%;
-  max-height: 60%;
+  left: 25%;
+  top: 30%;
+  width: 30%;
+  max-height: 62%;
   object-fit: contain;
   transform: translateX(-50%);
   filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.25));
@@ -1238,3 +1239,42 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   from { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
   to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2); opacity: 0; }
 }
+
+/* #10 18쪽처럼 쪽 하나에만 깔린 날씨에서는 그 쪽 가운데 */
+.page .weather-art { left: 50%; top: 34%; width: 56%; max-height: 58%; }
+
+/* ---------- 별빛스프 색: 푸른 은하빛 → 저을수록 황금빛 ----------
+   그릇 안쪽(그림의 금빛 스프 자리)을 덮는 푸른 은하. 저을 때마다 옅어져 금빛이 드러난다 */
+.soup-galaxy {
+  position: absolute;
+  left: 50%;
+  top: 51%;
+  width: 46.7%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(1.5px 1.5px at 30% 35%, #fff 50%, transparent 60%),
+    radial-gradient(1px 1px at 62% 28%, #fff 50%, transparent 60%),
+    radial-gradient(1.8px 1.8px at 70% 62%, #fff 50%, transparent 60%),
+    radial-gradient(1px 1px at 40% 70%, #fff 50%, transparent 60%),
+    radial-gradient(1.2px 1.2px at 52% 48%, #fff 50%, transparent 60%),
+    radial-gradient(1px 1px at 22% 58%, #fff 50%, transparent 60%),
+    conic-gradient(from 40deg at 50% 50%, rgb(140 120 255 / 0.55), rgb(80 170 255 / 0.35), rgb(200 120 255 / 0.5), rgb(90 140 255 / 0.35), rgb(140 120 255 / 0.55)),
+    radial-gradient(circle at 46% 42%, #6f7cf0 0%, #3a3f9c 48%, #1d1f5c 100%);
+  box-shadow: inset 0 0 18px rgb(10 10 40 / 0.6);
+  transition: opacity 0.7s ease;
+}
+.stir-ripple {
+  position: absolute;
+  left: 50%;
+  top: 51%;
+  width: 46.7%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid rgb(255 245 210 / 0.8);
+  transform: translate(-50%, -50%) scale(0.1);
+  pointer-events: none;
+  animation: stir-ripple 0.9s ease-out forwards;
+}
+@keyframes stir-ripple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
