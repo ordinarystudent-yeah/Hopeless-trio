@@ -95,10 +95,20 @@ for i in range(45):
     std.ellipse((x - s, y - s, x + s, y + s), fill=(255, 255, 255, rng.randint(120, 230)))
 img.alpha_composite(st)
 
-# 숟가락 (오른쪽 아래)
-sp = layer(); spd = ImageDraw.Draw(sp)
-spd.line((CX + 380, CY + 300, CX + 560, CY + 430), fill=(150, 160, 170, 255), width=26)
-spd.ellipse((CX + 330, CY + 250, CX + 420, CY + 330), fill=(172, 182, 192, 255))
+# 숟가락: 그릇 지름(800)만큼 긴 숟가락을 그릇 오른쪽에 세로로 살짝 비스듬히
+SL = 800
+spl = Image.new('RGBA', (220, SL + 40), (0, 0, 0, 0)); spd = ImageDraw.Draw(spl)
+spd.rounded_rectangle((94, 150, 126, SL + 20), radius=16, fill=(150, 160, 170, 255))      # 자루
+spd.ellipse((30, 10, 190, 220), fill=(172, 182, 192, 255))                                 # 머리
+spd.ellipse((52, 34, 168, 196), fill=(188, 198, 208, 255))                                 # 오목한 안쪽
+spd.ellipse((70, 50, 104, 110), fill=(236, 242, 246, 200))                                 # 반짝
+spd.line((104, 230, 104, SL - 20), fill=(214, 222, 228, 170), width=6)                     # 자루 빛
+spl = spl.rotate(-7, resample=Image.BICUBIC, expand=True)
+shadow = Image.new('RGBA', spl.size, (40, 80, 60, 0)); shadow.putalpha(spl.getchannel('A').point(lambda v: v * 0.35))
+sp = layer()
+px, py = CX + R_OUT + 140 - spl.width // 2, CY - spl.height // 2
+sp.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(10)), (px + 14, py + 18))
+sp.alpha_composite(spl, (px, py))
 img.alpha_composite(sp)
 
 # 종이 결
