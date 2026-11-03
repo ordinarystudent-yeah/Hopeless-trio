@@ -332,44 +332,44 @@
   /* ---------- #1 앞: 때와 날씨 ----------
      때는 그날의 기분에 빗댄다. sky는 #1의 가장 아래층에 깔리는 하늘색. */
   var times = [
-    { id: 'dawn', label: '어스름한 새벽', word: '새벽', mood: '아직 잠이 덜 깬 기분',
+    { id: 'dawn', phrase: '어스름한 새벽', label: '어스름한 새벽', word: '새벽', mood: '아직 잠이 덜 깬 기분',
       say: '어스름한 새벽이에요.', after: '집들이 하나 둘 깨기 시작했지만, 역시 아직 자고 싶어요.',
       sky: 'linear-gradient(180deg, #232a66 0%, #6d5fa6 55%, #e9a4a0 100%)' },
-    { id: 'morning', label: '밝은 아침', word: '아침', mood: '막 눈을 뜬 상쾌한 기분',
+    { id: 'morning', phrase: '밝은 아침', label: '밝은 아침', word: '아침', mood: '막 눈을 뜬 상쾌한 기분',
       say: '밝은 아침이에요.', after: '밝은 아침에도 아직 피곤해요... 더 자고 싶은 당신은 꾸벅꾸벅 눈이 감겨요.',
       sky: 'linear-gradient(180deg, #8cc6f0 0%, #cfe7f6 55%, #fde6c4 100%)' },
-    { id: 'day', label: '환한 낮', word: '낮', mood: '햇살처럼 들뜬 기분',
+    { id: 'day', phrase: '환한 낮', label: '환한 낮', word: '낮', mood: '햇살처럼 들뜬 기분',
       say: '환한 낮이에요.', after: '낮이지만, 꿈뻑꿈뻑 졸려요.',
       sky: 'linear-gradient(180deg, #3b8de0 0%, #7cc0f2 55%, #cdeafb 100%)' },
-    { id: 'evening', label: '노을이 진 저녁', word: '저녁', mood: '노곤노곤 지친 기분',
+    { id: 'evening', phrase: '노을 진 저녁', label: '노을이 진 저녁', word: '저녁', mood: '노곤노곤 지친 기분',
       say: '노을이 진 저녁이네요.', after: '잠을 자기에는 이르지만, 노곤노곤 몸이 피곤해지는 시간이에요.',
       sky: 'linear-gradient(180deg, #3a2f6b 0%, #b85c7c 55%, #f6a65a 100%)' },
-    { id: 'night', label: '깜깜한 밤', word: '밤', mood: '고요하고 졸린 기분',
+    { id: 'night', phrase: '깜깜한 밤', label: '깜깜한 밤', word: '밤', mood: '고요하고 졸린 기분',
       say: '깜깜한 밤이에요.', pre: '모두가 잠이 든 시간이에요.', after: '불 꺼진 밖을 보니 저절로 잠이 와요.',
       sky: 'linear-gradient(180deg, #0b1030 0%, #1d2452 60%, #2d2f6c 100%)' }
   ];
 
   // 날씨: #1의 가장 위층에 움직이는 효과(js/weather.js). 직접 그리기를 고르면 그린 그림이 그 층에 그대로 놓인다(움직이지 않음).
   var weathers = [
-    { id: 'sunny', label: '화창한 날', day: '화창한', emoji: '☀️', glow: '#d9a23a', feel: '맑고 청명한 기분이 들었어요.', seen: '맑은 햇살이 반짝반짝 쏟아지고 있었어요.' },
-    { id: 'rain', label: '비 오는 날', day: '비가 내리는', emoji: '🌧️', glow: '#4a6f9a', feel: '톡톡 떨어지는 빗소리에 마음이 차분해졌어요.', seen: '보슬보슬 비가 내리고 있었어요.' },
-    { id: 'snow', label: '눈 오는 날', day: '눈이 내리는', emoji: '❄️', glow: '#8aa6c8', feel: '소복소복 내리는 눈에 마음이 포근해졌어요.', seen: '하얀 눈이 소복소복 내리고 있었어요.' },
-    { id: 'cloudy', label: '흐린 날', day: '흐린', emoji: '☁️', glow: '#6b7390', feel: '구름이 잔뜩 낀 하늘처럼 마음이 몽글몽글했어요.', seen: '몽실몽실 구름이 하늘을 덮고 있었어요.' }
+    { id: 'sunny', pre: '맑게 갠', label: '화창한 날', day: '화창한', emoji: '☀️', glow: '#d9a23a', feel: '맑고 청명한 기분이 들었어요.', seen: '맑은 햇살이 반짝반짝 쏟아지고 있었어요.' },
+    { id: 'rain', pre: '비가 오는', label: '비 오는 날', day: '비가 내리는', emoji: '🌧️', glow: '#4a6f9a', feel: '톡톡 떨어지는 빗소리에 마음이 차분해졌어요.', seen: '보슬보슬 비가 내리고 있었어요.' },
+    { id: 'snow', pre: '눈이 오는', label: '눈 오는 날', day: '눈이 내리는', emoji: '❄️', glow: '#8aa6c8', feel: '소복소복 내리는 눈에 마음이 포근해졌어요.', seen: '하얀 눈이 소복소복 내리고 있었어요.' },
+    { id: 'cloudy', pre: '구름이 낀', label: '흐린 날', day: '흐린', emoji: '☁️', glow: '#6b7390', feel: '구름이 잔뜩 낀 하늘처럼 마음이 몽글몽글했어요.', seen: '몽실몽실 구름이 하늘을 덮고 있었어요.' }
   ];
-  var customWeather = { label: '직접 그리기', day: '특별한', feel: '내가 그린 하늘처럼 특별한 기분이 들었어요.', seen: '내가 그린 하늘이 펼쳐져 있었어요.' };
+  var customWeather = { label: '직접 그리기', day: '특별한', pre: '특별한 하늘이 펼쳐진', feel: '내가 그린 하늘처럼 특별한 기분이 들었어요.', seen: '내가 그린 하늘이 펼쳐져 있었어요.' };
 
   // #1 왼쪽 쪽: (선택한 하루)를 보내고 창문을 여니 하늘이…
   function introOpening(c) {
     var w = c.weather;
     return [w ? [{ v: w.day }, ' 하루를 보내고 창문을 여니 하늘이…'] : ['하루를 보내고 창문을 여니 하늘이…']];
   }
-  // #1 오른쪽 쪽: 때 문장 + 날씨 문장 + 잠이 들었던 (선택한 시간)…
+  // #1 오른쪽 쪽: 날씨와 때를 한 문장으로("비가 오는 깜깜한 밤이에요.") + 잠이 들었던 (선택한 시간)…
   function introSky(c) {
     var t = c.time, w = c.weather;
     var first = [];
-    if (t) first.push({ v: t.say });
+    if (t) first.push({ v: w ? w.pre + ' ' + t.phrase + '이에요.' : t.say });
+    else if (w) first.push(w.feel);
     if (t && t.pre) first.push(' ' + t.pre);
-    if (w) first.push((first.length ? ' ' : '') + w.feel);
     if (t) first.push(' ' + t.after);
     var out = [];
     if (first.length) out.push(first);
@@ -395,7 +395,7 @@
   };
 
   window.StarSoup = {
-    version: '3.1',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '3.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

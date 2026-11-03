@@ -83,6 +83,7 @@
     if (id !== 'custom') return S.weathers.find(function (w) { return w.id === id; }) || null;
     var wn = (customName || '').trim();
     return { id: 'custom', label: wn || S.customWeather.label, day: S.customWeather.day,
+      pre: wn ? '‘' + wn + '’ 하늘이 펼쳐진' : S.customWeather.pre,
       feel: wn ? '내가 그린 ‘' + wn + '’ 하늘처럼 특별한 기분이 들었어요.' : S.customWeather.feel,
       seen: wn ? '내가 그린 ‘' + wn + '’ 하늘이 펼쳐져 있었어요.' : S.customWeather.seen };
   }
@@ -1300,12 +1301,10 @@
       text: function () { return [['이제 별빛스프를 휘휘 저어 볼까요?'], ['스프를 10번 톡톡 눌러서 저어 주세요.']]; },
       body: function () {
         var galaxy = el('div', { class: 'soup-galaxy' });
-        var swirl = el('div', { class: 'stir-swirl' });
         // 스프(액체)와 그 위에 뜬 재료를 따로 돌린다: 재료는 액체에 끌려 조금 늦게 따라온다
-        // 점성: 스프 속 크림 결(리본)과 방울. 바깥쪽 스프일수록 늦게 끌려와 결이 소용돌이로 감기고,
-        // 멈추면 꿀처럼 천천히 풀린다. 빨리 돌 땐 방울이 길게 늘어나고 지나간 자리가 번진다
+        // 캔버스: 빛나는 소용돌이 결(누르면 파문처럼 물결졌다가 돌아옴)과, 빨리 돌 때 길게 늘어나는 방울
         var goo = el('canvas', { class: 'stir-goo', 'aria-hidden': 'true' });
-        var liquid = el('div', { class: 'stir-spin' }, galaxy, goo, swirl);
+        var liquid = el('div', { class: 'stir-spin' }, galaxy, goo);
         var floats = el('div', { class: 'stir-spin' }, soupIngredients(false));
         var count = el('div', { class: 'stir-count', 'aria-live': 'polite' });
         var pot = el('button', { type: 'button', class: 'soup-pot stir-pot', 'aria-label': '스프 젓기 (눌러서 저어요)' },
@@ -1319,35 +1318,53 @@
         for (var ri = 0; ri < RINGS; ri++) rings.push({ r: 0.08 + ri * 0.86 / (RINGS - 1), a: phy.a, v: 0 });
         var drops = [];
         for (var di = 0; di < 13; di++) drops.push({ j: 2 + (di * 5) % (RINGS - 3), t: di * 2.4 + 0.3, s: 0.022 + (di % 4) * 0.007 });
+        var waves = []; // 누른 자리에서 퍼지는 파문 { t0, ang }
         var gctx = goo.getContext && goo.getContext('2d');
+        // 파문: 누른 쪽에서 바깥으로 퍼져 나가며 빛의 결을 물결지게 밀었다가 잦아든다
+        var waveAt = function (r, th, now) {
+          var d = 0;
+          for (var i = 0; i < waves.length; i++) {
+            var tau = (now - waves[i].t0) / 1000, front = 0.12 + tau * 0.7, x = r - front;
+            var side = Math.max(0, Math.cos(th - waves[i].ang));
+            d += 0.07 * Math.exp(-2.4 * tau) * Math.sin(x * Math.PI * 2 * 3.2) * Math.exp(-(x * x) / 0.05) * (0.2 + 0.8 * side * side);
+          }
+          return d;
+        };
         var drawGoo = function (fresh) {
           if (!gctx) return;
           var dpr = Math.min(2, window.devicePixelRatio || 1);
           var W = Math.round(goo.clientWidth * dpr);
           if (!W) return;
           if (goo.width !== W) { goo.width = W; goo.height = W; fresh = true; }
-          var R = W / 2, g = gctx;
-          if (fresh) g.clearRect(0, 0, W, W);
-          else {
-            // 지난 프레임을 조금만 지워서, 움직일 때 결이 끈적하게 번져 남는다
-            g.globalCompositeOperation = 'destination-out';
-            g.fillStyle = 'rgba(0,0,0,0.3)';
-            g.fillRect(0, 0, W, W);
-            g.globalCompositeOperation = 'source-over';
-          }
+          var R = W / 2, g = gctx, now = performance.now();
+          g.clearRect(0, 0, W, W);
           var rad = Math.PI / 180;
-          // 크림 결 다섯 줄: 쉴 때는 완만한 나선, 저으면 바깥이 뒤처져 더 감긴다
-          for (var k = 0; k < 5; k++) {
-            var base = k * Math.PI * 2 / 5;
+          // 빛나는 소용돌이 결: 가는 동심원 고리들에 같은 빛 무늬를 칠한다. 파문이 지나가면 고리가 출렁여 빛이 물결진다
+          var glow = Math.min(1, 0.35 + Math.abs(phy.v) / 90);
+          var paintStyle = 'rgba(255, 250, 230, ' + (0.22 * glow).toFixed(3) + ')';
+          if (g.createConicGradient) {
+            var cg = g.createConicGradient(phy.sw * rad, R, R);
+            cg.addColorStop(0, 'rgba(255,255,255,0)');
+            cg.addColorStop(0.12, 'rgba(255,255,255,' + (0.42 * glow).toFixed(3) + ')');
+            cg.addColorStop(0.28, 'rgba(255,255,255,0)');
+            cg.addColorStop(0.55, 'rgba(255,236,180,' + (0.36 * glow).toFixed(3) + ')');
+            cg.addColorStop(0.72, 'rgba(255,255,255,0)');
+            cg.addColorStop(1, 'rgba(255,255,255,0)');
+            paintStyle = cg;
+          }
+          var NG = 20, gap = 0.97 / NG, SEG = 72;
+          g.strokeStyle = paintStyle;
+          g.lineWidth = gap * R;
+          for (var gi = 0; gi < NG; gi++) {
+            var rr = gap * (gi + 0.5);
             g.beginPath();
-            for (var j = 0; j < RINGS; j++) {
-              var q = rings[j], ang = base + q.r * 0.9 + (q.a - phy.a) * rad;
-              var x = R + Math.cos(ang) * q.r * R * 0.96, y = R + Math.sin(ang) * q.r * R * 0.96;
-              if (j) g.lineTo(x, y); else g.moveTo(x, y);
+            for (var si = 0; si <= SEG; si++) {
+              var th = si / SEG * Math.PI * 2;
+              var rw = Math.max(0, rr + (waves.length ? waveAt(rr, th, now) : 0)) * R;
+              var px = R + Math.cos(th) * rw, py = R + Math.sin(th) * rw;
+              if (si) g.lineTo(px, py); else g.moveTo(px, py);
             }
-            g.lineCap = 'round'; g.lineJoin = 'round';
-            g.strokeStyle = 'rgba(255, 244, 214, 0.16)'; g.lineWidth = R * 0.13; g.stroke();
-            g.strokeStyle = 'rgba(255, 250, 235, 0.42)'; g.lineWidth = R * 0.028; g.stroke();
+            g.stroke();
           }
           // 방울: 그 자리 스프가 빠를수록 결 방향으로 길쭉하게 늘어난다
           for (var d = 0; d < drops.length; d++) {
@@ -1370,8 +1387,6 @@
           var sq = phy.w;
           liquid.style.transform = 'rotate(' + phy.a.toFixed(2) + 'deg) scale(' + (1 + sq).toFixed(4) + ',' + (1 - sq * 0.6).toFixed(4) + ')';
           floats.style.transform = 'rotate(' + phy.b.toFixed(2) + 'deg) scale(' + (1 + sq * 0.5).toFixed(4) + ')';
-          swirl.style.transform = 'translate(-50%, -50%) rotate(' + phy.sw.toFixed(1) + 'deg)';
-          swirl.style.opacity = String(Math.min(1, 0.35 + Math.abs(phy.v) / 90));
         };
         var step = function (now) {
           var dt = Math.min(0.033, (now - (phy.last || now)) / 1000);
@@ -1402,6 +1417,8 @@
           draw();
           var calm = Math.abs(target - phy.a) < 0.05 && Math.abs(phy.v) < 0.05 && Math.abs(phy.a - phy.b) < 0.05 &&
             Math.abs(phy.bv) < 0.05 && Math.abs(phy.w) < 0.0005 && Math.abs(phy.wv) < 0.005 && ringCalm;
+          waves = waves.filter(function (wv) { return now - wv.t0 < 1800; });
+          calm = calm && !waves.length;
           drawGoo(calm);
           if (calm || !pot.isConnected) { phy.raf = 0; phy.last = 0; return; }
           phy.raf = requestAnimationFrame(step);
@@ -1428,6 +1445,9 @@
           // 그릇도 누른 쪽으로 아주 살짝 밀렸다 돌아온다
           var pr = pot.getBoundingClientRect();
           var nx = (e.clientX - pr.left) / pr.width - 0.5, ny = (e.clientY - pr.top) / pr.height - 0.5;
+          // 파문은 누른 쪽에서 시작 (돌아가는 스프 기준의 방향으로 바꿔 넣는다)
+          waves.push({ t0: phy.tap, ang: Math.atan2((e.clientY - pr.top) / pr.height - 0.51, nx) - phy.a * Math.PI / 180 });
+          if (waves.length > 4) waves.shift();
           if (pot.animate) {
             pot.animate([{ translate: '0 0' }, { translate: (nx * 6).toFixed(1) + 'px ' + (ny * 6).toFixed(1) + 'px' }, { translate: (nx * -2).toFixed(1) + 'px ' + (ny * -2).toFixed(1) + 'px' }, { translate: '0 0' }],
               { duration: 420, easing: 'ease-out' });
