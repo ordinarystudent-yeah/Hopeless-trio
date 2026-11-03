@@ -1292,3 +1292,17 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   pointer-events: none;
   mix-blend-mode: screen;
 }
+
+/* 출렁이는 스프: 그림의 금빛 스프 부분만 오려 낸 층(돌고 출렁인다)과, 그 아래 고정된 그릇 바닥.
+   스프가 한쪽으로 쏠리면 반대쪽에 그릇 바닥이 살짝 드러난다. 원 = 가로 23.35%, 세로 33% (그림 660/1414, 660/1000) */
+.stir-soup {
+  position: absolute;
+  inset: 0;
+  background: url('../assets/backgrounds/08-soup-top.jpg') center / cover no-repeat;
+  clip-path: ellipse(23.35% 33% at 50% 51%);
+}
+.stir-floor {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 23.6% 33.4% at 50% 51%, #efe4cb 0%, #e2d2b0 70%, #cdb68c 99%, transparent 100%);
+}
