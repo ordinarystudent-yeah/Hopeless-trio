@@ -28,20 +28,20 @@ def star(cx, cy, r, inner=0.45, rot=-90):
         pts.append((cx + rr * math.cos(a), cy + rr * math.sin(a)))
     return pts
 
-# 식탁보: 남보라 천에 체크 무늬
+# 식탁보: 삽화들과 어울리는 파스텔 라벤더 천에 체크 무늬 (채도는 낮게, 밝게)
 t = np.linspace(0, 1, H)[:, None]
-base = np.array([34, 36, 92]) * (1 - t) + np.array([58, 44, 112]) * t
+base = np.array([196, 190, 228]) * (1 - t) + np.array([214, 198, 232]) * t
 img = Image.fromarray(np.repeat(base[:, None, :], W, axis=1).astype('uint8'), 'RGB').convert('RGBA')
 chk = layer(); cd = ImageDraw.Draw(chk)
 for x in range(-40, W + 40, 120):
-    cd.rectangle((x, 0, x + 44, H), fill=(255, 255, 255, 14))
+    cd.rectangle((x, 0, x + 44, H), fill=(150, 138, 205, 34))
 for y in range(-40, H + 40, 120):
-    cd.rectangle((0, y, W, y + 44), fill=(255, 255, 255, 14))
+    cd.rectangle((0, y, W, y + 44), fill=(150, 138, 205, 34))
 img.alpha_composite(chk)
 
 # 그릇 그림자
 sh = layer(); sd = ImageDraw.Draw(sh)
-sd.ellipse((CX - 420, CY - 380, CX + 440, CY + 420), fill=(8, 10, 30, 150))
+sd.ellipse((CX - 420, CY - 380, CX + 440, CY + 420), fill=(90, 80, 140, 90))
 img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(40)))
 
 R_OUT, R_IN = 400, 330
@@ -87,8 +87,8 @@ img.alpha_composite(st)
 
 # 숟가락 (오른쪽 아래)
 sp = layer(); spd = ImageDraw.Draw(sp)
-spd.line((CX + 380, CY + 300, CX + 560, CY + 430), fill=(220, 214, 230, 255), width=26)
-spd.ellipse((CX + 330, CY + 250, CX + 420, CY + 330), fill=(232, 228, 240, 255))
+spd.line((CX + 380, CY + 300, CX + 560, CY + 430), fill=(166, 158, 196, 255), width=26)
+spd.ellipse((CX + 330, CY + 250, CX + 420, CY + 330), fill=(182, 175, 210, 255))
 img.alpha_composite(sp)
 
 # 종이 결
