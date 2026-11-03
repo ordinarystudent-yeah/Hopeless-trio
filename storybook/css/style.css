@@ -398,7 +398,7 @@ textarea.input { resize: none; }
   aspect-ratio: 4 / 3;
   background: radial-gradient(circle at 50% 42%, var(--glow, #4a568f) 0%, transparent 70%), var(--night-3);
 }
-.tile-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tile-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 7% 8% 26%; filter: drop-shadow(0 0.8cqh 1.2cqh rgb(0 0 0 / 0.35)); }   /* 음식 그림 전체가 보이게, 아래 이름표 자리는 비워 둠 */
 .tile--draw .tile-art img { object-fit: contain; padding: 6%; }
 .tile-emoji { font-size: 9cqh; line-height: 1; filter: drop-shadow(0 1cqh 1.6cqh rgb(0 0 0 / 0.35)); transform: translateY(-1.4cqh); }
 .tile-label {
@@ -1476,3 +1476,10 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 }
 .bubble-text.is-empty p { color: rgb(90 61 28 / 0.45); }
 .pg-text.is-narrow { max-width: 33%; }
+/* 말풍선 글씨는 글 길이의 절반만큼 오른쪽(말풍선 가운데 쪽)으로 */
+.bubble-text p { transform: translateX(50%); }
+/* 휴대폰 세로: 음식 이름이 두 줄이라 그림을 위쪽에 두고 이름은 작게 */
+@media (max-width: 600px) and (orientation: portrait) {
+  .choice-grid .tile-art img { padding: 4% 10% 40%; }
+  .choice-grid .tile-label { font-size: 0.66rem; line-height: 1.2; }
+}
