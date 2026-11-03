@@ -1477,7 +1477,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .bubble-text.is-empty p { color: rgb(90 61 28 / 0.45); }
 .pg-text.is-narrow { max-width: 33%; }
 /* 말풍선 글씨는 글 길이의 절반만큼 오른쪽(말풍선 가운데 쪽)으로 */
-.bubble-text p { transform: translateX(calc(50% - 1em)); }   /* 한 글자만큼 왼쪽으로 */
+.bubble-text p { transform: none; }
 /* 휴대폰 세로: 음식 이름이 두 줄이라 그림을 위쪽에 두고 이름은 작게 */
 @media (max-width: 600px) and (orientation: portrait) {
   .choice-grid .tile-art img { padding: 4% 10% 40%; }

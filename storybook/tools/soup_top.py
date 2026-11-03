@@ -28,20 +28,30 @@ def star(cx, cy, r, inner=0.45, rot=-90):
         pts.append((cx + rr * math.cos(a), cy + rr * math.sin(a)))
     return pts
 
-# 식탁보: 삽화들과 어울리는 파스텔 라벤더 천에 체크 무늬 (채도는 낮게, 밝게)
+# 식탁보: #4 삽화처럼 파스텔 민트 천 (크레용 결이 살짝 보이게)
 t = np.linspace(0, 1, H)[:, None]
-base = np.array([196, 190, 228]) * (1 - t) + np.array([214, 198, 232]) * t
+base = np.array([186, 228, 218]) * (1 - t) + np.array([166, 216, 206]) * t
 img = Image.fromarray(np.repeat(base[:, None, :], W, axis=1).astype('uint8'), 'RGB').convert('RGBA')
-chk = layer(); cd = ImageDraw.Draw(chk)
-for x in range(-40, W + 40, 120):
-    cd.rectangle((x, 0, x + 44, H), fill=(150, 138, 205, 34))
-for y in range(-40, H + 40, 120):
-    cd.rectangle((0, y, W, y + 44), fill=(150, 138, 205, 34))
-img.alpha_composite(chk)
+grain = layer(); gd0 = ImageDraw.Draw(grain)
+for i in range(2600):
+    x, y = rng.uniform(0, W), rng.uniform(0, H); l = rng.uniform(10, 34); a0 = rng.uniform(-0.5, 0.5) - 0.6
+    col = (255, 255, 255, rng.randint(18, 46)) if i % 2 else (110, 170, 165, rng.randint(14, 34))
+    gd0.line((x, y, x + math.cos(a0) * l, y + math.sin(a0) * l), fill=col, width=2)
+img.alpha_composite(grain.filter(ImageFilter.GaussianBlur(0.6)))
+
+# 그릇 아래 냅킨: 연두색 체크 천을 살짝 비스듬히 (#4의 연두 체크 냅킨처럼)
+nap = Image.new('RGBA', (860, 860), (0, 0, 0, 0)); nd = ImageDraw.Draw(nap)
+nd.rounded_rectangle((40, 40, 820, 820), radius=40, fill=(222, 244, 168, 255))
+for k in range(70, 820, 96):
+    nd.rectangle((k, 40, k + 22, 820), fill=(176, 214, 112, 150))
+    nd.rectangle((40, k, 820, k + 22), fill=(176, 214, 112, 150))
+nap = nap.rotate(14, resample=Image.BICUBIC, expand=True)
+ng = layer(); ng.paste(nap, (CX - nap.width // 2, CY - nap.height // 2), nap)
+img.alpha_composite(ng.filter(ImageFilter.GaussianBlur(0.8)))
 
 # 그릇 그림자
 sh = layer(); sd = ImageDraw.Draw(sh)
-sd.ellipse((CX - 420, CY - 380, CX + 440, CY + 420), fill=(90, 80, 140, 90))
+sd.ellipse((CX - 420, CY - 380, CX + 440, CY + 420), fill=(60, 100, 70, 90))
 img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(40)))
 
 R_OUT, R_IN = 400, 330
@@ -87,8 +97,8 @@ img.alpha_composite(st)
 
 # 숟가락 (오른쪽 아래)
 sp = layer(); spd = ImageDraw.Draw(sp)
-spd.line((CX + 380, CY + 300, CX + 560, CY + 430), fill=(166, 158, 196, 255), width=26)
-spd.ellipse((CX + 330, CY + 250, CX + 420, CY + 330), fill=(182, 175, 210, 255))
+spd.line((CX + 380, CY + 300, CX + 560, CY + 430), fill=(150, 160, 170, 255), width=26)
+spd.ellipse((CX + 330, CY + 250, CX + 420, CY + 330), fill=(172, 182, 192, 255))
 img.alpha_composite(sp)
 
 # 종이 결
