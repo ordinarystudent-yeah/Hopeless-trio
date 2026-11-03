@@ -1933,17 +1933,59 @@
   var switching = false;
   function stopAnims(elm) { if (elm && elm.getAnimations) elm.getAnimations().forEach(function (a) { a.cancel(); }); }
 
+  // 나가는 화면의 '사진'(복제본)을 그 자리에 띄워 두고, 새 화면을 바로 준비해서 둘이 동시에 움직인다.
+  // (예전에는 나가는 화면이 다 빠진 뒤에야 새 화면을 그리고 들어와서, 같은 움직임이 두 번 이어지고
+  //  그 사이에 화면을 그리느라 멈칫했다. 이제 그리는 일은 움직이기 전에 끝내고, 책장처럼 한 번에 넘어간다)
+  function ghostOf(elm) {
+    var r = elm.getBoundingClientRect();
+    var layer = el('div', { class: 'ghost-layer', 'aria-hidden': 'true' });
+    var clone = elm.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(function (n) { n.removeAttribute('id'); });
+    // 캔버스(날씨·반짝이·스프)는 복제되지 않으니 지금 그림을 옮겨 그린다
+    var from = elm.querySelectorAll('canvas'), to = clone.querySelectorAll('canvas');
+    for (var i = 0; i < from.length && i < to.length; i++) {
+      try { to[i].width = from[i].width; to[i].height = from[i].height; to[i].getContext('2d').drawImage(from[i], 0, 0); } catch (e) { /* 그릴 수 없으면 비워 둔다 */ }
+    }
+    var box = clone;
+    if (elm.classList.contains('leaf')) {
+      // 책장은 책 틀(한 쪽/펼침 보기 규칙)이 있어야 제 모양이라 빈 책 틀에 넣는다
+      var br = book.getBoundingClientRect();
+      box = el('div', { class: 'book', 'data-mode': book.getAttribute('data-mode') || '' }, clone);
+      r = br;
+      clone.classList.add('is-leaving');
+    }
+    box.style.position = 'fixed';
+    box.style.left = r.left + 'px';
+    box.style.top = r.top + 'px';
+    box.style.width = r.width + 'px';
+    box.style.height = r.height + 'px';
+    box.style.margin = '0';
+    box.style.maxWidth = 'none';
+    box.style.aspectRatio = 'auto';
+    layer.append(box);
+    document.body.append(layer);
+    return { layer: layer, el: clone };
+  }
+
   function leaveThen(card, dir, fn) {
     if (switching) return;
     switching = true;
     controlsEl.hidden = true;
     stopAnims(card);
     if (!card.animate) { fn(); return; }
-    var anim = card.animate([
-      { transform: 'rotate(0deg) scale(1)', opacity: 1 },
-      { transform: 'rotate(' + (-ARC.deg * dir) + 'deg) scale(.94)', opacity: 0 }
-    ], { duration: 620, easing: 'cubic-bezier(.55,0,.75,.3)' });
-    anim.finished.then(fn, fn);
+    var g = ghostOf(card);
+    fn();                       // 새 화면을 지금 그린다 (들어오는 움직임은 다음 프레임에 시작)
+    var d = -ARC.deg * dir;
+    nextFrame(function () {
+      var anim = g.el.animate([
+        { transform: 'rotate(0deg) scale(1)', opacity: 1 },
+        { transform: 'rotate(' + d * 0.45 + 'deg) scale(.975)', opacity: 1, offset: 0.4 },
+        { transform: 'rotate(' + d + 'deg) scale(.94)', opacity: 0 }
+      ], { duration: ARC.duration, easing: ARC.easing, fill: 'forwards' });
+      var drop = function () { g.layer.remove(); };
+      anim.finished.then(drop, drop);
+    });
   }
   function enterCard(card, dir) {
     var done = function () { switching = false; };
@@ -1955,13 +1997,16 @@
     nextFrame(function () {
       card.style.opacity = '';
       if (actions) actions.style.opacity = '';
+      // 나가는 화면과 같은 시간·같은 곡선으로 반대편에서 들어온다 (책장 넘김과 같은 움직임)
+      var d = ARC.deg * dir;
       var anim = card.animate([
-        { transform: 'rotate(' + (ARC.deg * dir) + 'deg) scale(.94)', opacity: 0 },
+        { transform: 'rotate(' + d + 'deg) scale(.94)', opacity: 0 },
+        { transform: 'rotate(' + d * 0.45 + 'deg) scale(.975)', opacity: 1, offset: 0.6 },
         { transform: 'rotate(0deg) scale(1)', opacity: 1 }
-      ], { duration: 760, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      ], { duration: ARC.duration, easing: ARC.easing });
       // 아래 버튼들은 카드가 거의 자리 잡은 뒤 살며시 나타난다
       if (actions) actions.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
-        { duration: 360, delay: 380, easing: 'ease-out', fill: 'backwards' });
+        { duration: 360, delay: ARC.duration * 0.6, easing: 'ease-out', fill: 'backwards' });
       anim.finished.then(done, done);
     });
   }

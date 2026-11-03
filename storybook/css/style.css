@@ -1316,3 +1316,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .burst-star { position: absolute; line-height: 1; transform: translate(-50%, -50%) scale(0); text-shadow: 0 0 12px rgb(255 198 90), 0 0 4px rgb(255 240 200), 0 0 1px #fff; will-change: transform, opacity; }
 /* 재료는 각자 따로 그려서(합성층) 움직일 때 픽셀에 걸려 떨리지 않게 */
 .stir-pot .soup-ing { will-change: translate, rotate; }
+
+/* 화면이 바뀔 때 나가는 화면의 복제본을 띄워 두는 층 (새 화면과 동시에 움직인다) */
+.ghost-layer { position: fixed; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; }
+.ghost-layer .guide-card, .ghost-layer .cover { will-change: transform, opacity; }
