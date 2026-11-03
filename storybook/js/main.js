@@ -1302,7 +1302,10 @@
         var galaxy = el('div', { class: 'soup-galaxy' });
         var swirl = el('div', { class: 'stir-swirl' });
         // 스프(액체)와 그 위에 뜬 재료를 따로 돌린다: 재료는 액체에 끌려 조금 늦게 따라온다
-        var liquid = el('div', { class: 'stir-spin' }, galaxy, swirl);
+        // 점성: 스프 속 크림 결(리본)과 방울. 바깥쪽 스프일수록 늦게 끌려와 결이 소용돌이로 감기고,
+        // 멈추면 꿀처럼 천천히 풀린다. 빨리 돌 땐 방울이 길게 늘어나고 지나간 자리가 번진다
+        var goo = el('canvas', { class: 'stir-goo', 'aria-hidden': 'true' });
+        var liquid = el('div', { class: 'stir-spin' }, galaxy, goo, swirl);
         var floats = el('div', { class: 'stir-spin' }, soupIngredients(false));
         var count = el('div', { class: 'stir-count', 'aria-live': 'polite' });
         var pot = el('button', { type: 'button', class: 'soup-pot stir-pot', 'aria-label': '스프 젓기 (눌러서 저어요)' },
@@ -1312,6 +1315,57 @@
         //  - 재료는 액체보다 늦게, 더 크게 흔들리며 따라옴
         //  - 누를 때마다 표면이 말랑하게 출렁임
         var phy = { a: state.soupStirs * 36, v: 0, b: state.soupStirs * 36, bv: 0, w: 0, wv: 0, sw: 0, tap: -1, raf: 0, last: 0 };
+        var RINGS = 14, rings = [];
+        for (var ri = 0; ri < RINGS; ri++) rings.push({ r: 0.08 + ri * 0.86 / (RINGS - 1), a: phy.a, v: 0 });
+        var drops = [];
+        for (var di = 0; di < 13; di++) drops.push({ j: 2 + (di * 5) % (RINGS - 3), t: di * 2.4 + 0.3, s: 0.022 + (di % 4) * 0.007 });
+        var gctx = goo.getContext && goo.getContext('2d');
+        var drawGoo = function (fresh) {
+          if (!gctx) return;
+          var dpr = Math.min(2, window.devicePixelRatio || 1);
+          var W = Math.round(goo.clientWidth * dpr);
+          if (!W) return;
+          if (goo.width !== W) { goo.width = W; goo.height = W; fresh = true; }
+          var R = W / 2, g = gctx;
+          if (fresh) g.clearRect(0, 0, W, W);
+          else {
+            // 지난 프레임을 조금만 지워서, 움직일 때 결이 끈적하게 번져 남는다
+            g.globalCompositeOperation = 'destination-out';
+            g.fillStyle = 'rgba(0,0,0,0.3)';
+            g.fillRect(0, 0, W, W);
+            g.globalCompositeOperation = 'source-over';
+          }
+          var rad = Math.PI / 180;
+          // 크림 결 다섯 줄: 쉴 때는 완만한 나선, 저으면 바깥이 뒤처져 더 감긴다
+          for (var k = 0; k < 5; k++) {
+            var base = k * Math.PI * 2 / 5;
+            g.beginPath();
+            for (var j = 0; j < RINGS; j++) {
+              var q = rings[j], ang = base + q.r * 0.9 + (q.a - phy.a) * rad;
+              var x = R + Math.cos(ang) * q.r * R * 0.96, y = R + Math.sin(ang) * q.r * R * 0.96;
+              if (j) g.lineTo(x, y); else g.moveTo(x, y);
+            }
+            g.lineCap = 'round'; g.lineJoin = 'round';
+            g.strokeStyle = 'rgba(255, 244, 214, 0.16)'; g.lineWidth = R * 0.13; g.stroke();
+            g.strokeStyle = 'rgba(255, 250, 235, 0.42)'; g.lineWidth = R * 0.028; g.stroke();
+          }
+          // 방울: 그 자리 스프가 빠를수록 결 방향으로 길쭉하게 늘어난다
+          for (var d = 0; d < drops.length; d++) {
+            var o = drops[d], rg = rings[o.j], an = o.t + (rg.a - phy.a) * rad;
+            var st = 1 + Math.min(2.6, Math.abs(rg.v) * rg.r / 45);
+            var sz = o.s * R;
+            g.save();
+            g.translate(R + Math.cos(an) * rg.r * R * 0.96, R + Math.sin(an) * rg.r * R * 0.96);
+            g.rotate(an + Math.PI / 2);
+            g.beginPath();
+            g.ellipse(0, 0, sz * st, sz / Math.sqrt(st), 0, 0, Math.PI * 2);
+            g.fillStyle = 'rgba(255, 246, 220, 0.5)'; g.fill();
+            g.beginPath();
+            g.ellipse(-sz * st * 0.25, -sz * 0.3 / Math.sqrt(st), sz * st * 0.35, sz * 0.25 / Math.sqrt(st), 0, 0, Math.PI * 2);
+            g.fillStyle = 'rgba(255, 255, 255, 0.55)'; g.fill();
+            g.restore();
+          }
+        };
         var draw = function () {
           var sq = phy.w;
           liquid.style.transform = 'rotate(' + phy.a.toFixed(2) + 'deg) scale(' + (1 + sq).toFixed(4) + ',' + (1 - sq * 0.6).toFixed(4) + ')';
@@ -1337,9 +1391,18 @@
           phy.w += phy.wv * dt;
           // 소용돌이 결은 액체보다 빠르게 흐른다
           phy.sw += phy.v * 2.2 * dt;
+          // 점성: 가운데 스프는 숟가락을 바로 따라오고, 바깥 스프는 무겁게 늦게 끌려온다
+          var ringCalm = true;
+          for (var j = 0; j < RINGS; j++) {
+            var q = rings[j], kk = 70 * (1 - 0.82 * q.r), cc = 2 * 0.95 * Math.sqrt(kk);
+            q.v += (kk * (phy.a - q.a) - cc * q.v) * dt;
+            q.a += q.v * dt;
+            if (Math.abs(phy.a - q.a) > 0.05 || Math.abs(q.v) > 0.05) ringCalm = false;
+          }
           draw();
           var calm = Math.abs(target - phy.a) < 0.05 && Math.abs(phy.v) < 0.05 && Math.abs(phy.a - phy.b) < 0.05 &&
-            Math.abs(phy.bv) < 0.05 && Math.abs(phy.w) < 0.0005 && Math.abs(phy.wv) < 0.005;
+            Math.abs(phy.bv) < 0.05 && Math.abs(phy.w) < 0.0005 && Math.abs(phy.wv) < 0.005 && ringCalm;
+          drawGoo(calm);
           if (calm || !pot.isConnected) { phy.raf = 0; phy.last = 0; return; }
           phy.raf = requestAnimationFrame(step);
         };
@@ -1352,6 +1415,9 @@
         };
         paint();
         draw();
+        // 처음 그릴 때는 화면에 붙은 뒤에 크기를 알 수 있다
+        if (window.ResizeObserver) new ResizeObserver(function () { if (!phy.raf) drawGoo(true); }).observe(goo);
+        else requestAnimationFrame(function () { requestAnimationFrame(function () { drawGoo(true); }); });
         pot.addEventListener('pointerdown', function (e) {
           if (state.soupStirs >= 10) return;
           state.soupStirs++;

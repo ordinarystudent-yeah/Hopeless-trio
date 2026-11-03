@@ -1278,3 +1278,16 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   animation: stir-ripple 0.9s ease-out forwards;
 }
 @keyframes stir-ripple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+
+/* 스프 점성: 크림 결과 방울을 그리는 캔버스 (스프 면 위, 소용돌이 빛 아래) */
+.stir-goo {
+  position: absolute;
+  left: 50%;
+  top: 51%;
+  width: 46.7%;
+  height: auto;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
