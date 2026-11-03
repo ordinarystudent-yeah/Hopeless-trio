@@ -56,13 +56,13 @@ img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(40)))
 
 R_OUT, R_IN = 400, 330
 bowl = layer(); bd = ImageDraw.Draw(bowl)
-bd.ellipse((CX - R_OUT, CY - R_OUT, CX + R_OUT, CY + R_OUT), fill=(246, 236, 214, 255))
+bd.ellipse((CX - R_OUT, CY - R_OUT, CX + R_OUT, CY + R_OUT), fill=(214, 216, 246, 255))   # 파스텔 블루 바이올렛 그릇 (#4 접시처럼)
 # 그릇 테 안쪽 그늘
-bd.ellipse((CX - R_IN - 18, CY - R_IN - 18, CX + R_IN + 18, CY + R_IN + 18), fill=(222, 206, 178, 255))
+bd.ellipse((CX - R_IN - 18, CY - R_IN - 18, CX + R_IN + 18, CY + R_IN + 18), fill=(188, 190, 234, 255))
 img.alpha_composite(bowl)
 rim = layer(); rd = ImageDraw.Draw(rim)
-crayon_ring(rd, CX, CY, R_OUT - 6, (200, 160, 120), 10, 150, 1400)
-crayon_ring(rd, CX, CY, R_IN + 30, (255, 198, 90), 7, 170, 1200)   # 테에 금빛 줄
+crayon_ring(rd, CX, CY, R_OUT - 6, (150, 150, 214), 10, 150, 1400)
+crayon_ring(rd, CX, CY, R_IN + 30, (236, 226, 255), 7, 190, 1200)   # 테에 밝은 줄
 img.alpha_composite(rim)
 
 # 스프: 금빛 원 + 소용돌이

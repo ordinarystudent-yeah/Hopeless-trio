@@ -174,8 +174,8 @@
       // 착한 일은 이 펼침면 앞의 묻는 화면에서 적는다 (입력칸이 그림을 가리지 않게).
       // 왼쪽 쪽의 큰 말풍선 안에 내가 적은 착한 일 (나레이션은 #5 두 번째 쪽으로 옮김) / 오른쪽 쪽은 삽화만
       pages: [
-        // 글은 쪽 가로 3/5~4/5 지점(가운데 70%)에
-        { bubble: { x: 0.45, y: 0.25, w: 0.5, h: 0.46, text: function (c) { return c.deed ? { text: '“' + c.deed + '”' } : { text: '나의 착한 일', empty: true }; } } },
+        // 글은 그림 속 말풍선 몸통의 한가운데(쪽 기준 가로 59%, 세로 51%)에
+        { bubble: { x: 0.34, y: 0.29, w: 0.5, h: 0.44, text: function (c) { return c.deed ? { text: '“' + c.deed + '”' } : { text: '나의 착한 일', empty: true }; } } },
         {}
       ],
       text: function () { return []; },
@@ -408,7 +408,7 @@
   };
 
   window.StarSoup = {
-    version: '5.7',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '5.8',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
