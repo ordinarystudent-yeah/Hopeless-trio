@@ -418,6 +418,7 @@
         : null;
       case 'taste': return tasteCarousel();
       case 'soup-ingredients': return soupIngredients(false);
+      case 'taste-draw': return state.taste === 'custom' ? tasteDrawPad(leaf) : null;
       // #8: 꾸민 착한 일 종이(메모지)를 스프가 놓인 식탁 한구석에
       case 'deed-note': return images[IMG_DEED]
         ? el('div', { class: 'soup-note', 'aria-label': '꾸민 착한 일 종이' }, el('img', { src: images[IMG_DEED], alt: '' }))
@@ -585,7 +586,7 @@
   // 무슨 맛이 났나요? 회전 카드. 가운데 카드가 곧 고른 맛. 마지막 카드는 '직접 그리기'
   function tasteCarousel() {
     var hasArt = !!images[IMG_TASTE];
-    var list = S.tastes.concat([{ id: 'custom', label: hasArt ? customTaste().label : S.customTaste.label,
+    var list = S.tastes.concat([{ id: 'custom', label: S.customTaste.label,
       emoji: '✏️', glow: '#3a4a7a', art: images[IMG_TASTE] || null, draw: true }]);
     var n = list.length;
     var focus = Math.max(0, list.findIndex(function (t) { return t.id === state.taste; }));
@@ -609,8 +610,6 @@
       card.addEventListener('click', function () {
         if (Date.now() - swipedAt < 350) return;    // 밀어서 돌린 직후의 클릭은 무시
         if (i !== focus) { turnTo(i); return; }
-        // 가운데의 '직접 그리기' 카드를 누르면 그림판이 열린다
-        if (t.draw) { drawTaste(); return; }
         card.animate([{ scale: '1' }, { scale: '1.06' }, { scale: '1' }], { duration: 380, easing: 'cubic-bezier(.3,1.4,.5,1)' });
         updateControls();
         saveSoon();
@@ -620,9 +619,9 @@
     });
     var relOf = function (i) { var rel = ((i - focus) % n + n) % n; if (rel > n / 2) rel -= n; return rel; };
     function apply() {
-      // 가운데(보고 있는) 카드가 곧 고른 맛. 직접 그리기는 그림이 있을 때만 고른 것으로 친다
+      // 가운데(보고 있는) 카드가 곧 고른 맛. '직접 그리기'도 다른 카드처럼 고르기만 하고, 그림은 16쪽 위에 바로 그린다
       var t = list[focus];
-      state.taste = t.draw && !t.art ? null : t.id;
+      state.taste = t.id;
       cards.forEach(function (card, i) {
         var rel = relOf(i);
         card.setAttribute('data-pos', rel);
@@ -655,16 +654,7 @@
           : [{ transform: from.t, opacity: from.o, filter: from.f }, { transform: to.t, opacity: to.o, filter: to.f }];
         moving.push(c.animate(frames, { duration: 620, easing: 'cubic-bezier(.25,.8,.25,1)' }));
       });
-      // '직접 그리기' 카드가 가운데로 오면(아직 안 그렸을 때) 카드가 자리 잡자마자 그림판을 바로 연다
-      clearTimeout(drawTimer);
-      if (list[focus].draw && !list[focus].art) {
-        var want = focus;
-        drawTimer = setTimeout(function () {
-          if (focus === want && box.isConnected && askId === 'taste' && !document.querySelector('.editor:not([hidden]), dialog[open]')) drawTaste();
-        }, 650);
-      }
     }
-    var drawTimer = 0;
     function turn(d) { turnTo((focus + d + n) % n); }
     var prevBtn = el('button', { type: 'button', class: 'c-nav c-nav--prev', 'aria-label': '이전 맛', onclick: function () { turn(-1); } }, '‹');
     var nextBtn = el('button', { type: 'button', class: 'c-nav c-nav--next', 'aria-label': '다음 맛', onclick: function () { turn(1); } }, '›');
@@ -687,25 +677,101 @@
     return box;
   }
 
-  // 맛 카드에서 가운데가 '직접 그리기'(아직 안 그림)인지
-  function askBodyFocusDraw() {
-    var c = document.querySelector('#ask-body .c-card[data-pos="0"]');
-    return !!(c && c.classList.contains('c-card--draw'));
-  }
-
-  // 맛을 직접 그린다 → 16쪽에 그 그림이 펼쳐진다
-  function drawTaste() {
-    window.StarSoupEditor.open({
-      title: '무슨 맛이 났는지 그리기', image: images[IMG_TASTE], askName: true, name: state.customTasteName,
-      nameLabel: '어떤 맛이었나요? (안 써도 돼요)', namePlaceholder: '예: 무지개처럼 알록달록한 맛'
-    }).then(function (res) {
-      if (!res) return;
-      state.customTasteName = res.name.slice(0, S.limits.tasteName);
-      saveImage(IMG_TASTE, res.image);
-      state.taste = 'custom';
-      if (askId === 'taste') paintAsk();
-      saveNow();
+  /* ---------- #9 16쪽: 맛을 그 쪽 위에 바로 그린다 ----------
+     '직접 그리기' 맛을 고르면 16쪽이 곧 도화지가 된다. 펜 색 몇 가지, 지우개, 되돌리기, 모두 지우기.
+     손을 뗄 때마다 저장되어 나중에 다시 보거나 이어 그릴 수 있다. */
+  function tasteDrawPad(leaf) {
+    var W = 1200, H = Math.round(1200 / 1.414);
+    var cv = el('canvas', { class: 'tdraw-canvas', width: W, height: H, 'aria-label': '무슨 맛이 났는지 그리는 곳' });
+    var g = cv.getContext('2d');
+    var colors = ['#2b2118', '#e8573f', '#f2a93b', '#4f9d5d', '#3d7fd9', '#8b5cd6'];
+    var tool = { color: colors[0], erase: false, size: 9 };
+    var history = [];
+    var saveTimer = 0;
+    var paintFrom = function (src) {
+      if (!src) return;
+      var im = new Image();
+      im.onload = function () { g.clearRect(0, 0, W, H); g.drawImage(im, 0, 0, W, H); };
+      im.src = src;
+    };
+    paintFrom(images[IMG_TASTE]);
+    var persist = function () {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () { saveImage(IMG_TASTE, cv.toDataURL('image/png')); }, 250);
+    };
+    var bar = el('div', { class: 'tdraw-bar', role: 'toolbar', 'aria-label': '그리기 도구' });
+    var pick = function (btn) { bar.querySelectorAll('.tdraw-tool').forEach(function (b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); }); };
+    colors.forEach(function (col, i) {
+      var b = el('button', { type: 'button', class: 'tdraw-tool tdraw-color', 'aria-label': '펜 색 ' + (i + 1), 'aria-pressed': i ? 'false' : 'true' });
+      b.style.setProperty('--c', col);
+      b.addEventListener('click', function () { tool.color = col; tool.erase = false; pick(b); });
+      bar.append(b);
     });
+    var eraser = el('button', { type: 'button', class: 'tdraw-tool tdraw-eraser', 'aria-label': '지우개', 'aria-pressed': 'false' }, '지우개');
+    eraser.addEventListener('click', function () { tool.erase = true; pick(eraser); });
+    var undo = el('button', { type: 'button', class: 'tdraw-btn', 'aria-label': '되돌리기' }, '↶');
+    undo.addEventListener('click', function () {
+      var last = history.pop();
+      if (!last) return;
+      g.putImageData(last, 0, 0);
+      persist();
+    });
+    var clear = el('button', { type: 'button', class: 'tdraw-btn', 'aria-label': '모두 지우기' }, '모두 지우기');
+    clear.addEventListener('click', function () {
+      ask({ title: '그림을 모두 지울까요?', message: '지운 그림은 되돌릴 수 있어요.', ok: '모두 지우기', danger: true }).then(function (yes) {
+        if (!yes) return;
+        history.push(g.getImageData(0, 0, W, H));
+        g.clearRect(0, 0, W, H);
+        persist();
+      });
+    });
+    bar.append(eraser, undo, clear);
+
+    var strokes = {};
+    var pos = function (e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; };
+    var width = function (e) { var pf = e.pointerType === 'pen' && e.pressure > 0 ? 0.35 + 1.3 * e.pressure : 1; return (tool.erase ? tool.size * 3.2 : tool.size) * pf; };
+    cv.addEventListener('pointerdown', function (e) {
+      // 펜을 쓰는 중에 손바닥이 닿으면 무시
+      if (e.pointerType === 'touch' && Object.keys(strokes).some(function (k) { return strokes[k].pen; })) return;
+      e.preventDefault();
+      try { cv.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
+      if (!Object.keys(strokes).length) {
+        history.push(g.getImageData(0, 0, W, H));
+        if (history.length > 20) history.shift();
+      }
+      var p0 = pos(e);
+      strokes[e.pointerId] = { x: p0.x, y: p0.y, pen: e.pointerType === 'pen' };
+      g.globalCompositeOperation = tool.erase ? 'destination-out' : 'source-over';
+      g.fillStyle = tool.color;
+      g.beginPath(); g.arc(p0.x, p0.y, width(e) / 2, 0, Math.PI * 2); g.fill();
+    });
+    cv.addEventListener('pointermove', function (e) {
+      var st = strokes[e.pointerId];
+      if (!st) return;
+      var list = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      if (!list.length) list = [e];
+      g.globalCompositeOperation = tool.erase ? 'destination-out' : 'source-over';
+      g.strokeStyle = tool.color; g.lineCap = 'round'; g.lineJoin = 'round';
+      list.forEach(function (ev) {
+        var p1 = pos(ev);
+        g.lineWidth = width(ev);
+        g.beginPath(); g.moveTo(st.x, st.y); g.lineTo(p1.x, p1.y); g.stroke();
+        st.x = p1.x; st.y = p1.y;
+      });
+    });
+    var end = function (e) {
+      if (!strokes[e.pointerId]) return;
+      delete strokes[e.pointerId];
+      g.globalCompositeOperation = 'source-over';
+      if (!Object.keys(strokes).length) persist();
+    };
+    cv.addEventListener('pointerup', end);
+    cv.addEventListener('pointercancel', end);
+    leaf._teardown.push(function () { clearTimeout(saveTimer); });
+    return el('div', { class: 'tdraw' },
+      cv,
+      el('p', { class: 'tdraw-tip', 'aria-hidden': 'true', text: '무슨 맛이 났는지 여기에 그려 보세요' }),
+      bar);
   }
 
   // 별빛스프 재료 스티커들. editable이면 요리 화면에서 끌어 옮기고 뗄 수 있다.
@@ -1646,7 +1712,7 @@
       body: function () { return el('div', { class: 'ask-carousel' }, tasteCarousel()); },
       note: function () {
         var t = ctx().taste;
-        if (!t && askBodyFocusDraw()) return S.customTaste.hint;
+        if (t && t.id === 'custom') return S.customTaste.hint;
         return t ? t.label + S.josa(t.label, '을/를') + ' 골랐어요. 다음으로 넘기면 그 맛이 그림으로 펼쳐져요.' : S.scenes[sceneIndex('taste')].hint;
       },
       // 안내 문장이 될 수 있는 것들: 가장 긴 문장 높이로 자리를 잡아 카드를 돌려도 화면이 움직이지 않게
@@ -1654,7 +1720,7 @@
         var name = (state.customTasteName || '').trim() || S.customTaste.fallbackName;
         return S.tastes.map(function (t) { return t.label; }).concat([name]).map(function (l) {
           return l + S.josa(l, '을/를') + ' 골랐어요. 다음으로 넘기면 그 맛이 그림으로 펼쳐져요.';
-        }).concat([S.scenes[sceneIndex('taste')].hint, S.customTaste.hint]);
+        }).concat([S.scenes[sceneIndex('taste')].hint, S.customTaste.hint]);  // custom → hint
       },
       ready: function () { return !!state.taste; }
     }
@@ -1894,7 +1960,7 @@
   var swipe = null;
   book.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' || swipe || switching) return;
-    if (e.target.closest('.sticker, input, textarea, .chips, .carousel')) return;
+    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw')) return;
     swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dir: null, leaf: currentLeaf() };
   });
   book.addEventListener('pointermove', function (e) {

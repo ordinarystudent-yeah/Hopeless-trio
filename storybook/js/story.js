@@ -211,7 +211,9 @@
       pages: [
         { art: 'soup' },
         {
-          image: function (c) { return c.taste ? (c.taste.id === 'custom' ? c.taste.art : 'assets/backgrounds/09-taste-' + c.taste.id + '.jpg') : null; },
+          // '직접 그리기'를 고르면 이 쪽이 도화지가 되어 바로 그릴 수 있다
+          image: function (c) { return c.taste && c.taste.id !== 'custom' ? 'assets/backgrounds/09-taste-' + c.taste.id + '.jpg' : null; },
+          widgets: ['taste-draw'],
           art: 'starsky'
         }
       ],
@@ -394,7 +396,7 @@
   };
 
   window.StarSoup = {
-    version: '4.1',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '4.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -406,7 +408,7 @@
     deedExamples: deedExamples,
     stickerSpots: stickerSpots,
     customFood: { label: '직접 그리기', fallbackName: '내가 그린 음식' },
-    customTaste: { label: '직접 그리기', fallbackName: '내가 그린 맛', hint: '가운데 카드를 눌러 어떤 맛이었는지 직접 그려 보세요.' },
+    customTaste: { label: '직접 그리기', fallbackName: '내가 그린 맛', hint: '직접 그리기를 골랐어요. 다음으로 넘기면 16쪽에 어떤 맛이었는지 바로 그릴 수 있어요.' },
     motifs: motifs,
     josa: josa,
     limits: { name: 12, deed: 80, foodName: 12, weatherName: 12, ingredient: 10, ingredients: 5, tasteName: 12 },
