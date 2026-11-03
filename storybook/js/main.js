@@ -1640,12 +1640,19 @@
     q.replaceChildren.apply(q, paragraphs(cfg.text(scene, ctx())));
     var body = document.getElementById('ask-body');
     body.replaceChildren(cfg.body());
+    var note = document.getElementById('ask-note');
+    note.textContent = '';
+    note.style.minHeight = '';
     paintAskNote();
   }
 
   function paintAskNote() {
     if (!askId) return;
-    document.getElementById('ask-note').textContent = ASK[askId].note();
+    // 같은 화면 안에서 안내 문장이 짧아져도(두 줄 → 한 줄) 높이를 줄이지 않는다
+    // → 스프 완성 때처럼 문장이 바뀌어도 카드가 줄어들며 그릇·버튼이 튀지 않는다
+    var noteEl = document.getElementById('ask-note');
+    if (noteEl.offsetHeight) noteEl.style.minHeight = noteEl.offsetHeight + 'px';
+    noteEl.textContent = ASK[askId].note();
     document.getElementById('btn-ask-next').toggleAttribute('data-blocked', !ASK[askId].ready());
   }
 
