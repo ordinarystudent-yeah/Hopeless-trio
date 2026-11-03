@@ -211,7 +211,7 @@
       pages: [
         { art: 'soup' },
         {
-          image: function (c) { return c.taste ? 'assets/backgrounds/09-taste-' + c.taste.id + '.jpg' : null; },
+          image: function (c) { return c.taste ? (c.taste.id === 'custom' ? c.taste.art : 'assets/backgrounds/09-taste-' + c.taste.id + '.jpg') : null; },
           art: 'starsky'
         }
       ],
@@ -394,7 +394,7 @@
   };
 
   window.StarSoup = {
-    version: '3.9',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '4.0',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -406,9 +406,10 @@
     deedExamples: deedExamples,
     stickerSpots: stickerSpots,
     customFood: { label: '직접 그리기', fallbackName: '내가 그린 음식' },
+    customTaste: { label: '직접 그리기', fallbackName: '내가 그린 맛', hint: '가운데 카드를 눌러 어떤 맛이었는지 직접 그려 보세요.' },
     motifs: motifs,
     josa: josa,
-    limits: { name: 12, deed: 80, foodName: 12, weatherName: 12, ingredient: 10, ingredients: 5 },
+    limits: { name: 12, deed: 80, foodName: 12, weatherName: 12, ingredient: 10, ingredients: 5, tasteName: 12 },
     // 삽화 자리에 "어떤 파일을 넣으면 되는지" 경로를 표시한다. 실제 삽화를 다 넣은 뒤에는 false로 바꾼다.
     showAssetNotes: true
   };

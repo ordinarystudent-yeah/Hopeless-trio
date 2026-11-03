@@ -9,6 +9,7 @@
   var IMG_DEED = 'deed-art';        // 착한 일 꾸미기 완성 그림 (메모지 포함)
   var IMG_DEED_BASE = 'deed-base';  // 메모지 없는 그림만 (다시 꾸밀 때)
   var IMG_WEATHER = 'weather-custom'; // #1 날씨를 직접 그린 그림
+  var IMG_TASTE = 'taste-custom';       // #9 맛을 직접 그린 그림 (16쪽에 펼쳐진다)
   var IMG_WAKE = 'wake-weather-custom'; // #10 깨어나 본 창 밖 날씨를 직접 그린 그림
 
   var book = document.getElementById('book');
@@ -24,7 +25,7 @@
       time: null, weather: null, customWeatherName: '', wakeWeather: null, wakeWeatherName: '',
       soup: [],   // 별빛스프 재료 (최대 5개) { id, name, u, v, w, r }: u·v·w는 스프 그림 기준 비율
       soupStirs: 0, // 스프를 저은 횟수 (10번이면 완성)
-      name: '', food: null, customFoodName: '', deed: '', taste: null,
+      name: '', food: null, customFoodName: '', deed: '', taste: null, customTasteName: '',
       stickers: {}, deedMemo: null, returnTo: null
     };
   }
@@ -71,7 +72,7 @@
     var name = state.name.trim();
     var c = { name: name, hasName: !!name, you: name || '당신', deed: state.deed.trim() };
     c.food = state.food === 'custom' ? customFood(c) : (S.foods.find(function (f) { return f.id === state.food; }) || null);
-    c.taste = S.tastes.find(function (t) { return t.id === state.taste; }) || null;
+    c.taste = state.taste === 'custom' ? customTaste() : (S.tastes.find(function (t) { return t.id === state.taste; }) || null);
     c.time = S.times.find(function (t) { return t.id === state.time; }) || null;
     c.weather = weatherOf(state.weather, state.customWeatherName);
     c.wakeWeather = weatherOf(state.wakeWeather, state.wakeWeatherName);
@@ -79,6 +80,11 @@
   }
 
   // 고른 날씨 → 문장에 쓸 정보 (직접 그린 날씨는 적은 이름으로)
+  // 직접 그린 맛: 이름(안 쓰면 '내가 그린 맛')과 그림
+  function customTaste() {
+    var tn = (state.customTasteName || '').trim();
+    return { id: 'custom', label: tn || S.customTaste.fallbackName, short: tn || S.customTaste.fallbackName, art: images[IMG_TASTE] || null };
+  }
   function weatherOf(id, customName) {
     if (id !== 'custom') return S.weathers.find(function (w) { return w.id === id; }) || null;
     var wn = (customName || '').trim();
@@ -200,7 +206,8 @@
     s.deed = str(raw.deed, S.limits.deed);
     s.customFoodName = str(raw.customFoodName, S.limits.foodName);
     s.food = raw.food === 'custom' || S.foods.some(function (f) { return f.id === raw.food; }) ? raw.food : null;
-    s.taste = S.tastes.some(function (t) { return t.id === raw.taste; }) ? raw.taste : null;
+    s.taste = raw.taste === 'custom' || S.tastes.some(function (t) { return t.id === raw.taste; }) ? raw.taste : null;
+    s.customTasteName = str(raw.customTasteName, S.limits.tasteName);
     s.time = S.times.some(function (t) { return t.id === raw.time; }) ? raw.time : null;
     s.weather = raw.weather === 'custom' || S.weathers.some(function (w) { return w.id === raw.weather; }) ? raw.weather : null;
     s.customWeatherName = str(raw.customWeatherName, S.limits.weatherName);
@@ -351,7 +358,8 @@
       if (pageImage) {
         var pimg = new Image();
         pimg.alt = '';
-        pimg.className = 'page-img';
+        // 직접 그린 그림(투명한 PNG)은 종이 바탕 위에 놓아, 펼침면 삽화가 비쳐 보이지 않게 한다
+        pimg.className = 'page-img' + (/^data:/.test(pageImage) ? ' page-img--drawn' : '');
         pimg.decoding = 'async';
         pimg.onload = function () { page.classList.add('has-image'); pimg.classList.add('is-loaded'); };
         pimg.onerror = function () { pimg.remove(); };
@@ -563,8 +571,12 @@
   /* ---------- 맛 고르기 회전 카드 (#9 16쪽) ----------
      가운데 카드는 앞에 크게, 좌우 카드는 살짝 뒤로 비스듬히. 옆으로 밀거나 ‹ › 를 누르면 원을 그리듯 돈다.
      옆 카드를 누르면 가운데로 오고, 가운데 카드를 누르면 그 맛을 고른다. */
+  // 무슨 맛이 났나요? 회전 카드. 가운데 카드가 곧 고른 맛. 마지막 카드는 '직접 그리기'
   function tasteCarousel() {
-    var list = S.tastes, n = list.length;
+    var hasArt = !!images[IMG_TASTE];
+    var list = S.tastes.concat([{ id: 'custom', label: hasArt ? customTaste().label : S.customTaste.label,
+      emoji: '✏️', glow: '#3a4a7a', art: images[IMG_TASTE] || null, draw: true }]);
+    var n = list.length;
     var focus = Math.max(0, list.findIndex(function (t) { return t.id === state.taste; }));
     var stage = el('div', { class: 'carousel-stage' });
     var cards = list.map(function (t, i) {
@@ -572,41 +584,68 @@
       art.style.setProperty('--glow', t.glow);
       var emoji = el('span', { class: 'c-emoji', text: t.emoji });
       art.append(emoji);
-      if (t.image) {
+      var src = t.art || t.image;
+      if (src) {
         var img = el('img', { alt: '' });
         img.onload = function () { emoji.remove(); };
         img.onerror = function () { img.remove(); };
-        img.src = t.image;
+        img.src = src;
         art.append(img);
       }
-      var card = el('button', { type: 'button', class: 'c-card', 'data-id': t.id, 'aria-label': t.label },
+      var card = el('button', { type: 'button', class: 'c-card' + (t.draw ? ' c-card--draw' + (t.art ? ' has-art' : '') : ''), 'data-id': t.id, 'aria-label': t.label },
         art, el('span', { class: 'c-label', text: t.label }),
         el('span', { class: 'check', 'aria-hidden': 'true' }, svgCheck()));
       card.addEventListener('click', function () {
         if (Date.now() - swipedAt < 350) return;    // 밀어서 돌린 직후의 클릭은 무시
-        if (i !== focus) { focus = i; layout(); return; }
-        layout();
-        card.animate([{ transform: getComputedStyle(card).transform }, { transform: getComputedStyle(card).transform + ' scale(1.06)' }, { transform: getComputedStyle(card).transform }], { duration: 380, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+        if (i !== focus) { turnTo(i); return; }
+        // 가운데의 '직접 그리기' 카드를 누르면 그림판이 열린다
+        if (t.draw) { drawTaste(); return; }
+        card.animate([{ scale: '1' }, { scale: '1.06' }, { scale: '1' }], { duration: 380, easing: 'cubic-bezier(.3,1.4,.5,1)' });
         updateControls();
         saveSoon();
       });
       stage.append(card);
       return card;
     });
-    function layout() {
-      // 가운데(보고 있는) 카드가 곧 고른 맛
-      state.taste = list[focus].id;
-      paintAskNote();
-      saveSoon();
+    var relOf = function (i) { var rel = ((i - focus) % n + n) % n; if (rel > n / 2) rel -= n; return rel; };
+    function apply() {
+      // 가운데(보고 있는) 카드가 곧 고른 맛. 직접 그리기는 그림이 있을 때만 고른 것으로 친다
+      var t = list[focus];
+      state.taste = t.draw && !t.art ? null : t.id;
       cards.forEach(function (card, i) {
-        var rel = ((i - focus) % n + n) % n;
-        if (rel > n / 2) rel -= n;
+        var rel = relOf(i);
         card.setAttribute('data-pos', rel);
         card.setAttribute('aria-pressed', state.taste === list[i].id ? 'true' : 'false');
         card.tabIndex = rel === 0 ? 0 : -1;
       });
+      paintAskNote();
+      saveSoon();
     }
-    function turn(d) { focus = (focus + d + n) % n; layout(); }
+    // 돌릴 때: 지금 모습 → 새 자리로 직접 움직인다 (CSS 전환에 맡기지 않아 어느 기기에서나 부드럽게)
+    // 뒤를 돌아 반대편으로 가는 카드는 뒤로 작아지며 사라졌다가 반대편에서 나타난다
+    var moving = [];
+    function turnTo(i) {
+      if (i === focus) return;
+      var before = cards.map(function (c) { var cs = getComputedStyle(c); return { t: cs.transform, o: cs.opacity, f: cs.filter, rel: Number(c.getAttribute('data-pos')) }; });
+      moving.forEach(function (a) { a.cancel(); });
+      moving = [];
+      focus = i;
+      apply();
+      cards.forEach(function (c, k) {
+        if (!c.animate) return;
+        var cs = getComputedStyle(c), to = { t: cs.transform, o: cs.opacity, f: cs.filter }, from = before[k];
+        if (from.t === to.t && from.o === to.o) return;
+        var jump = Math.abs(from.rel - Number(c.getAttribute('data-pos'))) > 1;
+        var frames = jump
+          ? [{ transform: from.t, opacity: from.o, filter: from.f },
+             { transform: from.t + ' scale(0.8)', opacity: 0, filter: from.f, offset: 0.45 },
+             { transform: to.t + ' scale(0.8)', opacity: 0, filter: to.f, offset: 0.55 },
+             { transform: to.t, opacity: to.o, filter: to.f }]
+          : [{ transform: from.t, opacity: from.o, filter: from.f }, { transform: to.t, opacity: to.o, filter: to.f }];
+        moving.push(c.animate(frames, { duration: 620, easing: 'cubic-bezier(.25,.8,.25,1)' }));
+      });
+    }
+    function turn(d) { turnTo((focus + d + n) % n); }
     var prevBtn = el('button', { type: 'button', class: 'c-nav c-nav--prev', 'aria-label': '이전 맛', onclick: function () { turn(-1); } }, '‹');
     var nextBtn = el('button', { type: 'button', class: 'c-nav c-nav--next', 'aria-label': '다음 맛', onclick: function () { turn(1); } }, '›');
     var box = el('div', { class: 'carousel', role: 'group', 'aria-label': '스프의 맛 고르기 (옆으로 넘기면 가운데에 보이는 맛이 골라져요)' }, stage, prevBtn, nextBtn);
@@ -624,8 +663,29 @@
     box.addEventListener('keydown', function (e) {
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); turn(e.key === 'ArrowLeft' ? -1 : 1); cards[focus].focus(); }
     });
-    layout();
+    apply();
     return box;
+  }
+
+  // 맛 카드에서 가운데가 '직접 그리기'(아직 안 그림)인지
+  function askBodyFocusDraw() {
+    var c = document.querySelector('#ask-body .c-card[data-pos="0"]');
+    return !!(c && c.classList.contains('c-card--draw'));
+  }
+
+  // 맛을 직접 그린다 → 16쪽에 그 그림이 펼쳐진다
+  function drawTaste() {
+    window.StarSoupEditor.open({
+      title: '무슨 맛이 났는지 그리기', image: images[IMG_TASTE], askName: true, name: state.customTasteName,
+      nameLabel: '어떤 맛이었나요? (안 써도 돼요)', namePlaceholder: '예: 무지개처럼 알록달록한 맛'
+    }).then(function (res) {
+      if (!res) return;
+      state.customTasteName = res.name.slice(0, S.limits.tasteName);
+      saveImage(IMG_TASTE, res.image);
+      state.taste = 'custom';
+      if (askId === 'taste') paintAsk();
+      saveNow();
+    });
   }
 
   // 별빛스프 재료 스티커들. editable이면 요리 화면에서 끌어 옮기고 뗄 수 있다.
@@ -1531,6 +1591,7 @@
         return el('div', { class: 'soup-cook' }, pot);
       },
       note: function () { return state.soupStirs >= 10 ? '보글보글, 별빛스프가 완성됐어요!' : '스프를 눌러 저어요. 한 번 누를 때마다 휘휘 돌아가요.'; },
+      notes: function () { return ['보글보글, 별빛스프가 완성됐어요!', '스프를 눌러 저어요. 한 번 누를 때마다 휘휘 돌아가요.']; },
       ready: function () { return state.soupStirs >= 10; },
       requireMessage: '스프를 10번 눌러서 다 저어 주세요.'
     },
@@ -1556,7 +1617,15 @@
       body: function () { return el('div', { class: 'ask-carousel' }, tasteCarousel()); },
       note: function () {
         var t = ctx().taste;
+        if (!t && askBodyFocusDraw()) return S.customTaste.hint;
         return t ? t.label + S.josa(t.label, '을/를') + ' 골랐어요. 다음으로 넘기면 그 맛이 그림으로 펼쳐져요.' : S.scenes[sceneIndex('taste')].hint;
+      },
+      // 안내 문장이 될 수 있는 것들: 가장 긴 문장 높이로 자리를 잡아 카드를 돌려도 화면이 움직이지 않게
+      notes: function () {
+        var name = (state.customTasteName || '').trim() || S.customTaste.fallbackName;
+        return S.tastes.map(function (t) { return t.label; }).concat([name]).map(function (l) {
+          return l + S.josa(l, '을/를') + ' 골랐어요. 다음으로 넘기면 그 맛이 그림으로 펼쳐져요.';
+        }).concat([S.scenes[sceneIndex('taste')].hint, S.customTaste.hint]);
       },
       ready: function () { return !!state.taste; }
     }
@@ -1624,6 +1693,7 @@
       askId = id;
       paintAsk();
       showScreen('ask');
+      measureAskNote();
       enterCard(document.getElementById('ask-card'), dir);
     };
     if (fromEl) leaveThen(fromEl, dir, show);
@@ -1644,6 +1714,18 @@
     note.textContent = '';
     note.style.minHeight = '';
     paintAskNote();
+    measureAskNote();
+  }
+
+  // 이 화면에서 나올 수 있는 안내 문장 중 가장 긴 것의 높이로 자리를 잡는다 (보이는 상태에서만 잴 수 있다)
+  function measureAskNote() {
+    var cfg = askId && ASK[askId], noteEl = document.getElementById('ask-note');
+    if (!cfg || !cfg.notes || !noteEl.offsetParent) return;
+    var keep = noteEl.textContent, h = noteEl.offsetHeight;
+    noteEl.style.minHeight = '';
+    cfg.notes().forEach(function (t) { noteEl.textContent = t; h = Math.max(h, noteEl.offsetHeight); });
+    noteEl.textContent = keep;
+    noteEl.style.minHeight = h + 'px';
   }
 
   function paintAskNote() {
@@ -1985,11 +2067,12 @@
     fn();                       // 새 화면을 지금 그린다 (들어오는 움직임은 다음 프레임에 시작)
     var d = -ARC.deg * dir;
     nextFrame(function () {
+      // 나가는 화면은 들어오는 화면보다 빨리, 점점 빨라지며 끝까지 투명해진다
+      // (끝에서 느려지면 거의 투명한 채로 머물러 걸린 듯 보이고, 들어오는 삽화와 오래 겹친다)
       var anim = g.el.animate([
         { transform: 'rotate(0deg) scale(1)', opacity: 1 },
-        { transform: 'rotate(' + d * 0.45 + 'deg) scale(.975)', opacity: 1, offset: 0.4 },
-        { transform: 'rotate(' + d + 'deg) scale(.94)', opacity: 0 }
-      ], { duration: ARC.duration, easing: ARC.easing, fill: 'forwards' });
+        { transform: 'rotate(' + d * 0.6 + 'deg) scale(.96)', opacity: 0 }
+      ], { duration: Math.round(ARC.duration * 0.5), easing: 'cubic-bezier(.45,0,.85,.45)', fill: 'forwards' });
       var drop = function () { g.layer.remove(); };
       anim.finished.then(drop, drop);
     });
@@ -2111,7 +2194,7 @@
   /* ---------- 시작 ---------- */
   var saved = { scene: 0, page: 0 };
   function loadImages() {
-    var keys = [IMG_FOOD, IMG_DEED, IMG_DEED_BASE, IMG_WEATHER, IMG_WAKE].concat(state.soup.map(function (g) { return 'soup-' + g.id; }));
+    var keys = [IMG_FOOD, IMG_DEED, IMG_DEED_BASE, IMG_WEATHER, IMG_WAKE, IMG_TASTE].concat(state.soup.map(function (g) { return 'soup-' + g.id; }));
     return Promise.all(keys.map(function (k) {
       return store.getImage(k).then(function (v) { if (typeof v === 'string') images[k] = v; }, function () {});
     }));
