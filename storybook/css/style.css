@@ -1309,3 +1309,10 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* 스프 가장자리: 오려 낸 모양을 따라 밝은 윤곽(메니스커스)과 그릇 바닥 쪽 그늘 */
 .stir-surface { filter: drop-shadow(0 0 1.5px rgb(255 244 210 / 0.75)) drop-shadow(0 1px 2px rgb(70 45 10 / 0.35)); }
 .stir-slosh { clip-path: ellipse(23.35% 33% at 50% 51%); }
+
+/* 스프 완성 별 폭죽 */
+.burst-layer { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.burst-flash { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgb(255 236 170 / 0.95) 0%, rgb(255 198 90 / 0.55) 40%, transparent 70%); transform: translate(-50%, -50%) scale(0.3); }
+.burst-star { position: absolute; line-height: 1; transform: translate(-50%, -50%) scale(0); text-shadow: 0 0 12px rgb(255 198 90), 0 0 4px rgb(255 240 200), 0 0 1px #fff; will-change: transform, opacity; }
+/* 재료는 각자 따로 그려서(합성층) 움직일 때 픽셀에 걸려 떨리지 않게 */
+.stir-pot .soup-ing { will-change: translate, rotate; }

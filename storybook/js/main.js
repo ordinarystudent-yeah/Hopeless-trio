@@ -1324,7 +1324,7 @@
           dx: 0, dy: 0, vx: 0, vy: 0 };
         var pushes = []; // 숟가락이 미는 힘 { t0, fx, fy }
         var ings = Array.prototype.map.call(ingBox.querySelectorAll('.soup-ing'), function (node, i) {
-          return { node: node, x: 0, y: 0, vx: 0, vy: 0, r: 0, vr: 0, gain: 2.2 + (i % 3) * 0.5, k: 30 + (i * 7) % 20 };
+          return { node: node, x: 0, y: 0, vx: 0, vy: 0, r: 0, vr: 0, gain: 2.2 + (i % 3) * 0.5, k: 16 + (i * 5) % 10 };
         });
         var SPOKES = 64, EDGE_X = 23.35, EDGE_Y = 33; // 스프 원의 반지름 (쪽 너비·높이에 대한 %)
         var lobe = function (d, w) { d = Math.atan2(Math.sin(d), Math.cos(d)); return Math.exp(-d * d / (2 * w * w)); };
@@ -1407,8 +1407,8 @@
           var W = pot.clientWidth || 1, rb = -phy.b * Math.PI / 180, cb = Math.cos(rb), sb = Math.sin(rb);
           for (i = 0; i < ings.length; i++) {
             var g = ings[i], lx = g.x * cb - g.y * sb, ly = g.x * sb + g.y * cb;
-            g.node.style.translate = (lx * W).toFixed(1) + 'px ' + (ly * W).toFixed(1) + 'px';
-            g.node.style.rotate = g.r.toFixed(1) + 'deg';
+            g.node.style.translate = (lx * W).toFixed(2) + 'px ' + (ly * W).toFixed(2) + 'px';
+            g.node.style.rotate = g.r.toFixed(2) + 'deg';
           }
         };
         var step = function (now) {
@@ -1446,11 +1446,11 @@
           // 재료: 스프 쏠림의 몇 배로 끌려가는 통통한 용수철 + 흐름에 따라 빙글
           var ingCalm = true;
           for (var ii = 0; ii < ings.length; ii++) {
-            var g = ings[ii], kc = g.k, cc2 = 2 * 0.22 * Math.sqrt(kc);
+            var g = ings[ii], kc = g.k, cc2 = 2 * 0.4 * Math.sqrt(kc);
             g.vx += (kc * (phy.dx * g.gain - g.x) - cc2 * g.vx) * dt;
             g.vy += (kc * (phy.dy * g.gain - g.y) - cc2 * g.vy) * dt;
             g.x += g.vx * dt; g.y += g.vy * dt;
-            g.vr += (-18 * g.r - 2 * 0.25 * Math.sqrt(18) * g.vr + (phy.v - (phy.bv || 0)) * 0.6) * dt;
+            g.vr += (-12 * g.r - 2 * 0.45 * Math.sqrt(12) * g.vr + (phy.v - phy.bv) * 0.5) * dt;
             g.r += g.vr * dt;
             if (Math.abs(g.x) + Math.abs(g.y) > 0.0003 || Math.abs(g.vx) + Math.abs(g.vy) > 0.002 || Math.abs(g.r) > 0.1 || Math.abs(g.vr) > 0.5) ingCalm = false;
           }
@@ -1500,7 +1500,7 @@
             var gx = (ib.left + ib.width / 2 - e.clientX) / pr.width, gy = (ib.top + ib.height / 2 - e.clientY) / pr.width;
             var dist = Math.sqrt(gx * gx + gy * gy) || 0.01, f = 0.35 * Math.exp(-dist / 0.18);
             g.vx += gx / dist * f; g.vy += gy / dist * f;
-            g.vr += (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 80);
+            g.vr += (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 40);
           });
           pushes.push({ t0: phy.tap, fx: -Math.sin(ta) * 0.3 + Math.cos(ta) * 0.1, fy: Math.cos(ta) * 0.3 + Math.sin(ta) * 0.1 });
           if (pot.animate) {
@@ -1523,6 +1523,7 @@
           }
           if (state.soupStirs >= 10) {
             pot.classList.add('is-done');
+            starBurst(pot);
             toast('별빛스프 완성! 세상에 하나뿐인 맛이 됐어요.');
           }
           paintAskNote();
@@ -1673,6 +1674,8 @@
   document.getElementById('btn-ask-back').addEventListener('click', function () {
     if (switching || !askId) return;
     var card = document.getElementById('ask-card');
+    // 스프 젓기 화면에서 뒤로 가면 저은 것을 되돌린다 → 다시 오면 처음부터 다시 저을 수 있다
+    if (askId === 'stir' && state.soupStirs) { state.soupStirs = 0; saveSoon(); }
     var list = askList(askId), pos = list.indexOf(askId);
     if (pos > 0) { showAsk(list[pos - 1], -1, card); return; }
     var here = S.scenes[askScene(askId)];
@@ -1729,6 +1732,43 @@
     var asks = S.scenes[state.scene].asks;
     if (asks && !askPage(S.scenes[state.scene])) { showAsk(asks[asks.length - 1], -1); return; }
     if (state.scene > 0) go(state.scene - 1, 1);
+  }
+
+  /* ---------- 스프 완성: 그릇 가운데에서 별이 팡 튀어 오르고 금빛이 번진다 ----------
+     카드 밖까지 날아가도록 화면 맨 위층(body)에 잠깐 붙였다 뗀다 */
+  function starBurst(pot) {
+    var r = pot.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height * 0.51, size = r.width * 0.467;
+    var layer = el('div', { class: 'burst-layer', 'aria-hidden': 'true' });
+    var flash = el('div', { class: 'burst-flash' });
+    flash.style.left = cx + 'px'; flash.style.top = cy + 'px';
+    flash.style.width = flash.style.height = size + 'px';
+    layer.append(flash);
+    if (flash.animate) {
+      flash.animate([{ transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0.95 }, { transform: 'translate(-50%, -50%) scale(1.9)', opacity: 0 }],
+        { duration: 900, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' });
+    }
+    var glyphs = ['★', '✦', '★', '✧', '★'], colors = ['#ffd45e', '#fff3c4', '#ffb938', '#ffffff', '#ffe08a'];
+    for (var i = 0; i < 22; i++) {
+      var star = el('span', { class: 'burst-star', text: glyphs[i % glyphs.length] });
+      var ang = (i / 22) * Math.PI * 2 + Math.random() * 0.3;
+      var dist = size * (0.55 + Math.random() * 0.75);
+      var px = Math.cos(ang) * dist, py = Math.sin(ang) * dist * 0.85 - size * 0.25;
+      var fs = 20 + Math.random() * 20, spin = (Math.random() < 0.5 ? -1 : 1) * (180 + Math.random() * 360);
+      star.style.left = cx + 'px'; star.style.top = cy + 'px';
+      star.style.fontSize = fs + 'px'; star.style.color = colors[i % colors.length];
+      layer.append(star);
+      if (star.animate) {
+        // 팡 튀어 나갔다가(빠르게) 꼭대기에서 잠깐 머물고, 살짝 떨어지며 반짝 사라진다
+        star.animate([
+          { transform: 'translate(-50%, -50%) translate(0px, 0px) scale(0.2) rotate(0deg)', opacity: 1 },
+          { transform: 'translate(-50%, -50%) translate(' + px.toFixed(1) + 'px, ' + py.toFixed(1) + 'px) scale(1.25) rotate(' + (spin * 0.6).toFixed(0) + 'deg)', opacity: 1, offset: 0.45 },
+          { transform: 'translate(-50%, -50%) translate(' + (px * 1.08).toFixed(1) + 'px, ' + (py + size * 0.35).toFixed(1) + 'px) scale(0.5) rotate(' + spin.toFixed(0) + 'deg)', opacity: 0 }
+        ], { duration: 1100 + Math.random() * 400, delay: Math.random() * 120, easing: 'cubic-bezier(.15,.8,.35,1)', fill: 'forwards' });
+      }
+    }
+    document.body.append(layer);
+    setTimeout(function () { layer.remove(); }, 1800);
   }
 
   /* ---------- 밀어서 넘기기 (터치·펜슬) ----------
