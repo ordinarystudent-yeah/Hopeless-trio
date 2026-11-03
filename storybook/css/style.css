@@ -230,7 +230,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .page--left .pg { padding-right: 11cqh; }
 /* 카드가 많은 쪽(#4)은 글을 조금 줄여 한 쪽 안에 모두 들어가게 한다 */
 .pg--dense { gap: 2.4cqh; padding-top: 6.5cqh; padding-bottom: 8cqh; }
-.pg--dense .story { font-size: 5.4cqh; line-height: 1.5; }
+.pg--dense .story { font-size: 4.3cqh; line-height: 1.5; }
 .pg--dense .pg-text.is-panel { padding: 2.6cqh 4cqh; gap: 1.4cqh; }
 .page--right .pg { padding-left: 11cqh; }
 
@@ -301,16 +301,16 @@ button, input, textarea { font: inherit; color: inherit; }
 
 .story {
   margin: 0;
-  font-size: 6.2cqh;
+  font-size: 4.7cqh;   /* 본문: PC에서 묻는 화면 제목(약 21px)과 비슷한 크기 */
   line-height: 1.6;
   white-space: pre-line;
   word-break: keep-all;
   overflow-wrap: anywhere;
   text-wrap: pretty;
 }
-.story--sm { font-size: 5.4cqh; }
-.story--q { font-size: 5.8cqh; line-height: 1.45; }
-.story.is-coda { font-family: var(--font-display); color: var(--soup); font-size: 6.4cqh; line-height: 1.45; }
+.story--sm { font-size: 4.3cqh; }
+.story--q { font-size: 4.6cqh; line-height: 1.45; }
+.story.is-coda { font-family: var(--font-display); color: var(--soup); font-size: 5.2cqh; line-height: 1.45; }
 .v { color: var(--soup); font-family: var(--font-display); }
 .v.is-quote { font-family: var(--font-body); font-weight: 700; }
 
@@ -1335,3 +1335,35 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .c-card--draw.has-art { border-style: solid; }
 .c-card--draw .c-art img { object-fit: contain; background: var(--milk); border-radius: 10%; }
 .page-img.page-img--drawn { background: var(--milk); object-fit: contain; }
+
+/* #10 펼침 보기: '창 밖을 보니…'를 고르기 전의 18쪽은 커튼처럼 덮어 둔다 */
+.page-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.035) 0 4cqh, transparent 4cqh 8cqh),
+    linear-gradient(180deg, #2b2f63 0%, #1d2150 100%);
+  color: var(--soft);
+  font-family: var(--font-display);
+  font-size: 10cqh;
+  letter-spacing: 0.2em;
+}
+
+/* #8 식탁 한구석의 착한 일 메모지: 그릇을 가리지 않게 왼쪽 아래 귀퉁이에 살짝 기울여 */
+.page .soup-note {
+  position: absolute;
+  left: 3.5%;
+  bottom: 7%;
+  width: 21%;
+  z-index: 2;
+  transform: rotate(-7deg);
+  padding: 0.8cqh;
+  background: #fffaf0;
+  border-radius: 0.6cqh;
+  box-shadow: 0 1.2cqh 2.4cqh -0.6cqh rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+.page .soup-note img { display: block; width: 100%; height: auto; border-radius: 0.3cqh; }

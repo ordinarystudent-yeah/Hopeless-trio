@@ -333,6 +333,13 @@
         class: 'page page--' + (pi ? 'right' : 'left'),
         'aria-label': (pi ? '오른쪽' : '왼쪽') + ' 쪽'
       });
+      // 펼침 보기에서 쪽 사이에 묻는 장면(#10): 묻기 전에는 그 쪽(18쪽)을 덮어 두었다가, 고른 뒤에 펼친다
+      if (mode === 'spread' && scene.askAt === pi && state.page < pi) {
+        page.classList.add('is-veiled');
+        page.append(el('div', { class: 'page-veil', 'aria-hidden': 'true' }, el('span', { text: '…' })));
+        spread.append(page);
+        return;
+      }
       var pg = el('div', { class: 'pg' + (p.tight ? ' pg--tight' : ''), 'data-place': p.place || 'top' });
       // 이 쪽만의 하늘(아래층)과 날씨(위층): 펼침면 삽화를 덮는다
       if (p.sky) {
@@ -411,6 +418,10 @@
         : null;
       case 'taste': return tasteCarousel();
       case 'soup-ingredients': return soupIngredients(false);
+      // #8: 꾸민 착한 일 종이(메모지)를 스프가 놓인 식탁 한구석에
+      case 'deed-note': return images[IMG_DEED]
+        ? el('div', { class: 'soup-note', 'aria-label': '꾸민 착한 일 종이' }, el('img', { src: images[IMG_DEED], alt: '' }))
+        : null;
       case 'recap': return recap(c);
     }
     return null;
@@ -644,7 +655,16 @@
           : [{ transform: from.t, opacity: from.o, filter: from.f }, { transform: to.t, opacity: to.o, filter: to.f }];
         moving.push(c.animate(frames, { duration: 620, easing: 'cubic-bezier(.25,.8,.25,1)' }));
       });
+      // '직접 그리기' 카드가 가운데로 오면(아직 안 그렸을 때) 카드가 자리 잡자마자 그림판을 바로 연다
+      clearTimeout(drawTimer);
+      if (list[focus].draw && !list[focus].art) {
+        var want = focus;
+        drawTimer = setTimeout(function () {
+          if (focus === want && box.isConnected && askId === 'taste' && !document.querySelector('.editor:not([hidden]), dialog[open]')) drawTaste();
+        }, 650);
+      }
     }
+    var drawTimer = 0;
     function turn(d) { turnTo((focus + d + n) % n); }
     var prevBtn = el('button', { type: 'button', class: 'c-nav c-nav--prev', 'aria-label': '이전 맛', onclick: function () { turn(-1); } }, '‹');
     var nextBtn = el('button', { type: 'button', class: 'c-nav c-nav--next', 'aria-label': '다음 맛', onclick: function () { turn(1); } }, '›');
@@ -1137,7 +1157,15 @@
   }
 
   function atLastStep() {
-    return state.scene === LAST && (mode === 'spread' || state.page === 1);
+    return state.scene === LAST && leavingNow();
+  }
+
+  // 이 장면을 떠날 차례인지: 한 쪽씩 보기는 두 번째 쪽, 펼침 보기는 보통 바로.
+  // 단, 쪽 사이에 묻는 화면이 있는 장면(#10)은 펼침 보기에서도 '묻기 전(18쪽 가림) → 물은 뒤(18쪽 보임)' 두 단계
+  function leavingNow() {
+    var sc = S.scenes[state.scene];
+    if (mode === 'spread') return state.page >= (sc.askAt || 0);
+    return state.page === 1;
   }
 
   function updateControls() {
@@ -1147,7 +1175,7 @@
     btnNext.hidden = last;
     endActions.hidden = !last;
     if (last) return;
-    var leavingScene = mode === 'spread' || state.page === 1;
+    var leavingScene = leavingNow();
     var label = '다음';
     if (leavingScene) {
       label = typeof scene.nextLabel === 'function' ? scene.nextLabel(ctx()) : (scene.nextLabel || '다음');
@@ -1268,7 +1296,7 @@
       return;
     }
     var here = S.scenes[state.scene].id;
-    var leavingScene = mode === 'spread' || state.page === 1;
+    var leavingScene = leavingNow();
     if (here === 'deed' && leavingScene) { showDeedPrompt(); return; }
     // 다음 장면의 그림을 보여 주기 전에 묻는 화면(음식·착한 일·맛)을 먼저 연다
     var upcoming = S.scenes[forwardTarget()];
@@ -1277,6 +1305,7 @@
     var curSc = S.scenes[state.scene];
     if (curSc.asks && askPage(curSc) && state.page === askPage(curSc) - 1) { showAsk(curSc.asks[0], 1); return; }
     if (mode === 'single' && state.page === 0) flipPage(1);
+    else if (!leavingScene) return;
     else go(forwardTarget(), 0);
   }
 
@@ -1664,7 +1693,8 @@
   }
 
   // 한 쪽씩 보기에서 이 장면의 몇 번째 쪽 앞에 묻는지 (0이면 장면 앞)
-  function askPage(sc) { return mode === 'single' && sc.askAt ? sc.askAt : 0; }
+  // 이 장면의 몇 번째 쪽 앞에서 묻는지 (0이면 장면 앞). #10은 한 쪽씩·펼침 보기 모두 17쪽과 18쪽 사이
+  function askPage(sc) { return sc.askAt || 0; }
 
   function askScene(id) { return sceneIndex(ASK[id].scene || id); }
   function askList(id) { return S.scenes[askScene(id)].asks || [id]; }
@@ -1961,7 +1991,7 @@
     if (m === mode) return;
     mode = m;
     book.setAttribute('data-mode', mode);
-    if (mode === 'spread') state.page = 0;
+    if (mode === 'spread' && !S.scenes[state.scene].askAt) state.page = 0;
     if (app.getAttribute('data-screen') === 'book') rerender();
   }
   window.addEventListener('resize', function () {
@@ -2116,7 +2146,7 @@
 
   function enterBook(index, page, dir) {
     state.scene = clamp(index, 0, LAST);
-    state.page = mode === 'single' ? (page || 0) : 0;
+    state.page = mode === 'single' || S.scenes[state.scene].askAt ? (page || 0) : 0;
     state.maxScene = Math.max(state.maxScene, state.scene);
     showScreen('book');
     saveNow();
