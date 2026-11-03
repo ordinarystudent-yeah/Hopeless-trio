@@ -1394,7 +1394,6 @@
     }
     var here = S.scenes[state.scene].id;
     var leavingScene = leavingNow();
-    if (here === 'deed' && leavingScene) { showDeedPrompt(); return; }
     // 다음 장면의 그림을 보여 주기 전에 묻는 화면(음식·착한 일·맛)을 먼저 연다
     var upcoming = S.scenes[forwardTarget()];
     if (leavingScene && upcoming && upcoming.asks && !askPage(upcoming)) { showAsk(upcoming.asks[0], 1); return; }
@@ -1897,6 +1896,8 @@
     // 같은 장면 앞에 묻는 화면이 더 있으면 차례로 (#1: 때 → 날씨)
     var list = askList(askId), pos = list.indexOf(askId);
     if (pos >= 0 && pos < list.length - 1 && state.returnTo == null) { showAsk(list[pos + 1], 1, card); return; }
+    // 착한 일을 적은 다음에는 #6으로 가기 전에 '착한 일을 그림으로 남겨 볼까요?' (#5 두 번째 쪽 다음 자리)
+    if (askId === 'deed' && state.returnTo == null) { leaveThen(card, 1, function () { openDeedPromptScreen(1); }); return; }
     var target = state.returnTo != null ? state.returnTo : askScene(askId);
     var after = cfg.after;
     var landPage = target === askScene(askId) ? (cfg.landPage != null ? cfg.landPage : askPage(S.scenes[target])) : 0;
@@ -1926,16 +1927,19 @@
   });
 
   // 착한 일을 적은 뒤 나오는 안내 화면 (동화 쪽이 아님): 가운데 버튼을 눌러야 꾸미기 화면으로 간다
+  // 안내 화면은 착한 일을 적은 뒤(묻는 화면에서) 또는 #6에서 뒤로 올 때 열린다.
+  // 이 화면에 있는 동안 state.scene은 #5라서, 다음은 #6(forwardTarget)으로 간다.
+  function openDeedPromptScreen(dir) {
+    state.scene = sceneIndex('deed') - 1;
+    paintDeedPrompt();
+    showScreen('deedPrompt');
+    enterCard(document.getElementById('deed-prompt-card'), dir);
+  }
   function showDeedPrompt() {
     var leaf = currentLeaf();
     if (!leaf) return;
     stopAnims(leaf);
-    leaveThen(leaf, 1, function () {
-      retire(leaf);
-      paintDeedPrompt();
-      showScreen('deedPrompt');
-      enterCard(document.getElementById('deed-prompt-card'), 1);
-    });
+    leaveThen(leaf, -1, function () { retire(leaf); openDeedPromptScreen(-1); });
   }
 
   function paintDeedPrompt() {
@@ -1956,7 +1960,8 @@
     leaveThen(document.getElementById('deed-prompt-card'), 1, function () { enterBook(forwardTarget(), 0, 1); });
   });
   document.getElementById('btn-deed-back').addEventListener('click', function () {
-    leaveThen(document.getElementById('deed-prompt-card'), -1, function () { enterBook(state.scene, 1, -1); });
+    // 뒤로: 착한 일을 적는 화면으로
+    showAsk('deed', -1, document.getElementById('deed-prompt-card'));
   });
 
   function prev() {
@@ -1964,6 +1969,8 @@
     var cur = S.scenes[state.scene];
     if (cur.asks && askPage(cur) && state.page === askPage(cur)) { showAsk(cur.asks[cur.asks.length - 1], -1); return; }
     if (mode === 'single' && state.page === 1) { flipPage(0); return; }
+    // #6 첫 쪽에서 뒤로 → 그림으로 남기기 안내 화면
+    if (cur.id === 'deed' && state.returnTo == null) { showDeedPrompt(); return; }
     // 묻는 화면이 있는 장면의 첫 쪽에서 뒤로 가면 그 화면으로
     var asks = S.scenes[state.scene].asks;
     if (asks && !askPage(S.scenes[state.scene])) { showAsk(asks[asks.length - 1], -1); return; }
