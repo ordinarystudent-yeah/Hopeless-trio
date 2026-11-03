@@ -216,3 +216,46 @@
 .ed-memo-head { font-family: var(--font-display); font-size: 2.8cqw; color: #9a7323; }
 .ed-memo-body { font-family: var(--font-display); font-size: 4.2cqw; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
 .editor.is-decorate .ed-tip { display: block !important; color: var(--soup); }
+
+/* ---------- 쪽 안에 붙인 그림판 (#9 16쪽 '직접 그리기' 맛) ----------
+   창으로 띄우지 않고 동화 쪽 안에 그대로: 왼쪽에 정사각 그림판, 오른쪽에 같은 도구들을 작게.
+   크기는 쪽 높이(cqh) 기준이라 휴대폰·PC 어디서나 쪽 안에 맞는다. */
+.editor.is-inline {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  padding: 2.4cqh;
+  background: var(--night-2);
+  animation: none;
+  flex-direction: row;
+}
+.editor.is-inline .ed-top { position: absolute; top: 2.4cqh; right: 2.4cqh; padding: 0; z-index: 2; }
+.editor.is-inline .ed-top > :not(#ed-undo) { display: none; }
+.editor.is-inline #ed-undo { width: max(22px, 7cqh); height: max(22px, 7cqh); }
+.editor.is-inline #ed-undo svg { width: 60%; height: 60%; }
+.editor.is-inline .ed-main { flex: 1; min-width: 0; flex-direction: row; align-items: stretch; gap: 2.4cqh; }
+.editor.is-inline .ed-stage { flex: none; height: 100%; aspect-ratio: 1; min-height: 0; }
+.editor.is-inline .ed-canvas-wrap { width: 100%; height: 100%; max-width: none; border-radius: 3cqh; }
+.editor.is-inline .ed-panel {
+  flex: 1; min-width: 0; overflow: hidden auto; gap: 1.8cqh;
+  padding: max(26px, 8cqh) 0 0; scrollbar-width: none;
+}
+.editor.is-inline .ed-name-field, .editor.is-inline .ed-tip { display: none; }
+.editor.is-inline .ed-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2cqh; }
+.editor.is-inline .tool {
+  min-height: 0; padding: 1.2cqh 0; gap: 0.4cqh; border-radius: 2.4cqh;
+  font-size: max(8px, 2.7cqh);
+}
+.editor.is-inline .tool svg { width: max(12px, 5.2cqh); height: max(12px, 5.2cqh); }
+.editor.is-inline .ed-size { grid-template-columns: minmax(0, 1fr) max(16px, 6cqh); gap: 1.2cqh; }
+.editor.is-inline .ed-size label, .editor.is-inline .ed-size output { display: none; }
+.editor.is-inline .ed-size-preview { width: max(16px, 6cqh); height: max(16px, 6cqh); border-radius: 1.6cqh; }
+.editor.is-inline .ed-colors { gap: 1.2cqh; }
+.editor.is-inline .swatch { width: max(13px, 5.6cqh); height: max(13px, 5.6cqh); border-width: 1.5px; }
+.editor.is-inline .swatch[aria-pressed="true"], .editor.is-inline .swatch-wheel.is-on { box-shadow: 0 0 0 2px var(--night-2), 0 0 0 3.5px var(--soup); }
+.editor.is-inline .swatch-wheel.is-on::after { inset: 22%; }
+.editor.is-inline .ed-actions { grid-template-columns: 1fr 1fr; gap: 1.2cqh; }
+.editor.is-inline .ed-actions .btn { min-height: max(22px, 7cqh); min-width: 0; padding: 0 0.6cqh; font-size: max(8px, 2.5cqh); border-radius: 99px; white-space: nowrap; overflow: hidden; }
+.editor.is-inline .ed-photo-bar { padding: 1.6cqh; gap: 1cqh; border-radius: 2.4cqh; }
+.editor.is-inline .ed-photo-bar label { font-size: max(9px, 2.8cqh); }
+.editor.is-inline .ed-photo-actions .btn { min-height: max(22px, 7cqh); font-size: max(9px, 2.8cqh); }

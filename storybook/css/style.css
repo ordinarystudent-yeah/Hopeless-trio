@@ -1368,10 +1368,5 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 }
 .page .soup-note img { display: block; width: 100%; height: auto; border-radius: 0.3cqh; }
 
-/* #9 16쪽: 직접 그린 맛 (그림판은 음식 그리기와 같은 것) */
-.tdraw { position: absolute; inset: 0; z-index: 4; background: var(--milk); display: grid; place-items: center; }
-.tdraw-art { position: absolute; inset: 6cqh 6cqh 14cqh; width: calc(100% - 12cqh); height: calc(100% - 20cqh); object-fit: contain; }
-.tdraw-tip { position: absolute; top: 30%; left: 0; right: 0; margin: 0; text-align: center; font-family: var(--font-display); font-size: 5cqh; color: rgb(60 50 40 / 0.45); }
-.tdraw-open { position: relative; z-index: 1; }
-.tdraw:not(.has-art) .tdraw-open { margin-top: 10cqh; }
-.tdraw.has-art .tdraw-open { position: absolute; bottom: 3.5cqh; left: 50%; transform: translateX(-50%); background: #fff; color: #4a3a2a; border: 1px solid rgb(74 58 42 / 0.3); box-shadow: 0 4px 12px -4px rgb(0 0 0 / 0.3); }
+/* #9 16쪽: 직접 그리기 맛 — 음식 그리기와 같은 그림판이 이 쪽 안에 들어온다 (css/editor.css의 .editor.is-inline) */
+.tdraw-host { position: absolute; inset: 0; z-index: 4; }

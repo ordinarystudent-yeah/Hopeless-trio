@@ -396,7 +396,7 @@
   };
 
   window.StarSoup = {
-    version: '4.3',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '4.4',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -408,7 +408,7 @@
     deedExamples: deedExamples,
     stickerSpots: stickerSpots,
     customFood: { label: '직접 그리기', fallbackName: '내가 그린 음식' },
-    customTaste: { label: '직접 그리기', fallbackName: '내가 그린 맛', hint: '직접 그리기를 골랐어요. 다음으로 넘기면 16쪽에 어떤 맛이었는지 바로 그릴 수 있어요.' },
+    customTaste: { label: '직접 그리기', fallbackName: '내가 그린 맛', hint: '직접 그리기를 골랐어요. 다음으로 넘기면 16쪽에서 어떤 맛이었는지 바로 그릴 수 있어요.' },
     motifs: motifs,
     josa: josa,
     limits: { name: 12, deed: 80, foodName: 12, weatherName: 12, ingredient: 10, ingredients: 5, tasteName: 12 },

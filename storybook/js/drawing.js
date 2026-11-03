@@ -31,6 +31,15 @@
   var memoEl = null;
   var MEMO = { w: 0.5, pad: 0.035, head: 0.028, font: 0.042, line: 1.45 }; // 그림판 너비 대비 비율
   var undo = [], dirty = false, stroke = null, photo = null, stamp = null, resolver = null, ready = false;
+  // 쪽 안에 붙인 그림판(인라인): { host, onChange, home, next, timer }. 창 없이 동화 쪽 위에 같은 도구를 그대로 놓는다
+  var inline = null;
+  function markDirty() {
+    dirty = true;
+    if (!inline || !inline.onChange) return;
+    clearTimeout(inline.timer);
+    var it = inline;
+    it.timer = setTimeout(function () { if (inline === it) it.onChange(canvas.toDataURL('image/png')); }, 300);
+  }
 
   /* ---------- 준비 ---------- */
   function init() {
@@ -114,6 +123,7 @@
 
     document.addEventListener('keydown', function (e) {
       if (root.hidden || !$('modal').hidden) return;
+      if (inline && e.key === 'Escape') return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undoOnce(); }
       else if (e.key === 'Escape') { e.preventDefault(); back(); }
     });
@@ -123,6 +133,7 @@
   function open(opts) {
     init();
     opts = opts || {};
+    if (inline) unmount();
     $('editor-title').textContent = opts.title || '그림 그리기';
     $('ed-done').textContent = opts.doneLabel || '다 그렸어요';
     $('ed-tip').textContent = opts.memo ? '메모지를 끌어서 원하는 곳에 옮겨 보세요. 그림 없이 넘어가도 괜찮아요.' : '사진 파일을 그림판에 끌어다 놓거나 붙여넣어도 들어가요.';
@@ -142,8 +153,16 @@
     paintSize();
     paintUndo();
     root.hidden = false;
-    document.documentElement.classList.add('is-editing');
-    $('ed-back').focus({ preventScroll: true });
+    if (opts.inline) {
+      // 쪽 안에 붙이기: 그림판 전체를 그 자리로 옮긴다 (닫을 때 원래 자리로)
+      inline = { host: opts.inline, onChange: opts.onChange, home: root.parentNode, next: root.nextSibling, timer: 0 };
+      root.classList.add('is-inline');
+      root.removeAttribute('aria-modal');
+      opts.inline.append(root);
+    } else {
+      document.documentElement.classList.add('is-editing');
+      $('ed-back').focus({ preventScroll: true });
+    }
 
     if (opts.base) {
       // 꾸미기 모드: 지난번 그림을 원래 자리·크기 그대로
@@ -163,7 +182,25 @@
     return new Promise(function (resolve) { resolver = resolve; });
   }
 
+  // 쪽 안에 붙인 그림판을 떼어 원래 자리로 (그 쪽이 사라질 때). 남은 변경은 바로 저장한다
+  function unmount(host) {
+    if (!inline || (host && inline.host !== host)) return;
+    var it = inline;
+    if (it.timer) { clearTimeout(it.timer); if (dirty && it.onChange) it.onChange(canvas.toDataURL('image/png')); }
+    if (photo) cancelPhoto();
+    inline = null;
+    root.classList.remove('is-inline');
+    root.setAttribute('aria-modal', 'true');
+    root.hidden = true;
+    if (it.home) it.home.insertBefore(root, it.next && it.next.parentNode === it.home ? it.next : null);
+    undo = [];
+    var r = resolver;
+    resolver = null;
+    if (r) r(null);
+  }
+
   function close(result) {
+    if (inline) { unmount(); return; }
     cancelPhoto();
     root.hidden = true;
     document.documentElement.classList.remove('is-editing');
@@ -232,7 +269,7 @@
   function undoOnce() {
     if (!undo.length) { ui().toast('더 이상 되돌릴 수 없어요.'); return; }
     g.putImageData(undo.pop(), 0, 0);
-    dirty = true;
+    markDirty();
     paintUndo();
   }
   function paintUndo() { undoBtn.disabled = !undo.length; }
@@ -246,7 +283,7 @@
       if (!yes) return;
       pushUndo();
       g.clearRect(0, 0, SIZE, SIZE);
-      dirty = true;
+      markDirty();
     });
   }
 
@@ -265,14 +302,14 @@
     pf = pressureOf(e);
     if (tool === 'bucket') {
       pushUndo();
-      if (fill(p)) dirty = true; else undo.pop(), paintUndo();
+      if (fill(p)) markDirty(); else undo.pop(), paintUndo();
       return;
     }
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
     pushUndo();
     stroke = { id: e.pointerId, last: p, carry: 0 };
     dab(p);
-    dirty = true;
+    markDirty();
   }
 
   function onMove(e) {
@@ -294,7 +331,7 @@
   }
 
   function onUp(e) {
-    if (stroke && e.pointerId === stroke.id) stroke = null;
+    if (stroke && e.pointerId === stroke.id) { stroke = null; if (inline) markDirty(); }
   }
 
   function prep(mode) {
@@ -504,7 +541,7 @@
     pushUndo();
     prep();
     g.drawImage(photo.img, photo.x - w / 2, photo.y - h / 2, w, h);
-    dirty = true;
+    markDirty();
     cancelPhoto();
   }
 
@@ -575,7 +612,7 @@
       memo.x = Math.max(mw, Math.min(1 - mw, (e.clientX - drag.dx - drag.r.left) / drag.r.width));
       memo.y = Math.max(mh, Math.min(1 - mh, (e.clientY - drag.dy - drag.r.top) / drag.r.height));
       placeMemo();
-      dirty = true;
+      markDirty();
     });
     var end = function () { drag = null; memoEl.classList.remove('is-dragging'); };
     memoEl.addEventListener('pointerup', end);
@@ -649,5 +686,5 @@
     return { image: out.toDataURL('image/jpeg', 0.9), base: base, memo: { x: memo.x, y: memo.y } };
   }
 
-  window.StarSoupEditor = { open: open };
+  window.StarSoupEditor = { open: open, unmount: unmount };
 })();

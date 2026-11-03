@@ -287,7 +287,6 @@
   /* ---------- 한 장면(펼침면) 만들기 ---------- */
   function buildLeaf(index) {
     var scene = S.scenes[index];
-    if (scene.id !== 'taste') tasteAutoDone = false;
     var c = ctx();
     var leaf = el('article', { class: 'leaf', 'data-page': state.page, 'aria-label': '#' + (index + 1) + ' 장면' });
     leaf._teardown = [];
@@ -679,39 +678,25 @@
   }
 
   /* ---------- #9 16쪽: '직접 그리기' 맛 ----------
-     이 쪽에 들어오면(한 쪽씩 보기: 16쪽으로 넘기면 / 펼침 보기: #9가 열리면) 음식 그리기와 같은 그림판이 바로 열린다.
-     다 그리면 그 그림이 종이 위에 놓이고, '다시 그리기'로 이어서 고칠 수 있다. */
-  var tasteAutoDone = false;   // 이번에 #9에 들어와서 그림판을 이미 한 번 열었는지
+     맛 카드에서 '직접 그리기'를 고르면 16쪽(삽화 옆 쪽)에 음식 그리기와 같은 그림판이 그대로 놓인다.
+     따로 창을 열거나 버튼을 누르지 않고 그 쪽에서 바로 그리며, 손을 뗄 때마다 저장된다. */
   function tasteDrawPad(leaf) {
-    var art = images[IMG_TASTE];
-    var box = el('div', { class: 'tdraw' + (art ? ' has-art' : '') });
-    if (art) box.append(el('img', { class: 'tdraw-art', src: art, alt: (customTaste().label) + ' 그림' }));
-    else box.append(el('p', { class: 'tdraw-tip', text: '무슨 맛이 났는지 그려 보세요' }));
-    box.append(el('button', { type: 'button', class: 'btn ' + (art ? 'btn-ghost btn-small' : 'btn-primary') + ' tdraw-open',
-      text: art ? '다시 그리기' : '✏️ 맛 그리기', onclick: openTasteEditor }));
-    if (!art && !tasteAutoDone) {
-      setTimeout(function () {
-        var here = state.scene === sceneIndex('taste') && (mode === 'spread' || state.page === 1);
-        var editorOpen = !document.getElementById('editor').hidden;
-        if (tasteAutoDone || !here || !leaf.isConnected || leaf !== currentLeaf() || images[IMG_TASTE] || editorOpen) return;
-        tasteAutoDone = true;
-        openTasteEditor();
-      }, ARC.duration + 150);
-    }
-    return box;
-  }
-  function openTasteEditor() {
-    tasteAutoDone = true;
-    window.StarSoupEditor.open({
-      title: '무슨 맛이 났는지 그리기', image: images[IMG_TASTE], askName: true, name: state.customTasteName,
-      nameLabel: '어떤 맛이었나요? (안 써도 돼요)', namePlaceholder: '예: 무지개 맛'
-    }).then(function (res) {
-      if (!res) return;
-      state.customTasteName = res.name.slice(0, S.limits.tasteName);
-      if (res.image) saveImage(IMG_TASTE, res.image);
-      saveNow();
-      rerender();
-    });
+    var host = el('div', { class: 'tdraw-host' });
+    var mounted = false;
+    var mount = function () {
+      if (mounted || !host.isConnected) return;
+      mounted = true;
+      window.StarSoupEditor.open({
+        inline: host, title: '무슨 맛이 났는지 그리기', base: images[IMG_TASTE],
+        onChange: function (data) { saveImage(IMG_TASTE, data); }
+      });
+    };
+    // 쪽이 화면에 붙은 뒤에 그림판을 옮겨 온다 (한 쪽씩 보기에서는 16쪽을 볼 때만)
+    var visible = function () { return mode === 'spread' || state.page === 1; };
+    requestAnimationFrame(function () { if (visible()) mount(); });
+    leaf._mountTaste = function () { if (visible()) mount(); };
+    leaf._teardown.push(function () { if (mounted) window.StarSoupEditor.unmount(host); });
+    return host;
   }
 
   // 별빛스프 재료 스티커들. editable이면 요리 화면에서 끌어 옮기고 뗄 수 있다.
@@ -1905,7 +1890,7 @@
   var swipe = null;
   book.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' || swipe || switching) return;
-    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw-open')) return;
+    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw-host')) return;
     swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dir: null, leaf: currentLeaf() };
   });
   book.addEventListener('pointermove', function (e) {
