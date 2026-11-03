@@ -23,6 +23,7 @@
       version: 2, layout: 2, scene: 0, page: 0, maxScene: 0,
       time: null, weather: null, customWeatherName: '', wakeWeather: null, wakeWeatherName: '',
       soup: [],   // 별빛스프 재료 (최대 5개) { id, name, u, v, w, r }: u·v·w는 스프 그림 기준 비율
+      soupStirs: 0, // 스프를 저은 횟수 (10번이면 완성)
       name: '', food: null, customFoodName: '', deed: '', taste: null,
       stickers: {}, deedMemo: null, returnTo: null
     };
@@ -204,6 +205,7 @@
     s.customWeatherName = str(raw.customWeatherName, S.limits.weatherName);
     s.wakeWeather = raw.wakeWeather === 'custom' || S.weathers.some(function (w) { return w.id === raw.wakeWeather; }) ? raw.wakeWeather : null;
     s.wakeWeatherName = str(raw.wakeWeatherName, S.limits.weatherName);
+    s.soupStirs = Number.isInteger(raw.soupStirs) ? clamp(raw.soupStirs, 0, 10) : 0;
     s.soup = Array.isArray(raw.soup) ? raw.soup.filter(function (g) { return g && typeof g.id === 'string' && /^[a-z0-9]+$/.test(g.id); })
       .slice(0, S.limits.ingredients).map(function (g) {
         return { id: g.id, name: str(g.name, S.limits.ingredient), u: num(g.u, 0, 1, 0.5), v: num(g.v, 0, 1, 0.5), w: num(g.w, 0.06, 0.4, 0.16), r: num(g.r, -180, 180, 0) };
@@ -582,9 +584,7 @@
       card.addEventListener('click', function () {
         if (Date.now() - swipedAt < 350) return;    // 밀어서 돌린 직후의 클릭은 무시
         if (i !== focus) { focus = i; layout(); return; }
-        state.taste = t.id;
         layout();
-        paintAskNote();
         card.animate([{ transform: getComputedStyle(card).transform }, { transform: getComputedStyle(card).transform + ' scale(1.06)' }, { transform: getComputedStyle(card).transform }], { duration: 380, easing: 'cubic-bezier(.3,1.4,.5,1)' });
         updateControls();
         saveSoon();
@@ -593,6 +593,10 @@
       return card;
     });
     function layout() {
+      // 가운데(보고 있는) 카드가 곧 고른 맛
+      state.taste = list[focus].id;
+      paintAskNote();
+      saveSoon();
       cards.forEach(function (card, i) {
         var rel = ((i - focus) % n + n) % n;
         if (rel > n / 2) rel -= n;
@@ -604,7 +608,7 @@
     function turn(d) { focus = (focus + d + n) % n; layout(); }
     var prevBtn = el('button', { type: 'button', class: 'c-nav c-nav--prev', 'aria-label': '이전 맛', onclick: function () { turn(-1); } }, '‹');
     var nextBtn = el('button', { type: 'button', class: 'c-nav c-nav--next', 'aria-label': '다음 맛', onclick: function () { turn(1); } }, '›');
-    var box = el('div', { class: 'carousel', role: 'group', 'aria-label': '스프의 맛 고르기 (옆으로 넘겨 보고 가운데 카드를 눌러 골라요)' }, stage, prevBtn, nextBtn);
+    var box = el('div', { class: 'carousel', role: 'group', 'aria-label': '스프의 맛 고르기 (옆으로 넘기면 가운데에 보이는 맛이 골라져요)' }, stage, prevBtn, nextBtn);
 
     // 카드 위에서 옆으로 밀면 돈다 (책장은 넘어가지 않음)
     var swipe = null, swipedAt = 0;
@@ -640,29 +644,68 @@
         del.addEventListener('click', function (e) {
           e.stopPropagation();
           state.soup = state.soup.filter(function (x) { return x.id !== g.id; });
+          state.soupStirs = 0;
           delete images['soup-' + g.id];
           store.deleteImage('soup-' + g.id).catch(function () {});
           saveNow();
           paintAsk();
         });
-        item.append(del);
-        var drag = null;
+        item.append(del, el('span', { class: 'st-handle ing-handle', 'aria-hidden': 'true' }));
+        // 끌면 옮기고, 노란 손잡이를 끌거나 두 손가락으로 벌리면 크기·방향이 바뀐다
+        var touches = {}, drag = null, pinch = null;
+        var place = function () {
+          item.style.left = g.u * 100 + '%';
+          item.style.top = g.v * 100 + '%';
+          item.style.width = g.w * 100 + '%';
+          item.style.setProperty('--r', g.r + 'deg');
+        };
+        var count = function () { return Object.keys(touches).length; };
         item.addEventListener('pointerdown', function (e) {
           if (e.target.closest('.st-del')) return;
           e.preventDefault();
-          var r = box.getBoundingClientRect();
-          drag = { id: e.pointerId, r: r, dx: e.clientX - (r.left + g.u * r.width), dy: e.clientY - (r.top + g.v * r.height) };
           try { item.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
+          touches[e.pointerId] = { x: e.clientX, y: e.clientY };
           item.classList.add('is-dragging');
+          var r = box.getBoundingClientRect();
+          var cx = r.left + g.u * r.width, cy = r.top + g.v * r.height;
+          if (count() === 2) {
+            var ids = Object.keys(touches), p1 = touches[ids[0]], p2 = touches[ids[1]];
+            pinch = { d: Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1, a: Math.atan2(p2.y - p1.y, p2.x - p1.x), w: g.w, r: g.r };
+            drag = null;
+            return;
+          }
+          if (count() > 2) return;
+          drag = { id: e.pointerId, r: r, handle: !!e.target.closest('.ing-handle'), cx: cx, cy: cy,
+            dx: e.clientX - cx, dy: e.clientY - cy,
+            d: Math.hypot(e.clientX - cx, e.clientY - cy) || 1, a: Math.atan2(e.clientY - cy, e.clientX - cx), w: g.w, r0: g.r };
         });
         item.addEventListener('pointermove', function (e) {
-          if (!drag || e.pointerId !== drag.id) return;
-          g.u = clamp((e.clientX - drag.dx - drag.r.left) / drag.r.width, 0.05, 0.95);
-          g.v = clamp((e.clientY - drag.dy - drag.r.top) / drag.r.height, 0.06, 0.94);
-          item.style.left = g.u * 100 + '%';
-          item.style.top = g.v * 100 + '%';
+          if (!touches[e.pointerId]) return;
+          touches[e.pointerId] = { x: e.clientX, y: e.clientY };
+          if (pinch && count() >= 2) {
+            var ids = Object.keys(touches), p1 = touches[ids[0]], p2 = touches[ids[1]];
+            g.w = clamp(pinch.w * Math.hypot(p2.x - p1.x, p2.y - p1.y) / pinch.d, 0.06, 0.4);
+            g.r = Math.round(pinch.r + (Math.atan2(p2.y - p1.y, p2.x - p1.x) - pinch.a) * 180 / Math.PI);
+          } else if (drag && e.pointerId === drag.id) {
+            if (drag.handle) {
+              g.w = clamp(drag.w * Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) / drag.d, 0.06, 0.4);
+              g.r = Math.round(drag.r0 + (Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx) - drag.a) * 180 / Math.PI);
+            } else {
+              g.u = clamp((e.clientX - drag.dx - drag.r.left) / drag.r.width, 0.05, 0.95);
+              g.v = clamp((e.clientY - drag.dy - drag.r.top) / drag.r.height, 0.06, 0.94);
+            }
+          } else return;
+          if (g.r > 180) g.r -= 360;
+          if (g.r < -180) g.r += 360;
+          place();
         });
-        var end = function () { if (drag) { drag = null; item.classList.remove('is-dragging'); saveSoon(); } };
+        var end = function (e) {
+          if (!touches[e.pointerId]) return;
+          delete touches[e.pointerId];
+          if (count() < 2) pinch = null;
+          if (drag && drag.id === e.pointerId) drag = null;
+          if (!count()) { item.classList.remove('is-dragging'); saveSoon(); }
+        };
         item.addEventListener('pointerup', end);
         item.addEventListener('pointercancel', end);
       }
@@ -684,6 +727,7 @@
       var n = state.soup.length, a = n * 2.4 + 0.6, rr = n ? 0.2 : 0.05;
       state.soup.push({ id: id, name: res.name.slice(0, S.limits.ingredient), u: 0.5 + Math.cos(a) * rr * 0.72, v: 0.51 + Math.sin(a) * rr, w: 0.15, r: Math.round(Math.random() * 24 - 12) });
       saveImage('soup-' + id, res.image);
+      state.soupStirs = 0;   // 새 재료를 넣었으니 다시 저어야 한다
       saveNow();
       paintAsk();
     });
@@ -1227,7 +1271,13 @@
     wake: weatherAsk({ key: 'wake', scene: 'ending', field: 'wakeWeather', nameField: 'wakeWeatherName', img: IMG_WAKE,
       question: '창 밖을 보니…', where: '창 밖에 그 날씨가 펼쳐져요.' }),
     soup: {
-      text: function () { return [['별빛스프에 무엇을 넣을까요?']]; },
+      text: function () {
+        return [
+          ['요정이 살짝 속삭였어요.'],
+          ['“별빛스프에 좋아하는 재료를 넣으면, 세상에 하나뿐인 맛이 난대요!”'],
+          ['별빛스프에 무엇을 넣을까요?']
+        ];
+      },
       body: function () {
         var full = state.soup.length >= S.limits.ingredients;
         var pot = el('div', { class: 'soup-pot' }, el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '위에서 내려다본 별빛스프' }), soupIngredients(true));
@@ -1239,10 +1289,53 @@
         return el('div', { class: 'soup-cook' }, pot, add);
       },
       note: function () {
-        return state.soup.length ? '재료를 끌어서 스프 안 원하는 곳에 띄워 보세요. ×를 누르면 뺄 수 있어요.'
+        return state.soup.length ? '재료를 끌어서 옮기고, 노란 손잡이(또는 두 손가락)로 크기를 바꿔요. ×를 누르면 뺄 수 있어요.'
           : '재료 이름을 적고 직접 그려서 넣어요. 다섯 개까지 넣을 수 있고, 안 넣어도 괜찮아요.';
       },
       ready: function () { return true; }
+    },
+    // 재료를 넣은 다음: 스프를 10번 톡톡 눌러 저어서 완성한다 (한 번에 36°, 10번이면 한 바퀴)
+    stir: {
+      scene: 'soup',
+      text: function () { return [['이제 별빛스프를 휘휘 저어 볼까요?'], ['스프를 10번 톡톡 눌러서 저어 주세요.']]; },
+      body: function () {
+        var spin = el('div', { class: 'stir-spin' }, el('div', { class: 'stir-swirl' }), soupIngredients(false));
+        var count = el('div', { class: 'stir-count', 'aria-live': 'polite' });
+        var pot = el('button', { type: 'button', class: 'soup-pot stir-pot', 'aria-label': '스프 젓기 (눌러서 저어요)' },
+          el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '' }), spin, count);
+        var paint = function () {
+          count.textContent = state.soupStirs >= 10 ? '완성!' : state.soupStirs + ' / 10';
+          count.classList.toggle('is-done', state.soupStirs >= 10);
+          spin.style.transform = 'rotate(' + state.soupStirs * 36 + 'deg)';
+        };
+        paint();
+        pot.addEventListener('pointerdown', function (e) {
+          if (state.soupStirs >= 10) return;
+          state.soupStirs++;
+          paint();
+          // 누른 자리에 별빛이 톡
+          var r = pot.getBoundingClientRect();
+          for (var k = 0; k < 5; k++) {
+            var sp = el('span', { class: 'stir-spark', text: '✦' });
+            sp.style.left = (e.clientX - r.left) + 'px';
+            sp.style.top = (e.clientY - r.top) + 'px';
+            sp.style.setProperty('--dx', (Math.random() * 80 - 40) + 'px');
+            sp.style.setProperty('--dy', (Math.random() * -70 - 10) + 'px');
+            pot.append(sp);
+            setTimeout(function (n) { return function () { n.remove(); }; }(sp), 800);
+          }
+          if (state.soupStirs >= 10) {
+            pot.classList.add('is-done');
+            toast('별빛스프 완성! 세상에 하나뿐인 맛이 됐어요.');
+          }
+          paintAskNote();
+          saveSoon();
+        });
+        return el('div', { class: 'soup-cook' }, pot);
+      },
+      note: function () { return state.soupStirs >= 10 ? '보글보글, 별빛스프가 완성됐어요!' : '스프를 눌러 저어요. 한 번 누를 때마다 휘휘 돌아가요.'; },
+      ready: function () { return state.soupStirs >= 10; },
+      requireMessage: '스프를 10번 눌러서 다 저어 주세요.'
     },
     food: {
       text: function (sc, c) { return sc.text(c); },

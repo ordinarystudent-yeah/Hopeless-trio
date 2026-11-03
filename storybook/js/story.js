@@ -191,7 +191,7 @@
     {
       // 이 펼침면 앞의 '요리' 화면에서 별빛스프에 넣을 재료(최대 5개)를 이름을 적고 그린다.
       // 왼쪽 쪽(13쪽)은 위에서 내려다본 스프 그릇(임시 아트워크, tools/soup_top.py), 그 위에 재료 스티커.
-      id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles', asks: ['soup'],
+      id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles', asks: ['soup', 'stir'],
       image: null, alt: '위에서 내려다본 별빛스프',
       pages: [
         { image: 'assets/backgrounds/08-soup-top.jpg', widgets: ['soup-ingredients'] },
@@ -218,7 +218,7 @@
       requireMessage: '스프에서 어떤 맛이 났는지 하나 골라 주세요.',
       nextLabel: '잠에서 깨기',
       text: function () { return [['무슨 맛이 났나요?']]; },
-      hint: '옆으로 넘겨 보고, 가운데 카드를 눌러 골라요.'
+      hint: '옆으로 넘겨 보세요. 가운데에 보이는 맛이 골라져요.'
     },
     {
       // #10: 17쪽 잠에서 깸 / 18쪽 창 밖 (삽화를 빼고 화창한 아침 하늘 + '창 밖을 보니…'에서 고른 날씨)
@@ -395,7 +395,7 @@
   };
 
   window.StarSoup = {
-    version: '2.7',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '2.8',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

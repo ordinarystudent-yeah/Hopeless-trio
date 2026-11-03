@@ -1192,3 +1192,49 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 @media (max-height: 500px) and (orientation: landscape) {
   .soup-pot { width: min(100%, calc((100dvh - 190px) * 1.414)); }
 }
+
+/* 넣은 재료: 노란 손잡이로 크기·방향 바꾸기 */
+.soup-ings.is-editable .ing-handle { display: grid; right: -10px; bottom: -10px; width: 26px; height: 26px; }
+
+/* ---------- 스프 젓기 (재료를 넣은 다음) ----------
+   그릇 그림은 그대로, 스프 위(소용돌이 + 재료)만 그릇 가운데를 축으로 돈다. 10번 × 36° = 한 바퀴 */
+.stir-pot { display: block; padding: 0; border: 0; cursor: pointer; font: inherit; color: inherit; touch-action: manipulation; }
+.stir-spin { position: absolute; inset: 0; transform-origin: 50% 51%; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); pointer-events: none; }
+.stir-swirl {
+  position: absolute;
+  left: 50%;
+  top: 51%;
+  width: 46.7%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.38) 12%, rgb(255 255 255 / 0) 28%, rgb(255 236 180 / 0.32) 55%, rgb(255 255 255 / 0) 72%);
+  mix-blend-mode: screen;
+}
+.stir-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 14px;
+  border-radius: 99px;
+  background: rgb(17 23 46 / 0.8);
+  color: var(--milk);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+.stir-count.is-done { background: var(--soup); color: var(--soup-ink); }
+.stir-pot.is-done { animation: stir-done 0.7s cubic-bezier(0.3, 1.4, 0.5, 1); box-shadow: 0 0 0 4px rgb(255 198 90 / 0.5), var(--shadow); }
+@keyframes stir-done { 40% { transform: scale(1.04); } }
+.stir-spark {
+  position: absolute;
+  color: #fff3c4;
+  font-size: 18px;
+  pointer-events: none;
+  text-shadow: 0 0 8px rgb(255 198 90 / 0.9);
+  animation: stir-spark 0.8s ease-out forwards;
+}
+@keyframes stir-spark {
+  from { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2); opacity: 0; }
+}
