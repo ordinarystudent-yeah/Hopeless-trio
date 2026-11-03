@@ -381,6 +381,8 @@
       }
       if (p.text) {
         var body = typeof p.text === 'function' ? p.text(c) : scene.text(c);
+      }
+      if (p.text && body) {
         var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') }, eyebrow(scene, index, p), paragraphs(body));
         pg.append(block);
       }
@@ -434,14 +436,14 @@
       'aria-label': chosen ? '창 밖 날씨 바꾸기' : '창문 열기' },
       glow, view, el('span', { class: 'win-frame', 'aria-hidden': 'true' }), paneL, paneR, el('span', { class: 'win-sill', 'aria-hidden': 'true' }), hint);
     // 움직임은 JS로 (기기의 '움직임 줄이기'에도 멈추지 않게)
-    var OPEN_L = 'perspective(80cqh) rotateY(76deg)', OPEN_R = 'perspective(80cqh) rotateY(-76deg)';
+    var OPEN_L = 'rotateY(76deg)', OPEN_R = 'rotateY(-76deg)';   // 원근은 .win의 perspective로
     if (chosen) { paneL.style.transform = OPEN_L; paneR.style.transform = OPEN_R; }
     else if (glow.animate) {
       // 닫힌 창: 금빛이 천천히 숨 쉬듯 번지고, 창이 살짝 들썩여 눌러 보고 싶게
       glow.animate([{ opacity: 0.15, transform: 'scale(0.98)' }, { opacity: 0.9, transform: 'scale(1.03)' }, { opacity: 0.15, transform: 'scale(0.98)' }],
         { duration: 2000, iterations: Infinity, easing: 'ease-in-out' });
       [paneL, paneR].forEach(function (pn, i) {
-        pn.animate([{ transform: 'none' }, { transform: 'perspective(80cqh) rotateY(' + (i ? -7 : 7) + 'deg)', offset: 0.12 }, { transform: 'none', offset: 0.24 }, { transform: 'none' }],
+        pn.animate([{ transform: 'none' }, { transform: 'rotateY(' + (i ? -7 : 7) + 'deg)', offset: 0.12 }, { transform: 'none', offset: 0.24 }, { transform: 'none' }],
           { duration: 3200, delay: 900, iterations: Infinity, easing: 'ease-in-out' });
       });
       hint.animate([{ opacity: 0.55 }, { opacity: 1 }, { opacity: 0.55 }], { duration: 2000, iterations: Infinity });

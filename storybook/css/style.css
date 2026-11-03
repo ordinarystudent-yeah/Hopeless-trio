@@ -1377,14 +1377,17 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
     repeating-linear-gradient(90deg, rgb(255 255 255 / 0.18) 0 2.2cqh, transparent 2.2cqh 6cqh),
     linear-gradient(180deg, #f3dcc0 0%, #ecc9a6 100%);
 }
-.page.has-window .pg { padding-right: 66cqh; }
+.page.has-window .pg { padding-left: 9cqh; padding-bottom: 6cqh; }
+.page.has-window .pg-text { z-index: 3; }
+/* 창문은 쪽 한가운데에 크게. 열린 뒤에는 아래에 글이 들어오도록 조금 위로 */
 .win {
   position: absolute;
-  right: 8cqh;
+  left: 50%;
   top: 50%;
-  width: 52cqh;
-  height: 64cqh;
-  margin-top: -34cqh;
+  width: 64cqh;
+  height: 76cqh;
+  margin: -40cqh 0 0 -32cqh;
+  perspective: 90cqh;
   padding: 0;
   border: 0;
   background: none;
@@ -1419,3 +1422,6 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   font-family: var(--font-display); font-size: max(10px, 3.6cqh); color: #7a5330; text-align: center; white-space: nowrap;
 }
 .win.is-open .win-hint { opacity: 0.7; }
+
+.win.is-open { width: 74cqh; height: 54cqh; top: 6cqh; margin: 0 0 0 -37cqh; }
+.win.is-open .win-hint { display: none; }

@@ -231,7 +231,7 @@
       image: 'assets/backgrounds/10-wake-up.jpg', alt: '아침에 잠에서 깬 아이의 방',
       pages: [
         { text: true, place: 'top', art: 'dawn', artPos: 'bottom' },
-        { window: true, text: function (c) { return windowText(c); }, place: 'top' }
+        { window: true, text: function (c) { return windowText(c); }, place: 'bottom' }
       ],
       text: function (c) {
         var taste = c.taste ? [{ v: c.taste.label }, josa(c.taste.label, '이/가')] : ['별빛스프의 맛이'];
@@ -383,7 +383,7 @@
   // #10 18쪽: 창 밖을 보니, (날씨) + 오늘도, 먹을 수 있을까요?
   function windowText(c) {
     var w = c.wakeWeather;
-    if (!w) return [['창문 너머에는 무엇이 보일까요?']];
+    if (!w) return null;   // 창을 열기 전에는 글 없이 창문만
     return [
       ['창 밖을 보니, '].concat(w ? [{ v: w.seen }] : ['밝은 아침이 와 있었어요.']),
       { coda: true, parts: ['오늘도, 먹을 수 있을까요?\n착한 아이에게 주는 별빛 스프를!'] }
@@ -399,7 +399,7 @@
   };
 
   window.StarSoup = {
-    version: '4.5',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '4.6',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
