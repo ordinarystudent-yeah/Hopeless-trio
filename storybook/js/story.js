@@ -358,9 +358,9 @@
   ];
   var customWeather = { label: '직접 그리기', day: '특별한', pre: '특별한 하늘이 펼쳐진', feel: '내가 그린 하늘처럼 특별한 기분이 들었어요.', seen: '내가 그린 하늘이 펼쳐져 있었어요.' };
 
-  // #1 왼쪽 쪽: 하루를 보내고 창문을 여니 하늘이…
+  // #1 왼쪽 쪽: 하루를 보내고 창문을 여니…
   function introOpening(c) {
-    return [['하루를 보내고 창문을 여니 하늘이…']];
+    return [['하루를 보내고 창문을 여니…']];
   }
   // #1 오른쪽 쪽: 날씨와 때를 한 문장으로("비가 오는 깜깜한 밤이에요.") + 잠이 들었던 (선택한 시간)…
   function introSky(c) {
@@ -394,7 +394,7 @@
   };
 
   window.StarSoup = {
-    version: '3.5',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '3.6',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

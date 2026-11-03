@@ -1486,9 +1486,8 @@
           paint();
           phy.tap = performance.now();
           kick();
-          // 그릇도 누른 쪽으로 아주 살짝 밀렸다 돌아온다
           var pr = pot.getBoundingClientRect();
-          var nx = (e.clientX - pr.left) / pr.width - 0.5, ny = (e.clientY - pr.top) / pr.height - 0.5;
+          var nx = (e.clientX - pr.left) / pr.width - 0.5;
           // 파문은 누른 쪽에서 시작 (돌아가는 스프 기준의 방향으로 바꿔 넣는다)
           waves.push({ t0: phy.tap, ang: Math.atan2((e.clientY - pr.top) / pr.height - 0.51, nx) - phy.a * Math.PI / 180 });
           if (waves.length > 4) waves.shift();
@@ -1503,10 +1502,6 @@
             g.vr += (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 40);
           });
           pushes.push({ t0: phy.tap, fx: -Math.sin(ta) * 0.3 + Math.cos(ta) * 0.1, fy: Math.cos(ta) * 0.3 + Math.sin(ta) * 0.1 });
-          if (pot.animate) {
-            pot.animate([{ translate: '0 0' }, { translate: (nx * 6).toFixed(1) + 'px ' + (ny * 6).toFixed(1) + 'px' }, { translate: (nx * -2).toFixed(1) + 'px ' + (ny * -2).toFixed(1) + 'px' }, { translate: '0 0' }],
-              { duration: 420, easing: 'ease-out' });
-          }
           var ripple = el('span', { class: 'stir-ripple', 'aria-hidden': 'true' });
           pot.append(ripple);
           setTimeout(function () { ripple.remove(); }, 900);
@@ -1746,7 +1741,7 @@
     layer.append(flash);
     if (flash.animate) {
       flash.animate([{ transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0.95 }, { transform: 'translate(-50%, -50%) scale(1.9)', opacity: 0 }],
-        { duration: 900, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' });
+        { duration: 1600, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' });
     }
     var glyphs = ['★', '✦', '★', '✧', '★'], colors = ['#ffd45e', '#fff3c4', '#ffb938', '#ffffff', '#ffe08a'];
     for (var i = 0; i < 22; i++) {
@@ -1764,11 +1759,11 @@
           { transform: 'translate(-50%, -50%) translate(0px, 0px) scale(0.2) rotate(0deg)', opacity: 1 },
           { transform: 'translate(-50%, -50%) translate(' + px.toFixed(1) + 'px, ' + py.toFixed(1) + 'px) scale(1.25) rotate(' + (spin * 0.6).toFixed(0) + 'deg)', opacity: 1, offset: 0.45 },
           { transform: 'translate(-50%, -50%) translate(' + (px * 1.08).toFixed(1) + 'px, ' + (py + size * 0.35).toFixed(1) + 'px) scale(0.5) rotate(' + spin.toFixed(0) + 'deg)', opacity: 0 }
-        ], { duration: 1100 + Math.random() * 400, delay: Math.random() * 120, easing: 'cubic-bezier(.15,.8,.35,1)', fill: 'forwards' });
+        ], { duration: 2000 + Math.random() * 600, delay: Math.random() * 200, easing: 'cubic-bezier(.15,.8,.35,1)', fill: 'forwards' });
       }
     }
     document.body.append(layer);
-    setTimeout(function () { layer.remove(); }, 1800);
+    setTimeout(function () { layer.remove(); }, 3000);
   }
 
   /* ---------- 밀어서 넘기기 (터치·펜슬) ----------
