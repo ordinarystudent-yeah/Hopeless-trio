@@ -1306,3 +1306,6 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   inset: 0;
   background: radial-gradient(ellipse 23.6% 33.4% at 50% 51%, #efe4cb 0%, #e2d2b0 70%, #cdb68c 99%, transparent 100%);
 }
+/* 스프 가장자리: 오려 낸 모양을 따라 밝은 윤곽(메니스커스)과 그릇 바닥 쪽 그늘 */
+.stir-surface { filter: drop-shadow(0 0 1.5px rgb(255 244 210 / 0.75)) drop-shadow(0 1px 2px rgb(70 45 10 / 0.35)); }
+.stir-slosh { clip-path: ellipse(23.35% 33% at 50% 51%); }

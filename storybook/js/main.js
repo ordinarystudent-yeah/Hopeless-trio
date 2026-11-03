@@ -1304,21 +1304,30 @@
         // 층: 그릇 그림(고정) / 그릇 바닥(고정, 스프가 밀려나면 드러남) / 출렁이는 층[ 도는 스프(금빛 스프·은하빛·빛결) + 떠 있는 재료 ]
         var goo = el('canvas', { class: 'stir-goo', 'aria-hidden': 'true' });
         var liquid = el('div', { class: 'stir-spin' }, el('div', { class: 'stir-soup', 'aria-hidden': 'true' }), galaxy, goo);
-        var floats = el('div', { class: 'stir-spin' }, soupIngredients(false));
-        var slosh = el('div', { class: 'stir-spin' }, liquid, floats);
+        var ingBox = soupIngredients(false);
+        var floats = el('div', { class: 'stir-spin' }, ingBox);
+        // slosh: 스프 가장자리 모양을 매 프레임 다시 그려 오려 낸다(한쪽만 볼록·납작). surface는 가장자리 윤곽선(메니스커스)
+        var slosh = el('div', { class: 'stir-spin stir-slosh' }, liquid);
+        var surface = el('div', { class: 'stir-spin stir-surface' }, slosh);
         var count = el('div', { class: 'stir-count', 'aria-live': 'polite' });
         var pot = el('button', { type: 'button', class: 'soup-pot stir-pot', 'aria-label': '스프 젓기 (눌러서 저어요)' },
           el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '' }),
-          el('div', { class: 'stir-floor', 'aria-hidden': 'true' }), slosh, count);
+          el('div', { class: 'stir-floor', 'aria-hidden': 'true' }), surface, floats, count);
         // 물성: 걸쭉한 스프를 숟가락으로 미는 느낌
         //  - 힘이 서서히 실려 천천히 출발(슬로우 인), 관성으로 살짝 지나쳤다가 되돌아와 멈춤
         //  - 재료는 액체보다 늦게, 더 크게 흔들리며 따라옴
-        //  - 출렁임(slosh): 숟가락이 민 쪽으로 스프가 쏠려 그릇 벽을 타고 올라갔다가 돌아온다.
-        //    스쿼시 앤 스트레치 — 빠르게 움직일 땐 움직이는 방향으로 늘어나고(stretch),
-        //    벽에 몰렸을 땐 그 방향으로 납작해진다(squash). 늘린 만큼 옆으로 줄여 넓이(부피)는 늘 그대로.
+        //  - 출렁임(slosh): 스프 전체가 아니라 가장자리 일부만 변한다. 숟가락이 민 쪽은 벽을 타고 볼록 올라가고,
+        //    빠르게 흐르는 쪽은 혀처럼 길게 늘어나며(stretch, 빠를수록 가늘고 길게), 반대쪽은 그만큼 물러난다(squash).
+        //    매 프레임 가장자리 넓이를 재서 처음 넓이와 같도록 맞춘다 → 모양이 바뀌어도 부피는 그대로.
+        //  - 재료: 저마다 무게가 달라 스프보다 크게 밀려났다 통통 튀며 돌아오고, 빙글 돌고, 누른 자리에서 밀려난다
         var phy = { a: state.soupStirs * 36, v: 0, b: state.soupStirs * 36, bv: 0, sw: 0, tap: -1, raf: 0, last: 0,
           dx: 0, dy: 0, vx: 0, vy: 0 };
         var pushes = []; // 숟가락이 미는 힘 { t0, fx, fy }
+        var ings = Array.prototype.map.call(ingBox.querySelectorAll('.soup-ing'), function (node, i) {
+          return { node: node, x: 0, y: 0, vx: 0, vy: 0, r: 0, vr: 0, gain: 2.2 + (i % 3) * 0.5, k: 30 + (i * 7) % 20 };
+        });
+        var SPOKES = 64, EDGE_X = 23.35, EDGE_Y = 33; // 스프 원의 반지름 (쪽 너비·높이에 대한 %)
+        var lobe = function (d, w) { d = Math.atan2(Math.sin(d), Math.cos(d)); return Math.exp(-d * d / (2 * w * w)); };
         var waves = [];  // 누른 자리에서 퍼지는 파문 { t0, ang }
         var gctx = goo.getContext && goo.getContext('2d');
         // 파문: 누른 쪽에서 바깥으로 넓게 퍼져 나가며 빛의 결을 크게 물결지게 밀었다가 잦아든다
@@ -1369,16 +1378,38 @@
           }
         };
         var draw = function () {
-          liquid.style.transform = 'rotate(' + phy.a.toFixed(2) + 'deg)';
+          // 1.3배로 키워 두고 가장자리 모양으로 오려 낸다 (볼록 나온 자리에도 스프 무늬가 있게)
+          liquid.style.transform = 'rotate(' + phy.a.toFixed(2) + 'deg) scale(1.3)';
           floats.style.transform = 'rotate(' + phy.b.toFixed(2) + 'deg)';
-          // 출렁이는 층: 쏠린 만큼 옮기고, 속도 방향으로 늘이고, 쏠린 방향으로 누른다 (둘 다 가로×세로 = 1)
-          var W = pot.clientWidth || 1;
+          // 가장자리 모양: 쏠린 쪽 볼록(벽 타기) + 흐르는 쪽 혀처럼 늘어남 + 파문이 가장자리에 닿으면 출렁
           var sp = Math.sqrt(phy.vx * phy.vx + phy.vy * phy.vy), dd = Math.sqrt(phy.dx * phy.dx + phy.dy * phy.dy);
-          var st = 1 + Math.min(0.18, sp * 1.4), sq = 1 + Math.min(0.14, dd * 3.6);
-          var tv = Math.atan2(phy.vy, phy.vx) * 180 / Math.PI, td = Math.atan2(phy.dy, phy.dx) * 180 / Math.PI;
-          slosh.style.transform = 'translate(' + (phy.dx * W).toFixed(2) + 'px,' + (phy.dy * W).toFixed(2) + 'px)' +
-            ' rotate(' + tv.toFixed(1) + 'deg) scale(' + st.toFixed(4) + ',' + (1 / st).toFixed(4) + ') rotate(' + (-tv).toFixed(1) + 'deg)' +
-            ' rotate(' + td.toFixed(1) + 'deg) scale(' + (1 / sq).toFixed(4) + ',' + sq.toFixed(4) + ') rotate(' + (-td).toFixed(1) + 'deg)';
+          var ad = Math.min(0.22, dd * 8), av = Math.min(0.18, sp * 1.4);
+          var td = Math.atan2(phy.dy, phy.dx), tv = Math.atan2(phy.vy, phy.vx);
+          var wv = 0.65 - 0.33 * Math.min(1, sp / 0.15); // 빠를수록 가늘고 길게
+          var now = performance.now(), rs = [], area = 0, i;
+          for (i = 0; i < SPOKES; i++) {
+            var th = i / SPOKES * Math.PI * 2;
+            var r = 1 + ad * lobe(th - td, 0.85) + av * lobe(th - tv, wv) - 0.35 * ad * lobe(th - td - Math.PI, 1.1);
+            for (var wi = 0; wi < waves.length; wi++) {
+              var tau = (now - waves[wi].t0) / 1000, fr = 0.1 + tau * 0.55 - 1;
+              r += 0.035 * Math.exp(-1.6 * tau) * Math.exp(-fr * fr / 0.03) * lobe(th - waves[wi].ang - phy.a * Math.PI / 180, 0.6);
+            }
+            rs.push(r); area += r * r;
+          }
+          var norm = Math.sqrt(SPOKES / area); // ½∑r²Δθ = π 이 되도록 → 넓이(부피) 유지
+          var pts = [];
+          for (i = 0; i < SPOKES; i++) {
+            var t2 = i / SPOKES * Math.PI * 2, rr = rs[i] * norm;
+            pts.push((50 + Math.cos(t2) * rr * EDGE_X).toFixed(2) + '% ' + (51 + Math.sin(t2) * rr * EDGE_Y).toFixed(2) + '%');
+          }
+          slosh.style.clipPath = 'polygon(' + pts.join(',') + ')';
+          // 재료: 각자 출렁임에 밀려나 통통 튀며 돌아온다 (도는 층 안이므로 방향을 그 층 기준으로 돌려서 넣는다)
+          var W = pot.clientWidth || 1, rb = -phy.b * Math.PI / 180, cb = Math.cos(rb), sb = Math.sin(rb);
+          for (i = 0; i < ings.length; i++) {
+            var g = ings[i], lx = g.x * cb - g.y * sb, ly = g.x * sb + g.y * cb;
+            g.node.style.translate = (lx * W).toFixed(1) + 'px ' + (ly * W).toFixed(1) + 'px';
+            g.node.style.rotate = g.r.toFixed(1) + 'deg';
+          }
         };
         var step = function (now) {
           var dt = Math.min(0.033, (now - (phy.last || now)) / 1000);
@@ -1405,18 +1436,34 @@
             return true;
           });
           var ks = 55, cs = 2 * 0.3 * Math.sqrt(55);
+          var ax = fx - ks * phy.dx - cs * phy.vx, ay = fy - ks * phy.dy - cs * phy.vy;
           phy.vx += (fx - ks * phy.dx - cs * phy.vx) * dt;
           phy.vy += (fy - ks * phy.dy - cs * phy.vy) * dt;
           // 쏠린 물결은 도는 스프를 따라 그릇 둘레로 조금 흘러간다
           var turn = phy.v * Math.PI / 180 * 0.5 * dt, co = Math.cos(turn), si2 = Math.sin(turn);
           var ndx = phy.dx * co - phy.dy * si2; phy.dy = phy.dx * si2 + phy.dy * co; phy.dx = ndx;
           phy.dx += phy.vx * dt; phy.dy += phy.vy * dt;
+          // 재료: 스프 쏠림의 몇 배로 끌려가는 통통한 용수철 + 흐름에 따라 빙글
+          var ingCalm = true;
+          for (var ii = 0; ii < ings.length; ii++) {
+            var g = ings[ii], kc = g.k, cc2 = 2 * 0.22 * Math.sqrt(kc);
+            g.vx += (kc * (phy.dx * g.gain - g.x) - cc2 * g.vx) * dt;
+            g.vy += (kc * (phy.dy * g.gain - g.y) - cc2 * g.vy) * dt;
+            g.x += g.vx * dt; g.y += g.vy * dt;
+            g.vr += (-18 * g.r - 2 * 0.25 * Math.sqrt(18) * g.vr + (phy.v - (phy.bv || 0)) * 0.6) * dt;
+            g.r += g.vr * dt;
+            if (Math.abs(g.x) + Math.abs(g.y) > 0.0003 || Math.abs(g.vx) + Math.abs(g.vy) > 0.002 || Math.abs(g.r) > 0.1 || Math.abs(g.vr) > 0.5) ingCalm = false;
+          }
           draw();
           var calm = Math.abs(target - phy.a) < 0.05 && Math.abs(phy.v) < 0.05 && Math.abs(phy.a - phy.b) < 0.05 &&
-            Math.abs(phy.bv) < 0.05 && !pushes.length && Math.abs(phy.dx) + Math.abs(phy.dy) < 0.0002 && Math.abs(phy.vx) + Math.abs(phy.vy) < 0.001;
+            Math.abs(phy.bv) < 0.05 && !pushes.length && Math.abs(phy.dx) + Math.abs(phy.dy) < 0.0002 && Math.abs(phy.vx) + Math.abs(phy.vy) < 0.001 && ingCalm;
           waves = waves.filter(function (wv) { return now - wv.t0 < 2200; });
           calm = calm && !waves.length;
-          if (calm) { phy.dx = phy.dy = phy.vx = phy.vy = 0; draw(); }
+          if (calm) {
+            phy.dx = phy.dy = phy.vx = phy.vy = 0;
+            ings.forEach(function (g) { g.x = g.y = g.vx = g.vy = g.r = g.vr = 0; });
+            draw();
+          }
           drawGoo();
           if (calm || !pot.isConnected) { phy.raf = 0; phy.last = 0; return; }
           phy.raf = requestAnimationFrame(step);
@@ -1447,6 +1494,14 @@
           if (waves.length > 4) waves.shift();
           // 숟가락이 스프를 미는 힘: 젓는 방향(시계 방향 접선)으로, 누른 쪽에서 조금 바깥으로
           var ta = Math.atan2((e.clientY - pr.top) / pr.height - 0.51, nx);
+          // 누른 자리 가까운 재료는 톡 밀려난다
+          ings.forEach(function (g) {
+            var ib = g.node.getBoundingClientRect();
+            var gx = (ib.left + ib.width / 2 - e.clientX) / pr.width, gy = (ib.top + ib.height / 2 - e.clientY) / pr.width;
+            var dist = Math.sqrt(gx * gx + gy * gy) || 0.01, f = 0.35 * Math.exp(-dist / 0.18);
+            g.vx += gx / dist * f; g.vy += gy / dist * f;
+            g.vr += (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 80);
+          });
           pushes.push({ t0: phy.tap, fx: -Math.sin(ta) * 0.3 + Math.cos(ta) * 0.1, fy: Math.cos(ta) * 0.3 + Math.sin(ta) * 0.1 });
           if (pot.animate) {
             pot.animate([{ translate: '0 0' }, { translate: (nx * 6).toFixed(1) + 'px ' + (ny * 6).toFixed(1) + 'px' }, { translate: (nx * -2).toFixed(1) + 'px ' + (ny * -2).toFixed(1) + 'px' }, { translate: '0 0' }],
