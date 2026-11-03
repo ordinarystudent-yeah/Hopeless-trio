@@ -300,7 +300,11 @@
       img.onload = function () { leaf.classList.add('has-image'); img.classList.add('is-loaded'); };
       img.onerror = function () { img.remove(); };
       img.src = scene.image;
+      // #1처럼 삽화를 효과 레이어로 겹칠 때 (예: 스크린 70%) — 아래의 하늘색이 비쳐 보인다
+      if (scene.imageBlend) { img.style.mixBlendMode = scene.imageBlend.mode; img.style.opacity = String(scene.imageBlend.opacity); }
       bg.append(img);
+      // 그 위에 놓는 그림(투명 PNG, 예: #1 도심)
+      if (scene.overlay) bg.append(el('img', { class: 'spread-overlay', src: scene.overlay, alt: '', decoding: 'async' }));
       if (S.showAssetNotes) bg.append(el('span', { class: 'asset-note', text: '펼침면 삽화 자리 · ' + scene.image }));
     }
     // #1: 가장 아래층에 고른 때의 하늘색
@@ -310,8 +314,6 @@
       var t = S.times.find(function (x) { return x.id === skyId; });
       bg.style.background = t ? t.sky : S.times[S.times.length - 1].sky;
       bg.setAttribute('data-sky', t ? t.id : 'night');
-      // 삽화가 있으면 그 위에 고른 때의 하늘빛을 살짝 물들인다 (밤 그림이라 밤이면 그대로)
-      if (scene.image && t && t.id !== 'night') bg.append(el('div', { class: 'sky-tint', 'data-sky': t.id, style: 'background:' + t.sky }));
     }
     spread.append(bg);
     // #1: 가장 위층에 고른 날씨의 움직이는 효과 (글 상자는 그 위에 놓여 읽기 쉽게)

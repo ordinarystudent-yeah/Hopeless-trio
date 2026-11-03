@@ -116,9 +116,11 @@
   var scenes = [
     {
       // #1 앞에서 '때'와 '날씨'를 묻는다. 층 순서: 위) 날씨 효과 / 중간) 삽화 / 아래) 하늘색
-      // 삽화 위에 고른 때의 하늘빛을 살짝 물들이고(sky-tint), 그 위에 날씨 효과가 움직인다.
+      // 층 순서 (위에서 아래로): 날씨 효과 / 도심(01-city.png) / 밤하늘 삽화(01-intro.jpg, 스크린 70%) / 고른 때의 하늘색
       id: 'intro', act: 0, tone: 'night', no: '1', asks: ['time', 'weather'], sky: true, weatherFx: true,
-      image: 'assets/backgrounds/01-intro.jpg', alt: '초승달과 별이 걸린 밤하늘 아래 알록달록한 마을',
+      image: 'assets/backgrounds/01-intro.jpg', alt: '초승달과 별이 걸린 하늘 아래 알록달록한 마을',
+      imageBlend: { mode: 'screen', opacity: 0.7 },
+      overlay: 'assets/backgrounds/01-city.png',
       pages: [
         { text: function (c) { return introOpening(c); }, place: 'top' },
         { text: function (c) { return introSky(c); }, place: 'bottom' }
@@ -399,7 +401,7 @@
   };
 
   window.StarSoup = {
-    version: '5.0',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '5.1',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

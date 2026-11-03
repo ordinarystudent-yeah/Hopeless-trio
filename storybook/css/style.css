@@ -1461,11 +1461,5 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .taste-name-field .input { padding: 6px 12px; min-height: 0; font-size: 14px; }
 }
 
-/* #1 삽화 위에 고른 때의 하늘빛 (위쪽 하늘에만, 아래 마을로 갈수록 옅게) */
-.sky-tint {
-  position: absolute; inset: 0; pointer-events: none;
-  mix-blend-mode: color; opacity: 0.6;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 45%, transparent 80%);
-          mask-image: linear-gradient(180deg, #000 0%, #000 45%, transparent 80%);
-}
-.sky-tint[data-sky="day"], .sky-tint[data-sky="morning"] { mix-blend-mode: soft-light; opacity: 0.85; }
+/* #1 도심: 밤하늘 삽화(스크린) 위에 그대로 덮는 투명 PNG */
+.spread-bg img.spread-overlay { opacity: 1; pointer-events: none; }

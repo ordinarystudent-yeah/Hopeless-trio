@@ -9,14 +9,17 @@
   function rand(a, b) { return a + Math.random() * (b - a); }
 
   // 구름 한 덩이: 겹친 동그라미 + 아래쪽 푸른 그림자
-  function drawCloud(g, x, y, s, body, shade, alpha) {
+  // sy: 세로 비율 (1보다 작으면 납작한 구름)
+  function drawCloud(g, x, y, s, body, shade, alpha, sy) {
+    sy = sy || 1;
     var bumps = [[-0.9, 0.1, 0.55], [-0.4, -0.25, 0.75], [0.25, -0.35, 0.85], [0.85, 0, 0.6], [0, 0.15, 0.7]];
+    var blob = function (b, dy) { g.beginPath(); g.ellipse(x + b[0] * s, y + (b[1] * s + dy) * sy, b[2] * s, b[2] * s * sy, 0, 0, Math.PI * 2); g.fill(); };
     g.globalAlpha = alpha * 0.9;
     g.fillStyle = shade;
-    bumps.forEach(function (b) { g.beginPath(); g.arc(x + b[0] * s, y + b[1] * s + s * 0.22, b[2] * s, 0, Math.PI * 2); g.fill(); });
+    bumps.forEach(function (b) { blob(b, s * 0.22); });
     g.globalAlpha = alpha;
     g.fillStyle = body;
-    bumps.forEach(function (b) { g.beginPath(); g.arc(x + b[0] * s, y + b[1] * s, b[2] * s, 0, Math.PI * 2); g.fill(); });
+    bumps.forEach(function (b) { blob(b, 0); });
     g.globalAlpha = 1;
   }
 
@@ -39,7 +42,8 @@
     cloudy: {
       make: function (w, h) {
         var list = [];
-        for (var i = 0; i < 24; i++) list.push({ x: rand(-w * 0.1, w * 1.1), y: rand(-h * 0.08, h * 0.75), s: Math.max(18, rand(h * 0.1, h * 0.2)), v: rand(0.12, 0.45), a: rand(0.55, 0.9), tone: Math.random() });
+        // 흐린 날: 납작한 구름이 하늘 위쪽에 잔뜩 (아래 마을을 가리지 않게)
+        for (var i = 0; i < 24; i++) list.push({ x: rand(-w * 0.1, w * 1.1), y: rand(-h * 0.06, h * 0.42), s: Math.max(18, rand(h * 0.1, h * 0.2)), v: rand(0.12, 0.45), a: rand(0.55, 0.9), tone: Math.random() });
         list.sort(function (a, b) { return a.s - b.s; });
         return list;
       },
@@ -50,7 +54,7 @@
           if (move !== false) c.x += c.v;
           if (c.x - c.s * 2 > w) c.x = -c.s * 2;
           var body = c.tone < 0.5 ? '#d9dce6' : '#c3c8d6';
-          drawCloud(g, c.x, c.y, c.s, body, 'rgba(90, 98, 125, .45)', c.a);
+          drawCloud(g, c.x, c.y, c.s, body, 'rgba(90, 98, 125, .45)', c.a, 0.55);
         });
       }
     },
