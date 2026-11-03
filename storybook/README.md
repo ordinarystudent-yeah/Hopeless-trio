@@ -58,9 +58,9 @@ storybook/
 | 1 | 1–2 | #1 도입 | `01-intro.jpg`(밤하늘, 스크린 70%) + `01-city.png`(도심, 투명 PNG) | 채색 완료 | 층: 날씨 효과 / 도심 / 밤하늘(스크린 70%) / 고른 때의 하늘색. 왼쪽 위(하루를 보내고 창문을 여니…), 오른쪽 아래(날씨·때 문장) |
 | 2 | 3–4 | #2 식탁 + #3 이름표 | `assets/backgrounds/02-03-dream-table.jpg` | 채색 완료 | 왼쪽 아래(#2), 오른쪽 위 흰 여백(#3). 이름은 그림 속 이름표에 바로 씀 |
 | 3 | 5–6 | #4 음식 | `assets/backgrounds/04-food-choice.jpg` | 채색 완료 | 왼쪽 위(글, 5쪽에 음식 스티커), 오른쪽 위(고른 음식 설명) |
-| 4 | 7–8 | #5 요정의 등장 | `assets/backgrounds/05-fairies-arrive.jpg` | 채색 완료 | 왼쪽 가운데 |
-| 5 | 9–10 | #6 착한 일 | `assets/backgrounds/06-fairy-praise.jpg` | 채색 완료 (왼쪽) | 왼쪽 큰 말풍선 안 |
-| 6 | 11–12 | #7 음식 받기 | `assets/backgrounds/07-fairies-serve.jpg` | 채색 완료 (왼쪽) | 오른쪽 위 (왼쪽에 착한 일 종이) |
+| 4 | 7–8 | #5 요정의 등장 | `assets/backgrounds/05-fairies-arrive.jpg` | 채색 완료 | 7쪽 가운데, 8쪽 왼쪽 위(요정은 아이들이 했던 착한 일들을…) |
+| 5 | 9–10 | #6 착한 일 | `assets/backgrounds/06-fairy-praise.jpg` | 채색 완료 (왼쪽) | 9쪽 그림 속 말풍선 안에 내가 적은 착한 일, 나레이션 없음 |
+| 6 | 11 (한 쪽) | #7 음식 받기 | `assets/backgrounds/07-fairies-serve.jpg` | 채색 완료 (왼쪽) | 11쪽 위(글), 오른쪽 아래 착한 일 종이. 한 쪽씩 보기에서는 12쪽 없이 바로 별빛스프 꾸미기로 |
 | 7 | 13–14 | #8 별빛스프 | 13쪽 `08-soup-top.jpg` (위에서 내려다본 그릇, 임시 아트워크 `tools/soup_top.py`) | 임시 | 13쪽 그릇 위에 요리한 재료 스티커, 14쪽 위(글) |
 | 8 | 15–16 | #9 맛 | `assets/backgrounds/09-taste.jpg` + 16쪽 `09-taste-galaxy/spark/cloud.jpg` | 채색 완료, 16쪽은 임시 아트워크 | 글 없음. 15쪽 삽화, 16쪽 고른 맛 그림(직접 그리기면 그림판) |
 | 9 | 17–18 | #10 엔딩 | 17쪽 `10-wake-up.jpg` | 채색 완료 (왼쪽) | 17쪽 위(잠에서 깸). 18쪽은 방 벽과 창문 그림(코드로 그림), 창을 열면 고른 날씨 |

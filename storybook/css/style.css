@@ -1463,3 +1463,16 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 
 /* #1 도심: 밤하늘 삽화(스크린) 위에 그대로 덮는 투명 PNG */
 .spread-bg img.spread-overlay { opacity: 1; pointer-events: none; }
+
+/* #6: 그림 속 말풍선 안에 내가 적은 착한 일 */
+.bubble-text {
+  position: absolute; z-index: 2; display: grid; place-items: center; padding: 2cqh 3cqh;
+  pointer-events: none;
+}
+.bubble-text p {
+  margin: 0; text-align: center; word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance;
+  font-family: var(--font-display); font-size: var(--fs, 6cqh); line-height: 1.35; color: #5a3d1c;
+  text-shadow: 0 0 1.2cqh rgb(255 250 225 / 0.9), 0 0 0.4cqh rgb(255 250 225 / 0.9);
+}
+.bubble-text.is-empty p { color: rgb(90 61 28 / 0.45); }
+.pg-text.is-narrow { max-width: 33%; }

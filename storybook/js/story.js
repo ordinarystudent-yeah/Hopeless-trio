@@ -156,7 +156,11 @@
       id: 'fairies', act: 1, tone: 'fairy', no: '5',
       image: 'assets/backgrounds/05-fairies-arrive.jpg', alt: '뚜껑 덮인 음식을 트레이에 끌고 오는 요정과 그 모습을 바라보는 주인공',
       // 왼쪽 쪽: 위에 트레이를 끌고 오는 요정, 그 아래 빈 자리에 글 / 오른쪽 쪽: 다 먹은 식탁에서 요정을 보는 주인공
-      pages: [{ text: true, place: 'center', ink: 'dark', art: 'fairies', artPos: 'top' }, { art: 'cloche' }],
+      pages: [
+        { text: true, place: 'center', ink: 'dark', art: 'fairies', artPos: 'top' },
+        // 오른쪽 위는 요정 얼굴이라 글은 왼쪽 반에만
+        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'top', ink: 'dark', narrow: true }
+      ],
       text: function () {
         return [
           ['그렇게 음식을 먹다 보니 요정들이 무언가 음식을 가져오네요.'],
@@ -168,18 +172,20 @@
       id: 'deed', act: 2, tone: 'fairy', no: '6', asks: ['deed'],
       image: 'assets/backgrounds/06-fairy-praise.jpg', alt: '요정의 큰 말풍선과 별이 담긴 그릇',
       // 착한 일은 이 펼침면 앞의 묻는 화면에서 적는다 (입력칸이 그림을 가리지 않게).
-      // 왼쪽 쪽의 큰 구름(말풍선) 안에 요정이 하는 말 / 오른쪽 쪽은 삽화만
-      pages: [{ text: true, place: 'center', ink: 'dark', art: 'bubble', artPos: 'bottom' }, { art: 'soup' }],
-      text: function () {
-        return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']];
-      },
+      // 왼쪽 쪽의 큰 말풍선 안에 내가 적은 착한 일 (나레이션은 #5 두 번째 쪽으로 옮김) / 오른쪽 쪽은 삽화만
+      pages: [
+        { bubble: { x: 0.17, y: 0.25, w: 0.48, h: 0.46, text: function (c) { return c.deed ? { text: '“' + c.deed + '”' } : { text: '나의 착한 일', empty: true }; } } },
+        {}
+      ],
+      text: function () { return []; },
       // 펼침면 앞의 묻는 화면에 나오는 질문
       question: function (c) { return [you(c, '이/가').concat([' 한 착한 일은 무엇인가요?'])]; }
     },
     {
-      id: 'serve', act: 2, tone: 'gold', no: '7',
+      // 한 쪽짜리 장면: 11쪽(뚜껑을 연 음식 + 글)만 보고 바로 별빛스프 꾸미기로 (한 쪽씩 보기에서 12쪽은 건너뜀)
+      id: 'serve', act: 2, tone: 'gold', no: '7', onePage: true,
       image: 'assets/backgrounds/07-fairies-serve.jpg', alt: '박수를 치며 음식을 놓아 주는 요정들',
-      pages: [{ art: 'cloche', place: 'bottom', widgets: ['deed-hint'] }, { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }],
+      pages: [{ text: true, place: 'top', ink: 'dark', widgets: ['deed-hint'] }, {}],
       // 와! 당신이 한 (착한 일)로 요정들은 박수를 보내며 당신의 앞에 그 음식을 놓아주었어요.
       text: function (c) {
         // 문장으로 끝나는 착한 일(…했어요)은 '‘…’라는 착한 일로', 짧은 말(설거지 돕기)은 '…로'
@@ -248,7 +254,7 @@
   var stickerSpots = {
     // 음식 스티커는 음식을 고른 다음 화면에 나타난다
     food: { x: 0.27, y: 0.7, w: 0.11, r: -6 },      // #4 첫 쪽(5쪽) 식탁 위
-    serve: { x: 0.3, y: 0.42, w: 0.15, r: 5 }       // 착한 일 종이(그림+메모지): #7 왼쪽 쪽(11쪽)
+    serve: { x: 0.37, y: 0.66, w: 0.13, r: 5 }      // 착한 일 종이(그림+메모지): #7 왼쪽 쪽(11쪽) 오른쪽 아래 (위에는 글)
   };
 
   /* ---------- 임시 그림 (실제 삽화가 들어오기 전까지만 사용) ---------- */
@@ -401,7 +407,7 @@
   };
 
   window.StarSoup = {
-    version: '5.1',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '5.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

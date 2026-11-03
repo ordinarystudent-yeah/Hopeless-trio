@@ -346,6 +346,14 @@
       }
       var pg = el('div', { class: 'pg' + (p.tight ? ' pg--tight' : ''), 'data-place': p.place || 'top' });
       if (p.window) { page.classList.add('has-image', 'has-window'); page.append(roomWindow(leaf)); }
+      // 그림 속 말풍선 안에 넣는 글 (#6: 내가 적은 착한 일)
+      if (p.bubble) {
+        var bt = p.bubble.text(c), bb = el('div', { class: 'bubble-text' + (bt.empty ? ' is-empty' : '') }, el('p', { text: bt.text }));
+        bb.style.left = p.bubble.x * 100 + '%'; bb.style.top = p.bubble.y * 100 + '%';
+        bb.style.width = p.bubble.w * 100 + '%'; bb.style.height = p.bubble.h * 100 + '%';
+        bb.style.setProperty('--fs', (bt.text.length <= 16 ? 7 : bt.text.length <= 32 ? 5.8 : bt.text.length <= 52 ? 4.8 : 4) + 'cqh');
+        page.append(bb);
+      }
       // 이 쪽만의 하늘(아래층)과 날씨(위층): 펼침면 삽화를 덮는다
       if (p.sky) {
         var pt = S.times.find(function (x) { return x.id === (typeof p.sky === 'string' ? p.sky : state.time); }) || S.times[1];
@@ -387,7 +395,7 @@
         var body = typeof p.text === 'function' ? p.text(c) : scene.text(c);
       }
       if (p.text && body) {
-        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') }, eyebrow(scene, index, p), paragraphs(body));
+        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') + (p.narrow ? ' is-narrow' : '') }, eyebrow(scene, index, p), paragraphs(body));
         pg.append(block);
       }
       if (p.nameplate) page.append(nameplateInput(leaf, p.nameplate));
@@ -1252,8 +1260,10 @@
   function leavingNow() {
     var sc = S.scenes[state.scene];
     if (mode === 'spread') return state.page >= (sc.askAt || 0);
-    return state.page === 1;
+    return state.page === lastPage(sc);
   }
+  // 한 쪽씩 보기에서 이 장면의 마지막 쪽 (onePage 장면은 첫 쪽만 보고 넘어간다: #7)
+  function lastPage(sc) { return sc && sc.onePage ? 0 : 1; }
 
   function updateControls() {
     var scene = S.scenes[state.scene];
@@ -1356,7 +1366,7 @@
     index = clamp(index, 0, LAST);
     direction = index >= state.scene ? 1 : -1;
     state.scene = index;
-    state.page = mode === 'single' ? (page || 0) : 0;
+    state.page = mode === 'single' ? Math.min(page || 0, lastPage(S.scenes[index])) : 0;
     state.maxScene = Math.max(state.maxScene, index);
     if (index === LAST && state.returnTo === LAST) state.returnTo = null;
     saveNow();
@@ -1391,7 +1401,7 @@
     // 한 쪽씩 보기: 이 장면 안의 그 쪽 앞에서 묻는다 (#10: 17쪽 → 창 밖을 보니… → 18쪽)
     var curSc = S.scenes[state.scene];
     if (curSc.asks && askPage(curSc) && state.page === askPage(curSc) - 1) { showAsk(curSc.asks[0], 1); return; }
-    if (mode === 'single' && state.page === 0) flipPage(1);
+    if (mode === 'single' && state.page < lastPage(curSc)) flipPage(1);
     else if (!leavingScene) return;
     else go(forwardTarget(), 0);
   }
@@ -1957,7 +1967,7 @@
     // 묻는 화면이 있는 장면의 첫 쪽에서 뒤로 가면 그 화면으로
     var asks = S.scenes[state.scene].asks;
     if (asks && !askPage(S.scenes[state.scene])) { showAsk(asks[asks.length - 1], -1); return; }
-    if (state.scene > 0) go(state.scene - 1, 1);
+    if (state.scene > 0) go(state.scene - 1, lastPage(S.scenes[state.scene - 1]));
   }
 
   /* ---------- 스프 완성: 그릇 가운데에서 별이 팡 튀어 오르고 금빛이 번진다 ----------
@@ -2254,7 +2264,7 @@
 
   function enterBook(index, page, dir) {
     state.scene = clamp(index, 0, LAST);
-    state.page = mode === 'single' || S.scenes[state.scene].askAt ? (page || 0) : 0;
+    state.page = mode === 'single' || S.scenes[state.scene].askAt ? Math.min(page || 0, mode === 'single' ? lastPage(S.scenes[state.scene]) : 1) : 0;
     state.maxScene = Math.max(state.maxScene, state.scene);
     showScreen('book');
     saveNow();
