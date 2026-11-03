@@ -1144,15 +1144,19 @@
   // 새 장면을 다 그린 뒤 다음 프레임에 움직이기 시작해야 첫 몇 프레임이 끊기지 않는다
   function nextFrame(fn) { requestAnimationFrame(function () { requestAnimationFrame(fn); }); }
 
+  // 넘어가는 동안에는 새로 누른 '다음/이전'·밀기를 받지 않는다.
+  // (넘기는 도중에 또 누르면 넘김이 처음부터 다시 시작되어 같은 움직임이 반복되고 끊겨 보였다)
   function arc(oldLeaf, newLeaf, dir) {
     oldLeaf._from = dragFrom;
     if (dragFrom) oldLeaf.style.transform = dragFrom;
     oldLeaf.classList.add('is-leaving');
     newLeaf.style.opacity = '0';
+    switching = true;
+    var release = function () { switching = false; };
     nextFrame(function () {
       newLeaf.style.opacity = '';
       arcOut(oldLeaf, dir);
-      arcIn(newLeaf, dir);
+      arcIn(newLeaf, dir).finished.then(release, release);
     });
   }
 
@@ -1770,7 +1774,7 @@
      왼쪽으로 밀면 다음, 오른쪽으로 밀면 이전. 미는 동안 책이 손가락을 살짝 따라온다. */
   var swipe = null;
   book.addEventListener('pointerdown', function (e) {
-    if (e.pointerType === 'mouse' || swipe) return;
+    if (e.pointerType === 'mouse' || swipe || switching) return;
     if (e.target.closest('.sticker, input, textarea, .chips, .carousel')) return;
     swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dir: null, leaf: currentLeaf() };
   });

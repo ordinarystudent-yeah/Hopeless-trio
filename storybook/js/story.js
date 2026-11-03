@@ -394,7 +394,7 @@
   };
 
   window.StarSoup = {
-    version: '3.6',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '3.7',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

@@ -1225,7 +1225,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   font-variant-numeric: tabular-nums;
 }
 .stir-count.is-done { background: var(--soup); color: var(--soup-ink); }
-.stir-pot.is-done { animation: stir-done 0.7s cubic-bezier(0.3, 1.4, 0.5, 1); box-shadow: 0 0 0 4px rgb(255 198 90 / 0.5), var(--shadow); }
+.stir-pot.is-done { box-shadow: 0 0 0 4px rgb(255 198 90 / 0.5), var(--shadow); }
 @keyframes stir-done { 40% { transform: scale(1.04); } }
 .stir-spark {
   position: absolute;
