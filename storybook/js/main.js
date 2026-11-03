@@ -743,12 +743,15 @@
     var mount = function () {
       if (mounted || !host.isConnected) return;
       mounted = true;
-      // 세로(한 쪽씩) 화면: 쪽 전체가 그림판, 도구는 책 아래로. 펼침 화면: 도구는 쪽 오른쪽에 겹쳐서
-      if (mode === 'single') {
-        dock = el('div', { class: 'tdraw-dock', role: 'toolbar', 'aria-label': '그리기 도구' });
-        book.parentNode.insertBefore(dock, book.nextSibling);
-        book.parentNode.classList.add('has-dock');
-      }
+      // 쪽 전체가 그림판, 도구는 캔버스 밖(책 아래)으로. 세로 화면은 여러 줄, 펼침 화면은 가로 한 줄로.
+      // 도구가 차지하는 높이만큼 책을 줄여 한 화면에 함께 들어가게 한다
+      dock = el('div', { class: 'tdraw-dock' + (mode === 'spread' ? ' is-row' : ''), role: 'toolbar', 'aria-label': '그리기 도구' });
+      var stageEl = book.parentNode;
+      stageEl.insertBefore(dock, book.nextSibling);
+      stageEl.classList.add('has-dock');
+      var fitDock = function () { if (dock.isConnected) stageEl.style.setProperty('--dock-h', (dock.offsetHeight + 12) + 'px'); };
+      if (window.ResizeObserver) { var dro = new ResizeObserver(fitDock); dro.observe(dock); leaf._teardown.push(function () { dro.disconnect(); }); }
+      requestAnimationFrame(fitDock);
       window.StarSoupEditor.open({
         inline: host, dock: dock, aspect: 297 / 210, title: '무슨 맛이 났는지 그리기', base: images[IMG_TASTE],
         onChange: function (data) { saveImage(IMG_TASTE, data); }
@@ -760,7 +763,10 @@
     leaf._mountTaste = function () { if (visible()) mount(); };
     leaf._teardown.push(function () {
       if (mounted) window.StarSoupEditor.unmount(host);
-      if (dock) { dock.remove(); if (!document.querySelector('.tdraw-dock')) book.parentNode.classList.remove('has-dock'); }
+      if (dock) {
+        dock.remove();
+        if (!document.querySelector('.tdraw-dock')) { book.parentNode.classList.remove('has-dock'); book.parentNode.style.removeProperty('--dock-h'); }
+      }
     });
     return host;
   }

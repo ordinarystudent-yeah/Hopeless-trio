@@ -1428,6 +1428,8 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 
 /* 세로 화면에서 #9 16쪽 그림 도구를 책 아래에 둘 때 */
 .stage.has-dock { flex-direction: column; justify-content: center; gap: 10px; }
+/* 도구 높이만큼 책을 줄인다 */
+.stage.has-dock .book { width: min(100%, max(220px, calc((100dvh - var(--chrome) - var(--dock-h, 0px)) * var(--ratio)))); }
 
 /* 휴대폰 글씨 한 단계 더 작게 (묻는 화면·안내·버튼) */
 @media (max-width: 600px) and (orientation: portrait) {

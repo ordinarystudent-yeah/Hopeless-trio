@@ -279,3 +279,31 @@
 .tdraw-dock .ed-actions { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 .tdraw-dock .ed-actions .ed-clear { grid-column: auto; }
 .tdraw-dock .ed-actions .btn { min-height: 34px; font-size: 0.76rem; padding: 0 6px; white-space: nowrap; }
+
+/* 펼침 화면: 책 아래 가로 한 줄 (좁으면 두 줄로) */
+.tdraw-dock.is-row { width: min(100%, 980px); padding: 8px 10px; }
+.tdraw-dock.is-row .ed-panel { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 14px; }
+.tdraw-dock.is-row #ed-undo { position: static; order: 9; flex: none; }
+.tdraw-dock.is-row { display: flex; align-items: center; gap: 10px; }
+.tdraw-dock.is-row .ed-panel { flex: 1; min-width: 0; }
+.tdraw-dock.is-row .ed-tools { display: flex; gap: 4px; margin: 0; }
+.tdraw-dock.is-row .tool { min-height: 0; width: 46px; padding: 4px 0; font-size: 0.62rem; }
+.tdraw-dock.is-row .tool svg { width: 17px; height: 17px; }
+.tdraw-dock.is-row .ed-size { width: 150px; grid-template-columns: minmax(0, 1fr) 28px; }
+.tdraw-dock.is-row .ed-size label { display: none; }
+.tdraw-dock.is-row .ed-size-preview { width: 28px; height: 28px; }
+.tdraw-dock.is-row .ed-colors { flex-wrap: nowrap; gap: 5px; }
+.tdraw-dock.is-row .swatch { width: 22px; height: 22px; flex: none; }
+.tdraw-dock.is-row .ed-actions { display: flex; gap: 6px; }
+.tdraw-dock.is-row .ed-actions .btn { min-height: 32px; font-size: 0.72rem; padding: 0 10px; }
+.tdraw-dock.is-row .ed-photo-bar { flex-direction: row; align-items: center; padding: 6px 10px; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .tdraw-dock.is-row { padding: 5px 8px; border-radius: 14px; }
+  .tdraw-dock.is-row .ed-panel { gap: 5px 10px; }
+  .tdraw-dock.is-row .tool { width: 38px; padding: 3px 0; font-size: 0.56rem; }
+  .tdraw-dock.is-row .tool svg { width: 15px; height: 15px; }
+  .tdraw-dock.is-row .ed-size { width: 110px; }
+  .tdraw-dock.is-row .swatch { width: 18px; height: 18px; }
+  .tdraw-dock.is-row .ed-actions .btn { min-height: 28px; font-size: 0.66rem; padding: 0 8px; }
+  .tdraw-dock.is-row #ed-undo { width: 30px; height: 30px; }
+}
