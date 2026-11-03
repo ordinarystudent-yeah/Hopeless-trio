@@ -287,6 +287,7 @@
   /* ---------- 한 장면(펼침면) 만들기 ---------- */
   function buildLeaf(index) {
     var scene = S.scenes[index];
+    if (scene.id !== 'taste') tasteAutoDone = false;
     var c = ctx();
     var leaf = el('article', { class: 'leaf', 'data-page': state.page, 'aria-label': '#' + (index + 1) + ' 장면' });
     leaf._teardown = [];
@@ -677,101 +678,40 @@
     return box;
   }
 
-  /* ---------- #9 16쪽: 맛을 그 쪽 위에 바로 그린다 ----------
-     '직접 그리기' 맛을 고르면 16쪽이 곧 도화지가 된다. 펜 색 몇 가지, 지우개, 되돌리기, 모두 지우기.
-     손을 뗄 때마다 저장되어 나중에 다시 보거나 이어 그릴 수 있다. */
+  /* ---------- #9 16쪽: '직접 그리기' 맛 ----------
+     이 쪽에 들어오면(한 쪽씩 보기: 16쪽으로 넘기면 / 펼침 보기: #9가 열리면) 음식 그리기와 같은 그림판이 바로 열린다.
+     다 그리면 그 그림이 종이 위에 놓이고, '다시 그리기'로 이어서 고칠 수 있다. */
+  var tasteAutoDone = false;   // 이번에 #9에 들어와서 그림판을 이미 한 번 열었는지
   function tasteDrawPad(leaf) {
-    var W = 1200, H = Math.round(1200 / 1.414);
-    var cv = el('canvas', { class: 'tdraw-canvas', width: W, height: H, 'aria-label': '무슨 맛이 났는지 그리는 곳' });
-    var g = cv.getContext('2d');
-    var colors = ['#2b2118', '#e8573f', '#f2a93b', '#4f9d5d', '#3d7fd9', '#8b5cd6'];
-    var tool = { color: colors[0], erase: false, size: 9 };
-    var history = [];
-    var saveTimer = 0;
-    var paintFrom = function (src) {
-      if (!src) return;
-      var im = new Image();
-      im.onload = function () { g.clearRect(0, 0, W, H); g.drawImage(im, 0, 0, W, H); };
-      im.src = src;
-    };
-    paintFrom(images[IMG_TASTE]);
-    var persist = function () {
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(function () { saveImage(IMG_TASTE, cv.toDataURL('image/png')); }, 250);
-    };
-    var bar = el('div', { class: 'tdraw-bar', role: 'toolbar', 'aria-label': '그리기 도구' });
-    var pick = function (btn) { bar.querySelectorAll('.tdraw-tool').forEach(function (b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); }); };
-    colors.forEach(function (col, i) {
-      var b = el('button', { type: 'button', class: 'tdraw-tool tdraw-color', 'aria-label': '펜 색 ' + (i + 1), 'aria-pressed': i ? 'false' : 'true' });
-      b.style.setProperty('--c', col);
-      b.addEventListener('click', function () { tool.color = col; tool.erase = false; pick(b); });
-      bar.append(b);
+    var art = images[IMG_TASTE];
+    var box = el('div', { class: 'tdraw' + (art ? ' has-art' : '') });
+    if (art) box.append(el('img', { class: 'tdraw-art', src: art, alt: (customTaste().label) + ' 그림' }));
+    else box.append(el('p', { class: 'tdraw-tip', text: '무슨 맛이 났는지 그려 보세요' }));
+    box.append(el('button', { type: 'button', class: 'btn ' + (art ? 'btn-ghost btn-small' : 'btn-primary') + ' tdraw-open',
+      text: art ? '다시 그리기' : '✏️ 맛 그리기', onclick: openTasteEditor }));
+    if (!art && !tasteAutoDone) {
+      setTimeout(function () {
+        var here = state.scene === sceneIndex('taste') && (mode === 'spread' || state.page === 1);
+        var editorOpen = !document.getElementById('editor').hidden;
+        if (tasteAutoDone || !here || !leaf.isConnected || leaf !== currentLeaf() || images[IMG_TASTE] || editorOpen) return;
+        tasteAutoDone = true;
+        openTasteEditor();
+      }, ARC.duration + 150);
+    }
+    return box;
+  }
+  function openTasteEditor() {
+    tasteAutoDone = true;
+    window.StarSoupEditor.open({
+      title: '무슨 맛이 났는지 그리기', image: images[IMG_TASTE], askName: true, name: state.customTasteName,
+      nameLabel: '어떤 맛이었나요? (안 써도 돼요)', namePlaceholder: '예: 무지개 맛'
+    }).then(function (res) {
+      if (!res) return;
+      state.customTasteName = res.name.slice(0, S.limits.tasteName);
+      if (res.image) saveImage(IMG_TASTE, res.image);
+      saveNow();
+      rerender();
     });
-    var eraser = el('button', { type: 'button', class: 'tdraw-tool tdraw-eraser', 'aria-label': '지우개', 'aria-pressed': 'false' }, '지우개');
-    eraser.addEventListener('click', function () { tool.erase = true; pick(eraser); });
-    var undo = el('button', { type: 'button', class: 'tdraw-btn', 'aria-label': '되돌리기' }, '↶');
-    undo.addEventListener('click', function () {
-      var last = history.pop();
-      if (!last) return;
-      g.putImageData(last, 0, 0);
-      persist();
-    });
-    var clear = el('button', { type: 'button', class: 'tdraw-btn', 'aria-label': '모두 지우기' }, '모두 지우기');
-    clear.addEventListener('click', function () {
-      ask({ title: '그림을 모두 지울까요?', message: '지운 그림은 되돌릴 수 있어요.', ok: '모두 지우기', danger: true }).then(function (yes) {
-        if (!yes) return;
-        history.push(g.getImageData(0, 0, W, H));
-        g.clearRect(0, 0, W, H);
-        persist();
-      });
-    });
-    bar.append(eraser, undo, clear);
-
-    var strokes = {};
-    var pos = function (e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; };
-    var width = function (e) { var pf = e.pointerType === 'pen' && e.pressure > 0 ? 0.35 + 1.3 * e.pressure : 1; return (tool.erase ? tool.size * 3.2 : tool.size) * pf; };
-    cv.addEventListener('pointerdown', function (e) {
-      // 펜을 쓰는 중에 손바닥이 닿으면 무시
-      if (e.pointerType === 'touch' && Object.keys(strokes).some(function (k) { return strokes[k].pen; })) return;
-      e.preventDefault();
-      try { cv.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저 */ }
-      if (!Object.keys(strokes).length) {
-        history.push(g.getImageData(0, 0, W, H));
-        if (history.length > 20) history.shift();
-      }
-      var p0 = pos(e);
-      strokes[e.pointerId] = { x: p0.x, y: p0.y, pen: e.pointerType === 'pen' };
-      g.globalCompositeOperation = tool.erase ? 'destination-out' : 'source-over';
-      g.fillStyle = tool.color;
-      g.beginPath(); g.arc(p0.x, p0.y, width(e) / 2, 0, Math.PI * 2); g.fill();
-    });
-    cv.addEventListener('pointermove', function (e) {
-      var st = strokes[e.pointerId];
-      if (!st) return;
-      var list = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-      if (!list.length) list = [e];
-      g.globalCompositeOperation = tool.erase ? 'destination-out' : 'source-over';
-      g.strokeStyle = tool.color; g.lineCap = 'round'; g.lineJoin = 'round';
-      list.forEach(function (ev) {
-        var p1 = pos(ev);
-        g.lineWidth = width(ev);
-        g.beginPath(); g.moveTo(st.x, st.y); g.lineTo(p1.x, p1.y); g.stroke();
-        st.x = p1.x; st.y = p1.y;
-      });
-    });
-    var end = function (e) {
-      if (!strokes[e.pointerId]) return;
-      delete strokes[e.pointerId];
-      g.globalCompositeOperation = 'source-over';
-      if (!Object.keys(strokes).length) persist();
-    };
-    cv.addEventListener('pointerup', end);
-    cv.addEventListener('pointercancel', end);
-    leaf._teardown.push(function () { clearTimeout(saveTimer); });
-    return el('div', { class: 'tdraw' },
-      cv,
-      el('p', { class: 'tdraw-tip', 'aria-hidden': 'true', text: '무슨 맛이 났는지 여기에 그려 보세요' }),
-      bar);
   }
 
   // 별빛스프 재료 스티커들. editable이면 요리 화면에서 끌어 옮기고 뗄 수 있다.
@@ -1452,6 +1392,11 @@
         return state.soup.length ? '재료를 끌어서 옮기고, 노란 손잡이(또는 두 손가락)로 크기를 바꿔요. ×를 누르면 뺄 수 있어요.'
           : '재료 이름을 적고 직접 그려서 넣어요. 다섯 개까지 넣을 수 있고, 안 넣어도 괜찮아요.';
       },
+      // 재료를 넣거나 빼서 안내 문장이 바뀌어도 높이가 그대로이도록 (두 문장 중 긴 쪽으로 자리 잡기)
+      notes: function () {
+        return ['재료를 끌어서 옮기고, 노란 손잡이(또는 두 손가락)로 크기를 바꿔요. ×를 누르면 뺄 수 있어요.',
+          '재료 이름을 적고 직접 그려서 넣어요. 다섯 개까지 넣을 수 있고, 안 넣어도 괜찮아요.'];
+      },
       ready: function () { return true; }
     },
     // 재료를 넣은 다음: 스프를 10번 톡톡 눌러 저어서 완성한다 (한 번에 36°, 10번이면 한 바퀴)
@@ -1960,7 +1905,7 @@
   var swipe = null;
   book.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' || swipe || switching) return;
-    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw')) return;
+    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw-open')) return;
     swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dir: null, leaf: currentLeaf() };
   });
   book.addEventListener('pointermove', function (e) {

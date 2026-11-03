@@ -1368,28 +1368,10 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 }
 .page .soup-note img { display: block; width: 100%; height: auto; border-radius: 0.3cqh; }
 
-/* #9 16쪽 도화지: '직접 그리기' 맛을 고르면 이 쪽 위에 바로 그린다 */
-.tdraw { position: absolute; inset: 0; z-index: 4; background: var(--milk); }
-.tdraw-canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
-.tdraw-tip {
-  position: absolute; left: 0; right: 0; top: 4cqh; margin: 0; text-align: center;
-  font-family: var(--font-display); font-size: 4cqh; color: rgb(60 50 40 / 0.35); pointer-events: none;
-}
-.tdraw-bar {
-  position: absolute; left: 50%; bottom: 3cqh; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 1.4cqh; padding: 1.2cqh 2cqh;
-  border-radius: 99px; background: rgb(23 28 58 / 0.88); box-shadow: 0 1cqh 3cqh -1cqh rgb(0 0 0 / 0.5);
-  white-space: nowrap;
-}
-.tdraw-color {
-  width: max(22px, 6.4cqh); height: max(22px, 6.4cqh); border-radius: 50%; padding: 0;
-  border: 2px solid rgb(255 255 255 / 0.25); background: var(--c); cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s;
-}
-.tdraw-color[aria-pressed="true"] { border-color: #fff; transform: scale(1.18); }
-.tdraw-eraser, .tdraw-btn {
-  min-height: max(24px, 6.4cqh); padding: 0 max(8px, 2cqh); border-radius: 99px;
-  border: 1px solid rgb(255 255 255 / 0.2); background: transparent; color: var(--milk);
-  font: inherit; font-size: max(11px, 3.4cqh); cursor: pointer;
-}
-.tdraw-eraser[aria-pressed="true"] { background: var(--soup); color: var(--soup-ink); border-color: var(--soup); }
+/* #9 16쪽: 직접 그린 맛 (그림판은 음식 그리기와 같은 것) */
+.tdraw { position: absolute; inset: 0; z-index: 4; background: var(--milk); display: grid; place-items: center; }
+.tdraw-art { position: absolute; inset: 6cqh 6cqh 14cqh; width: calc(100% - 12cqh); height: calc(100% - 20cqh); object-fit: contain; }
+.tdraw-tip { position: absolute; top: 30%; left: 0; right: 0; margin: 0; text-align: center; font-family: var(--font-display); font-size: 5cqh; color: rgb(60 50 40 / 0.45); }
+.tdraw-open { position: relative; z-index: 1; }
+.tdraw:not(.has-art) .tdraw-open { margin-top: 10cqh; }
+.tdraw.has-art .tdraw-open { position: absolute; bottom: 3.5cqh; left: 50%; transform: translateX(-50%); background: #fff; color: #4a3a2a; border: 1px solid rgb(74 58 42 / 0.3); box-shadow: 0 4px 12px -4px rgb(0 0 0 / 0.3); }
