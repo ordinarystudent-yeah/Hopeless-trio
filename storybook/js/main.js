@@ -2760,8 +2760,8 @@
 
   // 표지의 저자: 이름을 정하기 전에는 '당신', 정한 뒤에는 그 이름
   function paintAuthor() {
-    var n = (state.name || '').trim();
-    document.getElementById('cover-author').textContent = '저자: ' + (n || '당신');
+    var n = (state.name || '').trim(), box = document.getElementById('cover-author');
+    if (box) box.textContent = '저자: ' + (n || '당신');
   }
 
   function paintCover() {

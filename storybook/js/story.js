@@ -77,9 +77,9 @@
 
   /* ---------- #9 스프의 맛 3종 ---------- */
   var tastes = [
-    { id: 'galaxy', label: '은하수가 퍼지는 듯한 달콤한 맛', short: '달콤한 맛', image: 'assets/icons/taste-galaxy.png', emoji: '🌌', glow: '#5a4f9a' },
-    { id: 'spark', label: '별빛이 입 안에서 터지는 듯한 짜릿한 맛', short: '짜릿한 맛', image: 'assets/icons/taste-spark.png', emoji: '✨', glow: '#8a6a24' },
-    { id: 'cloud', label: '구름을 입에 머금은 듯한 포근한 맛', short: '포근한 맛', image: 'assets/icons/taste-cloud.png', emoji: '☁️', glow: '#5f6f9a' }
+    { id: 'galaxy', label: '은하수가 퍼지는 듯한 달콤한 맛', short: '달콤한 맛', image: 'assets/backgrounds/09-taste-galaxy.jpg', emoji: '🌌', glow: '#5a4f9a' },
+    { id: 'spark', label: '별빛이 입 안에서 터지는 듯한 짜릿한 맛', short: '짜릿한 맛', image: 'assets/backgrounds/09-taste-spark.jpg', emoji: '✨', glow: '#8a6a24' },
+    { id: 'cloud', label: '구름을 입에 머금은 듯한 포근한 맛', short: '포근한 맛', image: 'assets/backgrounds/09-taste-cloud.jpg', emoji: '☁️', glow: '#5f6f9a' }
   ];
 
   /* ---------- 착한 일 예시 (눌러서 바로 채우기) ---------- */
@@ -434,14 +434,14 @@
 
   /* ---------- 표지 ---------- */
   var cover = {
-    image: 'assets/backgrounds/00-cover.png',   // 표지 그림 (가로 A4, 297:210)
+    image: null,   // 표지 그림 (가로 A4, 297:210). 그림이 생기면 'assets/backgrounds/00-cover.png'
     kicker: '꿈속 식탁 이야기',
     title: '별빛스프',
     subtitle: '착한 아이에게 주는 특별한 스프'
   };
 
   window.StarSoup = {
-    version: '6.6',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '6.7',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
