@@ -389,7 +389,8 @@
         pimg.src = pageImage;
         page.append(pimg);
       }
-      if (p.art) {
+      // 임시 그림(motif)은 삽화가 없는 쪽에만 그린다. 삽화가 있으면 그 아래에 아무것도 깔지 않는다
+      if (p.art && !scene.image && !pageImage && !p.window) {
         var m = motif(p.art, p.artPos);
         if (p.faint) m.classList.add('is-faint');
         pg.append(m);

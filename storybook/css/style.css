@@ -1670,3 +1670,5 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .ask-carousel .c-card[data-pos="1"] { transform: translate(-50%, -50%) translateX(31cqw) translateZ(-60px) rotateY(-32deg) scale(0.82); }
   .ask-carousel .c-label { font-size: clamp(11px, 3.8cqw, 15px); }
 }
+/* 음식 카드: 빵·주먹밥은 5% 작게 */
+#food-choice-grid .tile[data-id="bread"] .tile-art img, #food-choice-grid .tile[data-id="rice-ball"] .tile-art img { transform: scale(0.95); }

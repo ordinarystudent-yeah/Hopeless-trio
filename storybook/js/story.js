@@ -441,7 +441,7 @@
   };
 
   window.StarSoup = {
-    version: '7.3',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '7.4',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -458,6 +458,6 @@
     josa: josa,
     limits: { name: 12, deed: 80, foodName: 12, weatherName: 12, ingredient: 10, ingredients: 5, tasteName: 12 },
     // 삽화 자리에 "어떤 파일을 넣으면 되는지" 경로를 표시한다. 실제 삽화를 다 넣은 뒤에는 false로 바꾼다.
-    showAssetNotes: true
+    showAssetNotes: false
   };
 })();
