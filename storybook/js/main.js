@@ -2226,7 +2226,7 @@
   function imgReady(img) {
     return img.complete && img.naturalWidth ? Promise.resolve() : new Promise(function (r) { img.addEventListener('load', r, { once: true }); img.addEventListener('error', r, { once: true }); setTimeout(r, 4000); });
   }
-  var FADE = [[0, 0], [0.1, 0], [0.57, 1]];   // 16쪽: 왼쪽 1/10 투명 → 57%에서 다 보임 (css의 mask와 같게)
+  var FADE = [[0, 0], [0.02, 0], [0.38, 1]];   // 16쪽: 왼쪽 1/10 투명 → 57%에서 다 보임 (css의 mask와 같게)
   function fadeAlpha(g, w, h) {
     var gr = g.createLinearGradient(0, 0, w, 0);
     FADE.forEach(function (f) { gr.addColorStop(f[0], 'rgba(0,0,0,' + f[1] + ')'); });
@@ -2284,13 +2284,16 @@
     var pbook = el('div', { class: 'book is-print', 'data-mode': 'spread' });
     host.append(pbook);
     document.body.append(host);
-    var pdf, PW = 297, PH = 210, first = true;
+    // 표지는 가로 A4 한 장, 장면은 펼침면(가로 A4 두 쪽을 나란히, 594×210mm) 한 장으로
+    var pdf, PH = 210, first = true;
     var addCanvas = function (cv, sx, sw) {
       var part = document.createElement('canvas'); part.width = sw; part.height = cv.height;
       part.getContext('2d').drawImage(cv, sx, 0, sw, cv.height, 0, 0, sw, cv.height);
-      if (!first) pdf.addPage('a4', 'landscape');
+      var w = Math.round(PH * sw / cv.height);
+      if (!first) pdf.addPage([w, PH], 'landscape');
+      else if (w !== 297) { pdf.deletePage(1); pdf.addPage([w, PH], 'landscape'); }
       first = false;
-      pdf.addImage(part.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, PW, PH);
+      pdf.addImage(part.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, w, PH);
     };
     var shoot = function (node) { return window.html2canvas(node, { scale: 1.5, backgroundColor: '#ffffff', useCORS: true, logging: false }); };
     var chain = Promise.all([loadScript('js/vendor/jspdf.umd.min.js'), loadScript('js/vendor/html2canvas.min.js')]).then(function () {
@@ -2317,9 +2320,7 @@
           .then(function () { return wait(700); })   // 글자 곡선·날씨 그림이 자리 잡을 때까지
           .then(function () { return shoot(pbook); })
           .then(function (cv) {
-            var half = Math.round(cv.width / 2);
-            addCanvas(cv, 0, half);
-            if (!sc.onePage) addCanvas(cv, half, cv.width - half);
+            addCanvas(cv, 0, cv.width);   // 펼침면 그대로 (양면)
             (leaf._teardown || []).forEach(function (fn) { fn(); });
           });
       });
