@@ -468,7 +468,7 @@
     var paneL = el('span', { class: 'win-pane win-pane--l' }), paneR = el('span', { class: 'win-pane win-pane--r' });
     var hint = el('span', { class: 'win-hint', 'aria-hidden': 'true', text: chosen ? '눌러서 바꿀 수 있어요' : '창문을 눌러 열어 보세요' });
     var glow = el('span', { class: 'win-glow', 'aria-hidden': 'true' });
-    var btn = el('button', { type: 'button', class: 'win' + (chosen ? ' is-open' : ' is-closed'),
+    var btn = el(printing ? 'div' : 'button', { type: printing ? null : 'button', class: 'win' + (chosen ? ' is-open' : ' is-closed'),
       'aria-label': chosen ? '창 밖 날씨 바꾸기' : '창문 열기' },
       glow, view, el('span', { class: 'win-frame', 'aria-hidden': 'true' }), paneL, paneR, el('span', { class: 'win-sill', 'aria-hidden': 'true' }), hint);
     // 움직임은 JS로 (기기의 '움직임 줄이기'에도 멈추지 않게)
@@ -650,9 +650,17 @@
 
   // 그림 속 이름표 앞면에 바로 이름을 쓴다 (종이책에서는 이 자리가 빈칸으로 남아 손으로 쓴다)
   function nameplateInput(leaf, box) {
+    // PDF 저장본: 입력칸 대신 적은 이름을 글자로 (html2canvas가 입력칸 글자를 제대로 못 그림)
+    if (printing) {
+      var np = el('div', { class: 'nameplate-input nameplate-print', text: state.name.trim() });
+      np.style.left = box.x * 100 + '%'; np.style.top = box.y * 100 + '%';
+      np.style.width = box.w * 100 + '%'; np.style.height = box.h * 100 + '%';
+      np.style.setProperty('--r', (box.r || 0) + 'deg');
+      return np;
+    }
     var input = el('input', {
       class: 'nameplate-input', id: 'input-name', type: 'text', maxlength: S.limits.name,
-      placeholder: '여기에 이름을 써요', autocomplete: 'off', enterkeyhint: 'done',
+      placeholder: printing ? '' : '여기에 이름을 써요', autocomplete: 'off', enterkeyhint: 'done',
       'aria-label': '나의 이름 (비워 두면 이야기 속에서 ‘당신’이라고 불러요)'
     });
     input.style.left = box.x * 100 + '%';
@@ -663,6 +671,7 @@
     input.value = state.name;
     input.addEventListener('input', function () {
       state.name = input.value.slice(0, S.limits.name);
+      paintAuthor();
       updateControls();
       saveSoon();
     });
@@ -909,6 +918,13 @@
      맛 카드에서 '직접 그리기'를 고르면 16쪽(삽화 옆 쪽)에 음식 그리기와 같은 그림판이 그대로 놓인다.
      따로 창을 열거나 버튼을 누르지 않고 그 쪽에서 바로 그리며, 손을 뗄 때마다 저장된다. */
   function drawPad(leaf, o) {
+    // PDF로 저장할 때는 그림판 대신 저장된 그림만
+    if (printing) {
+      var ph = el('div', { class: 'tdraw-host' });
+      if (o.paper) ph.append(el('img', { class: 'pdf-fill', src: fadedSheet('#fdfaf4'), alt: '' }));
+      if (images[o.key]) ph.append(el('img', { class: 'pdf-fill', src: images[o.key], alt: '' }));
+      return ph;
+    }
     var host = el('div', { class: 'tdraw-host' });
     // 바탕 종이를 그림판과 따로 깔면, 종이만 서서히 나타나게 하고 그린 선은 어디서나 또렷하게 보인다 (#9 16쪽)
     if (o.paper) host.append(el('div', { class: 'tdraw-paper', 'aria-hidden': 'true' }));
@@ -2173,28 +2189,163 @@
     if (state.scene > 0) go(state.scene - 1, lastPage(S.scenes[state.scene - 1]));
   }
 
+  /* ---------- PDF로 저장하기 ----------
+     장면마다 펼침면을 화면 밖에서 새로 만들어(설명·버튼·손잡이 같은 UI는 숨김) 그림으로 찍고,
+     왼쪽·오른쪽 쪽으로 나눠 가로 A4 한 장씩 넣는다. 맨 앞은 표지. 한 쪽짜리 장면(#7·#8)은 왼쪽 쪽만.
+     html2canvas는 혼합 모드·마스크를 못 그리므로 #1 하늘(스크린 70%)과 16쪽 그라데이션은 미리 그림으로 합쳐 둔다. */
+  var printing = false;
+  function loadScript(src) {
+    return new Promise(function (res, rej) {
+      if (document.querySelector('script[data-lib="' + src + '"]')) { res(); return; }
+      var sc = document.createElement('script'); sc.src = src; sc.setAttribute('data-lib', src);
+      sc.onload = res; sc.onerror = function () { rej(new Error('불러오지 못함: ' + src)); };
+      document.head.append(sc);
+    });
+  }
+  var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  function imgReady(img) {
+    return img.complete && img.naturalWidth ? Promise.resolve() : new Promise(function (r) { img.addEventListener('load', r, { once: true }); img.addEventListener('error', r, { once: true }); setTimeout(r, 4000); });
+  }
+  var FADE = [[0, 0], [0.25, 0], [0.72, 1]];   // 16쪽: 왼쪽 1/4 투명 → 72%에서 다 보임 (css의 mask와 같게)
+  function fadeAlpha(g, w, h) {
+    var gr = g.createLinearGradient(0, 0, w, 0);
+    FADE.forEach(function (f) { gr.addColorStop(f[0], 'rgba(0,0,0,' + f[1] + ')'); });
+    gr.addColorStop(1, 'rgba(0,0,0,1)');
+    g.globalCompositeOperation = 'destination-in'; g.fillStyle = gr; g.fillRect(0, 0, w, h); g.globalCompositeOperation = 'source-over';
+  }
+  function fadedSheet(color) {
+    var cv = document.createElement('canvas'); cv.width = 600; cv.height = 424;
+    var g = cv.getContext('2d'); g.fillStyle = color; g.fillRect(0, 0, 600, 424); fadeAlpha(g, 600, 424);
+    return cv.toDataURL('image/png');
+  }
+  function fadedImage(img) {
+    var cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    var g = cv.getContext('2d'); g.drawImage(img, 0, 0); fadeAlpha(g, cv.width, cv.height);
+    return cv.toDataURL('image/png');
+  }
+  // CSS 'linear-gradient(180deg, #a 0%, #b 55%, #c 100%)'를 캔버스 세로 그러데이션으로
+  function paintSky(g, css, w, h) {
+    var stops = (css || '').match(/#[0-9a-f]{3,8}\s+[\d.]+%/gi) || [];
+    var gr = g.createLinearGradient(0, 0, 0, h);
+    stops.forEach(function (st) { var m = st.split(/\s+/); gr.addColorStop(parseFloat(m[1]) / 100, m[0]); });
+    g.fillStyle = stops.length ? gr : '#1d2452'; g.fillRect(0, 0, w, h);
+  }
+  function prepForPrint(leaf, scene) {
+    var jobs = [];
+    var bg = leaf.querySelector('.spread-bg'), bimg = bg && bg.querySelector('img:not(.spread-overlay)');
+    if (scene.imageBlend && bimg) {
+      jobs.push(imgReady(bimg).then(function () {
+        if (!bimg.naturalWidth) return;
+        var cv = document.createElement('canvas'); cv.width = bimg.naturalWidth; cv.height = bimg.naturalHeight;
+        var g = cv.getContext('2d');
+        paintSky(g, bg.style.background, cv.width, cv.height);
+        g.globalAlpha = scene.imageBlend.opacity; g.globalCompositeOperation = scene.imageBlend.mode;
+        g.drawImage(bimg, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+        bimg.style.mixBlendMode = ''; bimg.style.opacity = '';
+        bimg.src = cv.toDataURL('image/jpeg', 0.92);
+        return imgReady(bimg);
+      }));
+    }
+    leaf.querySelectorAll('.page.is-fade .page-img').forEach(function (pi) {
+      jobs.push(imgReady(pi).then(function () { if (pi.naturalWidth) { pi.src = fadedImage(pi); return imgReady(pi); } }));
+    });
+    return Promise.all(jobs);
+  }
+  function pdfBusy(text) {
+    var box = document.getElementById('pdf-busy');
+    if (!text) { if (box) box.remove(); return; }
+    if (!box) { box = el('div', { class: 'pdf-busy', id: 'pdf-busy', role: 'status' }, el('div', { class: 'pdf-busy-card' }, el('span', { class: 'pdf-spin', 'aria-hidden': 'true' }), el('p'))); document.body.append(box); }
+    box.querySelector('p').textContent = text;
+  }
+  function makePdf() {
+    if (printing || document.getElementById('pdf-busy')) return;
+    pdfBusy('PDF를 만들 준비를 하고 있어요…');
+    var host = el('div', { class: 'pdf-host', 'aria-hidden': 'true' });
+    var pbook = el('div', { class: 'book is-print', 'data-mode': 'spread' });
+    host.append(pbook);
+    document.body.append(host);
+    var pdf, PW = 297, PH = 210, first = true;
+    var addCanvas = function (cv, sx, sw) {
+      var part = document.createElement('canvas'); part.width = sw; part.height = cv.height;
+      part.getContext('2d').drawImage(cv, sx, 0, sw, cv.height, 0, 0, sw, cv.height);
+      if (!first) pdf.addPage('a4', 'landscape');
+      first = false;
+      pdf.addImage(part.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, PW, PH);
+    };
+    var shoot = function (node) { return window.html2canvas(node, { scale: 1.5, backgroundColor: '#ffffff', useCORS: true, logging: false }); };
+    var chain = Promise.all([loadScript('js/vendor/jspdf.umd.min.js'), loadScript('js/vendor/html2canvas.min.js')]).then(function () {
+      pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      // 표지
+      pdfBusy('표지를 담고 있어요…');
+      paintAuthor();
+      var cover = document.getElementById('cover-card').cloneNode(true);
+      cover.removeAttribute('id'); cover.querySelectorAll('[id]').forEach(function (n) { n.removeAttribute('id'); });
+      cover.classList.add('is-print-cover');
+      host.append(cover);
+      return wait(300).then(function () { return shoot(cover); }).then(function (cv) { addCanvas(cv, 0, cv.width); cover.remove(); });
+    });
+    S.scenes.forEach(function (sc, i) {
+      chain = chain.then(function () {
+        pdfBusy('PDF를 만들고 있어요… (' + (i + 1) + ' / ' + S.scenes.length + ')');
+        var keep = mode; mode = 'spread'; printing = true;
+        var leaf;
+        try { leaf = buildLeaf(i); } finally { printing = false; mode = keep; }
+        leaf.classList.add('is-print-leaf');
+        pbook.replaceChildren(leaf);
+        var imgs = Array.prototype.slice.call(leaf.querySelectorAll('img'));
+        return Promise.all(imgs.map(imgReady)).then(function () { return prepForPrint(leaf, sc); })
+          .then(function () { return wait(700); })   // 글자 곡선·날씨 그림이 자리 잡을 때까지
+          .then(function () { return shoot(pbook); })
+          .then(function (cv) {
+            var half = Math.round(cv.width / 2);
+            addCanvas(cv, 0, half);
+            if (!sc.onePage) addCanvas(cv, half, cv.width - half);
+            (leaf._teardown || []).forEach(function (fn) { fn(); });
+          });
+      });
+    });
+    chain.then(function () {
+      pdfBusy('');
+      host.remove();
+      var n = (state.name || '').trim();
+      pdf.save('별빛스프' + (n ? '-' + n : '') + '.pdf');
+      toast('PDF로 저장했어요.');
+    }, function (err) {
+      pdfBusy('');
+      host.remove();
+      toast('PDF를 만들지 못했어요. 잠시 뒤 다시 해 주세요.');
+      if (window.console) console.error(err);
+    });
+  }
+
   /* ---------- 별빛스프 숟가락 ----------
      그릇 그림(08-soup-top.jpg)에는 숟가락이 없고, 같은 자리에 따로 놓는다 (tools/soup_top.py가 08-spoon.png와 자리를 만든다).
      그림과 같은 297:210 상자 안에서 % 위치라 재료 화면·젓기 화면·#8 13쪽 어디서나 같은 자리 */
   var SPOON = { x: 0.761, y: 0.069, w: 0.256, h: 0.912, hx: 0.58, hy: 0.13 };   // hx·hy: 숟가락 머리(오목한 곳) 위치
   function potSpoon() {
-    var wrap = el('div', { class: 'pot-spoon', 'aria-hidden': 'true' },
+    // 바깥(.pot-spoon): 옮기기, 안(.pot-spoon-in): 손잡이 끝을 축으로 기울이기
+    var inner = el('div', { class: 'pot-spoon-in' },
       el('img', { src: 'assets/backgrounds/08-spoon.png', alt: '', draggable: 'false' }),
-      el('span', { class: 'pot-spoon-soup' }));
+      el('span', { class: 'pot-spoon-sink' }),     // 스프에 잠긴 부분 (숟가락 머리의 3/4을 덮는 스프)
+      el('span', { class: 'pot-spoon-soup' }));    // 뜬 스프 (머리 가득)
+    var wrap = el('div', { class: 'pot-spoon', 'aria-hidden': 'true' }, inner);
     wrap.style.left = SPOON.x * 100 + '%'; wrap.style.top = SPOON.y * 100 + '%';
     wrap.style.width = SPOON.w * 100 + '%'; wrap.style.height = SPOON.h * 100 + '%';
     wrap.style.transformOrigin = SPOON.hx * 100 + '% ' + SPOON.hy * 100 + '%';
-    var soup = wrap.querySelector('.pot-spoon-soup');
-    soup.style.left = SPOON.hx * 100 + '%'; soup.style.top = SPOON.hy * 100 + '%';
+    inner.style.transformOrigin = SPOON.hx * 100 + '% 96%';
     return wrap;
   }
 
   /* ---------- #8 13쪽: 떠먹기 ----------
-     그릇 가운데에 점선 원이 느릿하게 깜빡인다. 누르면 옆에 놓인 숟가락이 날아와 스프에 잠기고(파문),
-     금빛 스프를 한 숟갈 떠서 들어 올렸다가 제자리로 돌아간다 */
+     그릇 가운데 점선 원이 느릿하게 깜빡인다. 누르면
+     ① 숟가락을 느릿하게 들어 올리고(슬로우 아웃) ② 그릇 가운데로 옮겨 ③ 슬로우 인으로 스프에 담가 머리의 3/4까지 잠기고 0.5초 기다린다
+     ④ 살짝 뒤로 빼며 잠겼던 머리가 드러나면 스프가 가득 담겨 있고 ⑤ 손잡이를 축으로 왼쪽으로 기울며 떠 올리는 동안 스프가 점점 작아진다
+     ⑥ 제자리로 돌아간다 */
   function soupScoop() {
     var box = el('div', { class: 'scoop-layer' });
-    var spoon = potSpoon();
+    if (printing) { box.append(potSpoon()); return box; }
+    var spoon = potSpoon(), inner = spoon.firstChild;
+    var sink = spoon.querySelector('.pot-spoon-sink'), soup = spoon.querySelector('.pot-spoon-soup');
     var ring = el('button', { type: 'button', class: 'scoop-target', 'aria-label': '별빛스프 한 숟갈 떠먹기' });
     box.append(spoon, ring);
     var blink = ring.animate ? ring.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 1600, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' }) : null;
@@ -2204,35 +2355,50 @@
       if (busy || !spoon.animate) return;
       busy = true;
       if (blink) blink.pause();
-      ring.animate([{ opacity: getComputedStyle(ring).opacity }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
+      var fadeRing = ring.animate([{ opacity: getComputedStyle(ring).opacity }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
       var W = box.clientWidth, H = box.clientHeight;
-      // 숟가락 머리를 그릇 가운데(점선 원)로
       var hx = (SPOON.x + SPOON.w * SPOON.hx) * W, hy = (SPOON.y + SPOON.h * SPOON.hy) * H;
       var tx = 0.5 * W - hx, ty = 0.51 * H - hy;
-      var f = function (k, rot, sc) { return 'translate(' + (tx * k).toFixed(1) + 'px,' + (ty * k).toFixed(1) + 'px) rotate(' + rot + 'deg) scale(' + sc + ')'; };
+      var T = function (x, y, rot, sc) { return 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) rotate(' + rot + 'deg) scale(' + sc + ')'; };
+      var D = 5200, at = function (ms) { return ms / D; };
+      var ease = { out: 'cubic-bezier(.15,.6,.3,1)', in: 'cubic-bezier(.55,0,.9,.4)', io: 'cubic-bezier(.45,0,.35,1)' };
+      var back = H * 0.025;   // 살짝 뒤로(손잡이 쪽, 아래로) 빼기
       var a = spoon.animate([
-        { transform: f(0, 0, 1) },
-        { transform: f(0.15, -10, 1.06), offset: 0.12 },                                  // 집어 들기
-        { transform: 'translate(' + tx.toFixed(1) + 'px,' + (ty - H * 0.08).toFixed(1) + 'px) rotate(-38deg) scale(1.08)', offset: 0.36 },
-        { transform: f(1, -30, 0.96), offset: 0.48 },                                     // 스프에 잠김
-        { transform: f(1, -44, 0.96), offset: 0.6 },                                      // 떠 올림
-        { transform: 'translate(' + tx.toFixed(1) + 'px,' + (ty - H * 0.16).toFixed(1) + 'px) rotate(-40deg) scale(1.1)', offset: 0.76 },
-        { transform: f(0, 0, 1) }
-      ], { duration: 2800, easing: 'cubic-bezier(.45,.05,.35,1)' });
-      spoon.querySelector('.pot-spoon-soup').animate(
-        [{ opacity: 0 }, { opacity: 0, offset: 0.55 }, { opacity: 1, offset: 0.62 }, { opacity: 1, offset: 0.82 }, { opacity: 0, offset: 0.92 }, { opacity: 0 }],
-        { duration: 2800 });
-      setTimeout(function () {
+        { transform: T(0, 0, 0, 1), easing: ease.out },
+        { transform: T(-W * 0.02, -H * 0.05, -6, 1.06), offset: at(800), easing: ease.io },          // ① 느릿하게 들기 (슬로우 아웃)
+        { transform: T(tx, ty - H * 0.06, -20, 1.06), offset: at(1650), easing: ease.in },             // ② 그릇 위로
+        { transform: T(tx, ty, -20, 0.97), offset: at(2250) },                                       // ③ 슬로우 인으로 잠김
+        { transform: T(tx, ty, -20, 0.97), offset: at(2750), easing: ease.io },                      //    0.5초 대기
+        { transform: T(tx, ty + back, -20, 0.98), offset: at(3150), easing: ease.io },               // ④ 살짝 뒤로 빼기
+        { transform: T(tx - W * 0.03, ty + back - H * 0.04, -20, 1.02), offset: at(4300), easing: ease.io },
+        { transform: T(0, 0, 0, 1) }                                                                 // ⑥ 제자리
+      ], { duration: D });
+      inner.animate([                                                                                // ⑤ 손잡이를 축으로 왼쪽으로 기울기
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(0deg)', offset: at(3150), easing: ease.io },
+        { transform: 'rotate(-26deg)', offset: at(4300), easing: ease.io },
+        { transform: 'rotate(0deg)' }
+      ], { duration: D });
+      sink.animate([
+        { opacity: 0 }, { opacity: 0, offset: at(1900), easing: ease.in },
+        { opacity: 1, offset: at(2250) }, { opacity: 1, offset: at(2750), easing: ease.io },
+        { opacity: 0, offset: at(3150) }, { opacity: 0 }
+      ], { duration: D });
+      soup.animate([
+        { opacity: 0, transform: 'translate(-50%, -50%) scale(1)' },
+        { opacity: 0, transform: 'translate(-50%, -50%) scale(1)', offset: at(2800) },
+        { opacity: 1, transform: 'translate(-50%, -50%) scale(1)', offset: at(3150), easing: ease.io },
+        { opacity: 1, transform: 'translate(-50%, -50%) scale(0.25)', offset: at(4300) },            //    떠 올리며 점점 작아짐
+        { opacity: 0, transform: 'translate(-50%, -50%) scale(0.1)', offset: at(4500) },
+        { opacity: 0, transform: 'translate(-50%, -50%) scale(0.1)' }
+      ], { duration: D });
+      setTimeout(function () {   // 잠기는 순간 파문
         var rip = el('span', { class: 'scoop-ring', 'aria-hidden': 'true' });
         box.append(rip);
-        rip.animate([{ transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0.9 }, { transform: 'translate(-50%, -50%) scale(1.7)', opacity: 0 }], { duration: 900, easing: 'ease-out', fill: 'forwards' });
-        setTimeout(function () { rip.remove(); }, 920);
-      }, 2800 * 0.47);
-      var done = function () {
-        busy = false;
-        ring.getAnimations().forEach(function (x) { if (x !== blink) x.cancel(); });
-        if (blink) blink.play();
-      };
+        rip.animate([{ transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0.9 }, { transform: 'translate(-50%, -50%) scale(1.7)', opacity: 0 }], { duration: 1000, easing: 'ease-out', fill: 'forwards' });
+        setTimeout(function () { rip.remove(); }, 1020);
+      }, 2150);
+      var done = function () { busy = false; fadeRing.cancel(); if (blink) blink.play(); };
       a.finished.then(done, done);
     });
     return box;
@@ -2321,6 +2487,7 @@
   document.getElementById('btn-reread').addEventListener('click', function () { state.returnTo = null; go(0, 0); });
   var recapModal = document.getElementById('recap-modal');
   function closeRecap() { recapModal.hidden = true; }
+  document.getElementById('btn-pdf').addEventListener('click', makePdf);
   document.getElementById('btn-recap').addEventListener('click', function () {
     var body = document.getElementById('recap-body');
     body.replaceChildren(recap(ctx()));
@@ -2417,6 +2584,7 @@
   var rotateHinted = false;
 
   function showScreen(name) {
+    if (name === 'cover') paintAuthor();
     app.setAttribute('data-screen', name);
     Object.keys(screens).forEach(function (k) { screens[k].hidden = k !== name; });
     controlsEl.hidden = name !== 'book';
@@ -2590,11 +2758,18 @@
   document.getElementById('btn-guide-back').addEventListener('click', backToCover);
   document.getElementById('btn-guide-start').addEventListener('click', function () { start(document.getElementById('guide-card')); });
 
+  // 표지의 저자: 이름을 정하기 전에는 '당신', 정한 뒤에는 그 이름
+  function paintAuthor() {
+    var n = (state.name || '').trim();
+    document.getElementById('cover-author').textContent = '저자: ' + (n || '당신');
+  }
+
   function paintCover() {
     var c = S.cover;
     document.getElementById('cover-kicker').textContent = c.kicker;
     document.getElementById('cover-title').textContent = c.title;
     document.getElementById('cover-sub').textContent = c.subtitle;
+    paintAuthor();
     document.getElementById('build-tag').textContent = 'V' + S.version;
     var artBox = document.getElementById('cover-art');
     artBox.insertAdjacentHTML('beforeend', S.motifs.coverArt || S.motifs.soup); // 코드에 고정된 그림만

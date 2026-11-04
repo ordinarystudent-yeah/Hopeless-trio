@@ -1581,3 +1581,39 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .scoop-target { width: 30%; border: max(3px, 1cqh) dashed #fff; background: rgb(255 255 255 / 0.18);
   box-shadow: 0 0 0 max(2px, 0.5cqh) rgb(196 120 30 / 0.55), inset 0 0 0 max(2px, 0.5cqh) rgb(196 120 30 / 0.4), 0 0 3cqh rgb(255 230 150 / 0.8); }
 .stir-count { z-index: 2; }
+.cover-author { margin: 1.4cqh 0 0; font-family: var(--font-display); font-size: 3.6cqh; color: var(--soup); letter-spacing: 0.04em; }
+.pot-spoon-in { position: absolute; inset: 0; will-change: transform; }
+.pot-spoon-in img { display: block; width: 100%; height: 100%; }
+/* 잠긴 부분: 숟가락 머리 아래쪽 3/4을 덮는 금빛 스프 (가장자리는 부드럽게) */
+.pot-spoon-sink { position: absolute; left: 58%; top: 15.5%; width: 52%; height: 22%; transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(closest-side, #f7bd55 0%, #f6b94a 62%, rgb(246 185 74 / 0.75) 82%, rgb(246 185 74 / 0) 100%); opacity: 0; }
+/* 뜬 스프: 머리 가득 */
+.pot-spoon-soup { left: 58% !important; top: 13% !important; width: 40% !important; height: 19% !important;
+  background: radial-gradient(circle at 38% 35%, #fff1c4 0%, #ffd27a 22%, #f6b94a 60%, #e3922a 100%) !important;
+  box-shadow: inset 0 0 0.6cqh rgb(160 90 20 / 0.5); }
+
+/* ---------- PDF 저장 ---------- */
+.pdf-host { position: fixed; left: -12000px; top: 0; width: 2000px; pointer-events: none; }
+.pdf-host .book.is-print { width: 2000px !important; max-width: none; transition: none; }
+.pdf-host .is-print-cover { width: 1414px; max-width: none; }
+.is-print-leaf { box-shadow: none !important; border-radius: 0 !important; transform: none !important; }
+/* 저장본에는 UI·설명용 글씨를 넣지 않는다 */
+.book.is-print .pg-note, .book.is-print .sticker-hint, .book.is-print .pg-hint, .book.is-print .asset-note,
+.book.is-print .scoop-target, .book.is-print .win-hint, .book.is-print .win-glow, .book.is-print .st-del, .book.is-print .st-handle,
+.book.is-print .reveal .btn, .book.is-print .bubble-text.is-empty, .book.is-print .eyebrow, .book.is-print .curve-eyebrow,
+.book.is-print .page-veil, .book.is-print .sparkles { display: none !important; }
+.book.is-print .sticker.is-selected::after, .book.is-print .sticker:focus-visible::after { display: none; }
+.book.is-print .nameplate-input { caret-color: transparent; }
+.book.is-print .page-img { opacity: 1 !important; transition: none; }
+.pdf-fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.is-print-cover .intro-actions, .is-print-cover .build-tag, .is-print-cover .sparkles { display: none !important; }
+.pdf-busy { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: rgb(10 14 32 / 0.6); }
+.pdf-busy-card { display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-radius: 18px; background: var(--night-2); color: var(--milk); box-shadow: var(--shadow); font-family: var(--font-display); }
+.pdf-busy-card p { margin: 0; }
+.pdf-spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgb(255 255 255 / 0.2); border-top-color: var(--soup); animation: pdf-spin 0.9s linear infinite; }
+@keyframes pdf-spin { to { transform: rotate(360deg); } }
+.nameplate-print { display: flex; align-items: center; justify-content: center; }
+/* 저장본: 3D로 열린 창문은 평면으로만 그려져 창 너머를 가리므로 열린 창의 덧창은 뺀다 */
+.book.is-print .win.is-open .win-pane { display: none; }
+.book.is-print .nameplate-print { border-bottom-color: transparent; }
+.book.is-print .win-frame, .book.is-print .win-pane { box-shadow: none !important; }
