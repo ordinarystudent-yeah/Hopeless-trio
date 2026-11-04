@@ -34,6 +34,12 @@
   var undo = [], dirty = false, stroke = null, photo = null, stamp = null, resolver = null, ready = false;
   // 쪽 안에 붙인 그림판(인라인): { host, onChange, home, next, timer }. 창 없이 동화 쪽 위에 같은 도구를 그대로 놓는다
   var inline = null;
+  // 도구는 쪽 안 그림판일 때 그림판 밖(.tdraw-dock)으로 옮겨지므로, 그쪽까지 함께 찾는다
+  function toolsAll(sel) {
+    var list = Array.prototype.slice.call(root.querySelectorAll(sel));
+    if (inline && inline.dock) list = list.concat(Array.prototype.slice.call(inline.dock.querySelectorAll(sel)));
+    return list;
+  }
   function markDirty() {
     dirty = true;
     if (!inline || !inline.onChange) return;
@@ -247,7 +253,7 @@
   /* ---------- 도구 ---------- */
   function setTool(t) {
     tool = t;
-    root.querySelectorAll('[data-tool]').forEach(function (b) {
+    toolsAll('[data-tool]').forEach(function (b) {
       b.setAttribute('aria-pressed', b.getAttribute('data-tool') === t ? 'true' : 'false');
     });
     $('ed-size-row').classList.toggle('is-off', t === 'bucket');
@@ -258,7 +264,7 @@
   function setColor(c) {
     color = c;
     stamp = null;
-    root.querySelectorAll('.swatch').forEach(function (b) {
+    toolsAll('.swatch').forEach(function (b) {
       b.setAttribute('aria-pressed', b.getAttribute('data-color') === c ? 'true' : 'false');
     });
     if (/^#[0-9a-f]{6}$/i.test(c)) colorInput.value = c;
