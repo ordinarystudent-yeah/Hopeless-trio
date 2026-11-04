@@ -1073,14 +1073,14 @@
     if (state.soup.length >= S.limits.ingredients) { toast('재료는 다섯 개까지 넣을 수 있어요.'); return; }
     window.StarSoupEditor.open({
       title: '별빛스프 재료 그리기', askName: true, name: '',
-      nameLabel: '어떤 재료인가요?', namePlaceholder: '예: 별사탕'
+      nameLabel: '어떤 재료인가요?', namePlaceholder: '예: 별사탕', allowNameOnly: true
     }).then(function (res) {
       if (!res) return;
       var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       // 그릇 안 빈자리에 놓는다 (스프 그림의 그릇은 가운데, 반지름 약 0.33)
       var n = state.soup.length, a = n * 2.4 + 0.6, rr = n ? 0.2 : 0.05;
       state.soup.push({ id: id, name: res.name.slice(0, S.limits.ingredient), u: 0.5 + Math.cos(a) * rr * 0.72, v: 0.51 + Math.sin(a) * rr, w: 0.15, r: Math.round(Math.random() * 24 - 12) });
-      saveImage('soup-' + id, res.image);
+      if (res.image) saveImage('soup-' + id, res.image);
       state.soupStirs = 0;   // 새 재료를 넣었으니 다시 저어야 한다
       saveNow();
       refreshAskUI();

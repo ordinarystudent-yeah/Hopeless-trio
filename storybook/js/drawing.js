@@ -34,6 +34,7 @@
   var undo = [], dirty = false, stroke = null, photo = null, stamp = null, resolver = null, ready = false;
   // 쪽 안에 붙인 그림판(인라인): { host, onChange, home, next, timer }. 창 없이 동화 쪽 위에 같은 도구를 그대로 놓는다
   var inline = null;
+  var allowNameOnly = false;
   // 도구는 쪽 안 그림판일 때 그림판 밖(.tdraw-dock)으로 옮겨지므로, 그쪽까지 함께 찾는다
   function toolsAll(sel) {
     var list = Array.prototype.slice.call(root.querySelectorAll(sel));
@@ -96,6 +97,9 @@
     undoBtn.addEventListener('click', undoOnce);
     $('ed-back').addEventListener('click', back);
     $('ed-done').addEventListener('click', finish);
+    // 키보드가 올라와 있을 때 누르면, 입력칸이 먼저 포커스를 잃고 키보드가 내려가며 버튼이 움직여 첫 탭이 빗나간다.
+    // 누르는 순간 포커스를 옮기지 않게 해서 한 번에 눌리게 한다
+    ['ed-done', 'ed-back'].forEach(function (id) { $(id).addEventListener('pointerdown', function (e) { e.preventDefault(); }); });
     $('ed-clear').addEventListener('click', clearAll);
 
     // 사진: 카메라로 찍기 / 앨범에서 고르기 (둘 다 사용자가 직접 고르는 파일 선택 방식)
@@ -141,6 +145,7 @@
     init();
     opts = opts || {};
     if (inline) unmount();
+    allowNameOnly = !!opts.allowNameOnly;
     $('editor-title').textContent = opts.title || '그림 그리기';
     $('ed-done').textContent = opts.doneLabel || '다 그렸어요';
     $('ed-tip').textContent = opts.memo ? '메모지를 끌어서 원하는 곳에 옮겨 보세요. 그림 없이 넘어가도 괜찮아요.' : '사진 파일을 그림판에 끌어다 놓거나 붙여넣어도 들어가요.';
@@ -246,8 +251,11 @@
     if (photo) commitPhoto();
     if (memo) { close(exportDecorated()); return; }
     var image = exportTrimmed();
-    if (!image) { ui().toast('아직 그린 그림이 없어요. 그림을 그리거나 사진을 넣어 주세요.'); return; }
-    close({ image: image, name: nameInput.value.trim() });
+    var nm = nameInput.value.trim();
+    // 이름만 적어도 되는 곳(스프 재료)은 그림 없이 넣는다
+    if (!image && !(allowNameOnly && nm)) { ui().toast(allowNameOnly ? '재료 이름을 적거나 그림을 그려 주세요.' : '아직 그린 그림이 없어요. 그림을 그리거나 사진을 넣어 주세요.'); return; }
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    close({ image: image, name: nm });
   }
 
   /* ---------- 도구 ---------- */
