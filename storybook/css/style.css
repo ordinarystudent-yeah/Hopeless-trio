@@ -1649,3 +1649,24 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   #food-choice-grid .tile-label { padding: 8px 3px 4px; }
   #food-choice-grid .tile-art img { padding: 9% 13% 46%; }
 }
+
+/* 고르는 카드(음식·때·날씨)는 누를 때 크기가 변하지 않게: 줄어드는 대신 살짝 어두워진다 */
+.choice-grid .tile.is-pressed { transform: none !important; filter: brightness(0.88); }
+.choice-grid .tile { transition: border-color 0.15s, box-shadow 0.15s, filter 0.1s; }
+
+/* 맛 고르기: 이름 칸을 절반 높이로, 그만큼 카드를 크게 */
+.taste-name-field { gap: 2px; }
+.taste-name-field label { font-size: 0.72rem; }
+.taste-name-field .input { min-height: 0; height: auto; padding: 3px 12px; font-size: 14px; line-height: 1.3; border-radius: 10px; }
+.ask-taste { gap: 6px; }
+.ask-taste .ask-carousel { height: clamp(230px, 42vh, 360px); }
+@media (max-height: 500px) and (orientation: landscape) {
+  .ask-taste .ask-carousel { height: clamp(140px, 40vh, 210px); }
+  .taste-name-field .input { padding: 2px 10px; font-size: 13px; }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .ask-carousel .c-card { width: min(46cqw, 66cqh); height: min(64cqw, 92cqh); }
+  .ask-carousel .c-card[data-pos="-1"] { transform: translate(-50%, -50%) translateX(-31cqw) translateZ(-60px) rotateY(32deg) scale(0.82); }
+  .ask-carousel .c-card[data-pos="1"] { transform: translate(-50%, -50%) translateX(31cqw) translateZ(-60px) rotateY(-32deg) scale(0.82); }
+  .ask-carousel .c-label { font-size: clamp(11px, 3.8cqw, 15px); }
+}
