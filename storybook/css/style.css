@@ -1500,3 +1500,12 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .memo-text { font-family: var(--font-display); font-size: calc(var(--w) * 11cqw); line-height: 1.35; }
 .paper-body figcaption { font-size: calc(var(--w, 0.15) * 10cqw); }
 .sticker--paper.is-selected .st-handle { display: grid; }
+
+/* 나레이션 아래 작은 안내 */
+.pg-note { margin: 0; font-size: max(10px, 3cqh); opacity: 0.85; }
+/* #6 10쪽: 그림판 위에 떠 있는 나레이션 (터치는 아래 그림판으로) */
+.pg-text.is-over-pad { z-index: 5; pointer-events: none; align-self: flex-start; }
+.memo-body--food { background: #ffe1d8; }
+.memo-body--food .memo-head { color: #c0624a; }
+.has-image .pg-text.is-ink .pg-note { color: #7a5a38; opacity: 1; }
+.pg-text:not(.is-ink) .pg-note { color: var(--milk); opacity: 0.85; }

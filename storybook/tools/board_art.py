@@ -12,14 +12,14 @@ def layer(): return Image.new('RGBA', (W, H), (0, 0, 0, 0))
 # 벽: 삽화의 흰 종이처럼 밝은 크림
 img = Image.new('RGBA', (W, H), (252, 249, 242, 255))
 
-# 보드 틀(연한 나무색) + 코르크 판(파스텔 살구)
+# 보드 틀(연한 나무색) + 안쪽 판(파스텔 민트)
 F = 46
 frame = layer(); fd = ImageDraw.Draw(frame)
 fd.rounded_rectangle((60, 54, W - 60, H - 54), radius=34, fill=(232, 204, 164, 255))
-fd.rounded_rectangle((60 + F, 54 + F, W - 60 - F, H - 54 - F), radius=18, fill=(246, 226, 196, 255))
+fd.rounded_rectangle((60 + F, 54 + F, W - 60 - F, H - 54 - F), radius=18, fill=(196, 234, 222, 255))
 img.alpha_composite(frame)
 # 판 그림자(위쪽 안쪽)
-sh = layer(); ImageDraw.Draw(sh).rounded_rectangle((60 + F, 54 + F, W - 60 - F, 54 + F + 26), radius=12, fill=(180, 140, 100, 70))
+sh = layer(); ImageDraw.Draw(sh).rounded_rectangle((60 + F, 54 + F, W - 60 - F, 54 + F + 26), radius=12, fill=(90, 150, 130, 70))
 img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(10)))
 
 # 코르크 결: 작은 점과 짧은 크레용 선
@@ -27,11 +27,11 @@ cork = layer(); cd = ImageDraw.Draw(cork)
 x0, y0, x1, y1 = 60 + F, 54 + F, W - 60 - F, H - 54 - F
 for i in range(4200):
     x, y = rng.uniform(x0, x1), rng.uniform(y0, y1); s = rng.uniform(1, 3.2)
-    c = rng.choice([(214, 176, 132), (236, 206, 166), (255, 240, 214), (226, 190, 150)])
+    c = rng.choice([(160, 210, 196), (210, 242, 232), (240, 252, 248), (176, 222, 208)])
     cd.ellipse((x - s, y - s, x + s, y + s), fill=c + (rng.randint(70, 160),))
 for i in range(900):
     x, y = rng.uniform(x0, x1), rng.uniform(y0, y1); l = rng.uniform(8, 22); a = rng.uniform(0, math.pi)
-    cd.line((x, y, x + math.cos(a) * l, y + math.sin(a) * l), fill=(255, 246, 228, rng.randint(50, 110)), width=2)
+    cd.line((x, y, x + math.cos(a) * l, y + math.sin(a) * l), fill=(236, 252, 246, rng.randint(50, 110)), width=2)
 img.alpha_composite(cork.filter(ImageFilter.GaussianBlur(0.5)))
 
 # 틀 크레용 결

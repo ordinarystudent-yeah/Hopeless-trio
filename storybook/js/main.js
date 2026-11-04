@@ -396,7 +396,10 @@
         var body = typeof p.text === 'function' ? p.text(c) : scene.text(c);
       }
       if (p.text && body) {
-        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') + (p.narrow ? ' is-narrow' : '') }, eyebrow(scene, index, p), paragraphs(body));
+        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') + (p.narrow ? ' is-narrow' : '') + (p.board ? ' is-over-pad' : '') }, eyebrow(scene, index, p), paragraphs(body));
+        // 나레이션 아래 작은 안내 (#4 5쪽: 스티커 붙이기, #6 10쪽: 보드 꾸미기)
+        var noteText = p.note === 'food-sticker' ? (c.food ? foodStickerHint() : '') : typeof p.note === 'function' ? p.note(c) : '';
+        if (noteText) block.append(el('p', { class: 'hint pg-note' + (p.note === 'food-sticker' ? ' sticker-hint' : ''), text: noteText }));
         pg.append(block);
       }
       if (p.nameplate) page.append(nameplateInput(leaf, p.nameplate));
@@ -484,7 +487,7 @@
     switch (name) {
       case 'food-result': return foodResult(c);
       case 'board-draw': return drawPad(leaf, { key: IMG_BOARD, title: '보드에 그림 그리기', clear: true,
-        tip: '메모지를 끌어 옮기고 노란 손잡이로 크기를 바꿔요. 빈 곳에는 그림을 그릴 수 있어요.' });
+        tip: '메모지는 끌어서 옮기고, 노란 손잡이로 크기를 바꿀 수 있어요.' });
       case 'deed-hint': return images[IMG_DEED]
         ? el('p', { class: 'hint sticker-hint pg-hint' }, '꾸민 착한 일 종이를 끌어서 원하는 곳에 옮겨 보세요.')
         : null;
@@ -594,7 +597,7 @@
     return el('div', { class: 'pg-text is-panel reveal' + (f ? '' : ' is-empty'), 'aria-live': 'polite' },
       el('p', { class: 'eyebrow', text: f ? '한입 냠, ' + f.name : '음식을 고르면' }),
       el('p', { class: 'story story--sm', text: f ? f.desc : '아직 먹고 싶은 음식을 고르지 않았어요.' }),
-      f ? el('p', { class: 'hint sticker-hint', text: foodStickerHint() })
+      f ? null
         : el('button', { type: 'button', class: 'btn btn-soft btn-small', text: '음식 고르러 가기', onclick: function () { showAsk('food', -1); } }));
   }
 
@@ -786,7 +789,7 @@
         inline: host, dock: dock, aspect: 297 / 210, title: o.title, base: images[o.key], clear: o.clear,
         onChange: function (data) { saveImage(o.key, data); }
       });
-      if (o.tip) setTimeout(function () { if (host.isConnected) toast(o.tip, 4200); }, 400);
+      if (o.tip) setTimeout(function () { if (host.isConnected) toast(o.tip, 3600); }, 400);
     };
     // 쪽이 화면에 붙은 뒤에 그림판을 옮겨 온다 (한 쪽씩 보기에서는 16쪽을 볼 때만)
     var visible = function () { return mode === 'spread' || state.page === 1; };
