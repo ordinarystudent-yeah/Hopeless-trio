@@ -642,6 +642,8 @@
       case 'taste': return tasteCarousel();
       case 'soup-ingredients': return soupIngredients(false);
       case 'soup-scoop': return soupScoop();
+      case 'soup-ui': return mode === 'spread' && !printing ? inlineAsk('soup') : null;
+      case 'taste-ui': return mode === 'spread' && !printing ? inlineAsk('taste') : null;
       case 'taste-draw': return state.taste === 'custom' ? drawPad(leaf, { key: IMG_TASTE, title: '무슨 맛이 났는지 그리기', clear: true, paper: true }) : null;
       // #8: 꾸민 착한 일 종이(메모지)를 스프가 놓인 식탁 한구석에
       case 'deed-note': return images[IMG_DEED]
@@ -862,7 +864,8 @@
         card.setAttribute('aria-pressed', state.taste === list[i].id ? 'true' : 'false');
         card.tabIndex = rel === 0 ? 0 : -1;
       });
-      var nameField = document.querySelector('#ask-body .taste-name-field');
+      var wrapEl = box.closest && box.closest('.ask-taste');
+      var nameField = wrapEl ? wrapEl.querySelector('.taste-name-field') : document.querySelector('#ask-body .taste-name-field');
       if (nameField) {
         var on = t.id === 'custom';
         nameField.classList.toggle('is-on', on);
@@ -999,7 +1002,7 @@
           delete images['soup-' + g.id];
           store.deleteImage('soup-' + g.id).catch(function () {});
           saveNow();
-          paintAsk();
+          refreshAskUI();
         });
         item.append(del, el('span', { class: 'st-handle ing-handle', 'aria-hidden': 'true' }));
         // 끌면 옮기고, 노란 손잡이를 끌거나 두 손가락으로 벌리면 크기·방향이 바뀐다
@@ -1080,7 +1083,7 @@
       saveImage('soup-' + id, res.image);
       state.soupStirs = 0;   // 새 재료를 넣었으니 다시 저어야 한다
       saveNow();
-      paintAsk();
+      refreshAskUI();
     });
   }
 
@@ -1616,10 +1619,13 @@
     var leavingScene = leavingNow();
     // 다음 장면의 그림을 보여 주기 전에 묻는 화면(음식·착한 일·맛)을 먼저 연다
     var upcoming = S.scenes[forwardTarget()];
-    if (leavingScene && upcoming && upcoming.asks && !askPage(upcoming)) { showAsk(upcoming.asks[0], 1); return; }
+    // 펼침 화면 #8: 14쪽에서 맛을 고르지 않았으면 넘어가지 않는다
+    if (leavingScene && mode === 'spread' && here === 'soup' && !state.taste) { toast('14쪽에서 무슨 맛이 났는지 골라 주세요.'); return; }
+    var upAsks = upcoming && asksOf(upcoming);
+    if (leavingScene && upAsks && !askPage(upcoming)) { showAsk(upAsks[0], 1); return; }
     // 한 쪽씩 보기: 이 장면 안의 그 쪽 앞에서 묻는다 (#10: 17쪽 → 창 밖을 보니… → 18쪽)
     var curSc = S.scenes[state.scene];
-    if (curSc.asks && askPage(curSc) && state.page === askPage(curSc) - 1) { showAsk(curSc.asks[0], 1); return; }
+    if (asksOf(curSc) && askPage(curSc) && state.page === askPage(curSc) - 1) { showAsk(asksOf(curSc)[0], 1); return; }
     if (mode === 'single' && state.page < lastPage(curSc)) flipPage(1);
     else if (!leavingScene) return;
     else go(forwardTarget(), 0);
@@ -2028,7 +2034,12 @@
   function askPage(sc) { return sc.askAt || 0; }
 
   function askScene(id) { return sceneIndex(ASK[id].scene || id); }
-  function askList(id) { return S.scenes[askScene(id)].asks || [id]; }
+  function askList(id) { return asksOf(S.scenes[askScene(id)]) || [id]; }
+  // 이 장면 앞에서 묻는 화면들 (펼침 화면은 쪽 안에 넣은 것을 뺀다)
+  function asksOf(sc) {
+    var a = mode === 'spread' && sc.spreadAsks ? sc.spreadAsks : sc.asks;
+    return a && a.length ? a : null;
+  }
 
   // 오늘의 날씨를 직접 그린다 → 그 그림이 #1 가장 위층에 그대로 놓인다 (움직이지 않음)
   // 날씨를 직접 그린다 → 그 그림이 하늘 위층에 그대로 놓인다 (움직이지 않음)
@@ -2061,6 +2072,19 @@
     if (fromEl) leaveThen(fromEl, dir, show);
     else if (leaf) { stopAnims(leaf); leaveThen(leaf, dir, show); }
     else if (!switching) { switching = true; show(); }
+  }
+
+  // 묻는 화면이면 다시 그리고, 쪽 안에 넣은 화면(펼침 화면의 재료 넣기)이면 그 쪽을 다시 그린다
+  function refreshAskUI() { if (askId) paintAsk(); else rerender(); }
+
+  // 펼침 화면: 묻는 화면(재료 넣기·맛 고르기)을 쪽 안에 그대로 넣는다
+  function inlineAsk(id) {
+    var cfg = ASK[id], sc = S.scenes[askScene(id)];
+    var note = el('p', { class: 'prompt-text ask-note inline-note', text: cfg.note() });
+    var box = el('div', { class: 'inline-ask' + (id === 'soup' ? ' is-ink' : ''), 'data-ask': id },
+      el('div', { class: 'choice-text' }, paragraphs(cfg.text(sc, ctx()))),
+      el('div', { class: 'ask-body' }, cfg.body()), note);
+    return box;
   }
 
   function paintAsk() {
@@ -2106,6 +2130,9 @@
   }
 
   function paintAskNote() {
+    document.querySelectorAll('.leaf .inline-ask').forEach(function (b) {
+      var n = b.querySelector('.inline-note'); if (n) n.textContent = ASK[b.getAttribute('data-ask')].note();
+    });
     if (!askId) return;
     // 같은 화면 안에서 안내 문장이 짧아져도(두 줄 → 한 줄) 높이를 줄이지 않는다
     // → 스프 완성 때처럼 문장이 바뀌어도 카드가 줄어들며 그릇·버튼이 튀지 않는다
@@ -2199,12 +2226,12 @@
   function prev() {
     if (switching) return;
     var cur = S.scenes[state.scene];
-    if (cur.asks && askPage(cur) && state.page === askPage(cur)) { showAsk(cur.asks[cur.asks.length - 1], -1); return; }
+    if (asksOf(cur) && askPage(cur) && state.page === askPage(cur)) { var ca = asksOf(cur); showAsk(ca[ca.length - 1], -1); return; }
     if (mode === 'single' && state.page === 1) { flipPage(0); return; }
     // #6 첫 쪽에서 뒤로 → 그림으로 남기기 안내 화면
     if (cur.id === 'deed' && state.returnTo == null) { showDeedPrompt(); return; }
     // 묻는 화면이 있는 장면의 첫 쪽에서 뒤로 가면 그 화면으로
-    var asks = S.scenes[state.scene].asks;
+    var asks = asksOf(S.scenes[state.scene]);
     if (asks && !askPage(S.scenes[state.scene])) { showAsk(asks[asks.length - 1], -1); return; }
     if (state.scene > 0) go(state.scene - 1, lastPage(S.scenes[state.scene - 1]));
   }
@@ -2226,7 +2253,7 @@
   function imgReady(img) {
     return img.complete && img.naturalWidth ? Promise.resolve() : new Promise(function (r) { img.addEventListener('load', r, { once: true }); img.addEventListener('error', r, { once: true }); setTimeout(r, 4000); });
   }
-  var FADE = [[0, 0], [0.02, 0], [0.38, 1]];   // 16쪽: 왼쪽 1/10 투명 → 57%에서 다 보임 (css의 mask와 같게)
+  var FADE = [[0, 0], [0.001, 0], [0.14, 1]];   // 16쪽: 왼쪽 1/10 투명 → 57%에서 다 보임 (css의 mask와 같게)
   function fadeAlpha(g, w, h) {
     var gr = g.createLinearGradient(0, 0, w, 0);
     FADE.forEach(function (f) { gr.addColorStop(f[0], 'rgba(0,0,0,' + f[1] + ')'); });
@@ -2467,7 +2494,7 @@
   var swipe = null;
   book.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' || swipe || switching) return;
-    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw-host, .win, .scoop-target')) return;
+    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw-host, .win, .scoop-target, .inline-ask')) return;
     swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dir: null, leaf: currentLeaf() };
   });
   book.addEventListener('pointermove', function (e) {

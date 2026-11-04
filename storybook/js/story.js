@@ -214,7 +214,7 @@
       // 한 쪽짜리 장면: 11쪽(뚜껑을 연 음식 + 글)만 보고 바로 별빛스프 꾸미기로 (한 쪽씩 보기에서 12쪽은 건너뜀)
       id: 'serve', act: 2, tone: 'gold', no: '7', onePage: true,
       image: 'assets/backgrounds/07-fairies-serve.jpg', alt: '박수를 치며 음식을 놓아 주는 요정들',
-      pages: [{ text: true, place: 'top', ink: 'dark' }, {}],
+      pages: [{ text: true, place: 'top', ink: 'dark' }, { widgets: ['soup-ui'] }],
       // 와! 당신이 한 (착한 일)로 요정들은 박수를 보내며 당신의 앞에 그 음식을 놓아주었어요.
       text: function (c) {
         // 문장으로 끝나는 착한 일(…했어요)은 '‘…’라는 착한 일로', 짧은 말(설거지 돕기)은 '…로'
@@ -229,11 +229,12 @@
       // 이 펼침면 앞의 '요리' 화면에서 별빛스프에 넣을 재료(최대 5개)를 이름을 적고 그린다.
       // 왼쪽 쪽(13쪽)은 위에서 내려다본 스프 그릇(임시 아트워크, tools/soup_top.py), 그 위에 재료 스티커.
       // 한 쪽짜리 장면: 13쪽(스프 그릇 + 글)만 보고 바로 '무슨 맛이 났나요?'로 (한 쪽씩 보기에서 14쪽은 건너뜀)
-      id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles', sparkles: 12, asks: ['soup', 'stir'], onePage: true,
+      // 펼침 화면에서는 재료 넣기를 #7 12쪽에, 맛 고르기를 14쪽에 넣으므로 그 앞의 묻는 화면은 젓기만 (spreadAsks)
+      id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles', sparkles: 12, asks: ['soup', 'stir'], spreadAsks: ['stir'], onePage: true,
       image: null, alt: '위에서 내려다본 별빛스프',
       pages: [
         { image: 'assets/backgrounds/08-soup-top.jpg', widgets: ['soup-ingredients', 'deed-note', 'soup-scoop'], text: true, place: 'top', ink: 'dark' },
-        { art: 'starsky', artPos: 'bottom' }
+        { art: 'starsky', artPos: 'bottom', widgets: ['taste-ui'] }
       ],
       text: function (c) {
         return [
@@ -242,7 +243,7 @@
       }
     },
     {
-      id: 'taste', act: 3, tone: 'gold', no: '9', asks: ['taste'],
+      id: 'taste', act: 3, tone: 'gold', no: '9', asks: ['taste'], spreadAsks: [],
       image: 'assets/backgrounds/09-taste.jpg', alt: '별빛스프의 맛이 소용돌이처럼 퍼지는 순간',
       // '무슨 맛이 났나요?'는 이 펼침면 앞의 묻는 화면에서 회전 카드로 고른다.
       // 왼쪽 쪽은 삽화, 오른쪽 쪽(16쪽)에는 고른 맛에 맞춘 그림(assets/backgrounds/09-taste-<맛>.jpg)만 (글 없음)
@@ -441,7 +442,7 @@
   };
 
   window.StarSoup = {
-    version: '7.7',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '7.8',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

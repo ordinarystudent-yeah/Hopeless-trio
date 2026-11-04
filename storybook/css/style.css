@@ -1523,8 +1523,8 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .pg-text.is-end { align-self: flex-end; max-width: 70%; text-align: right; }
 /* #9 16쪽: 왼쪽 1/3은 투명, 거기서부터 서서히 나타나 15쪽 삽화와 이어진다 */
 .page.is-fade .page-img, .page.is-fade .tdraw-paper {
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 2%, #000 38%);
-          mask-image: linear-gradient(90deg, transparent 0%, transparent 2%, #000 38%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 14%);
+          mask-image: linear-gradient(90deg, transparent 0%, #000 14%);
 }
 .tdraw-paper { position: absolute; inset: 0; background: #fdfaf4; pointer-events: none; }
 /* 그림 도구 자리만큼 줄었던 책이 부드럽게 원래 크기로 */
@@ -1701,3 +1701,31 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .book.is-print .folio { color: #3b2c18 !important; opacity: 1 !important; font-weight: 700; font-size: 3.4cqh;
   text-shadow: 0 0 0.6cqh #fff, 0 0 0.3cqh #fff, 0 0 0.15cqh #fff; }
 .book.is-print .soup-ing-name { display: none !important; }
+
+/* 펼침 화면: 12쪽 재료 넣기, 14쪽 맛 고르기 (쪽 크기 cqh 기준) */
+.inline-ask { width: 100% !important; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2cqh;
+  padding: 0; margin: 0; background: none; border: 0; box-shadow: none; text-align: center; }
+.page .pg:has(.inline-ask) { padding: 5cqh 6cqh 7cqh; justify-content: center; }
+.inline-ask .choice-text .story { font-size: 3.6cqh !important; line-height: 1.45; color: var(--milk); margin: 0; }
+.inline-ask .ask-body { width: 100%; display: flex; justify-content: center; }
+.inline-ask .soup-cook { gap: 1.6cqh; }
+.inline-ask .soup-pot { width: min(100%, 92cqh) !important; border-radius: 2.4cqh; }
+.inline-ask .soup-ings { pointer-events: auto; }
+.inline-ask .soup-add { font-size: max(10px, 2.8cqh); min-height: max(24px, 6.4cqh); padding: 0 3cqh; }
+.inline-ask .inline-note { font-size: max(9px, 2.5cqh) !important; color: var(--soft); max-width: 90%; margin: 0; }
+.inline-ask .ask-taste { width: 100%; gap: 1cqh; }
+.inline-ask .ask-taste .ask-carousel { height: 58cqh; }
+.inline-ask .taste-name-field { width: min(100%, 70cqh); }
+.inline-ask .taste-name-field label { font-size: max(8px, 2.4cqh); }
+.inline-ask .taste-name-field .input { font-size: max(10px, 3cqh); padding: 0.6cqh 2cqh; }
+.page:has(.inline-ask) .pg-art { display: none; }
+.inline-ask.is-ink .choice-text .story { color: var(--plate-ink); }
+.inline-ask.is-ink .inline-note { color: #7a5a38; }
+.inline-ask .soup-pot { width: min(100%, 100cqh) !important; }
+.inline-ask .soup-add { background: var(--night-2); color: var(--milk); }
+.inline-ask { gap: 1.4cqh; }
+.inline-ask .soup-pot { width: min(100%, 84cqh) !important; }
+.inline-ask .soup-cook { width: 100%; align-items: center !important; }
+.inline-ask .choice-text .story { font-size: 3.2cqh !important; line-height: 1.4; }
+.page .pg:has(.inline-ask) { padding: 3cqh 5cqh 6cqh; }
+.inline-ask .soup-add, .ask-body .soup-add { align-self: center; }
