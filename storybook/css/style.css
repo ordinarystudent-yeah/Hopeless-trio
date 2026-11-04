@@ -1624,9 +1624,9 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 #food-choice-grid > .tile { grid-column: span 2; }
 #food-choice-grid > .tile:nth-child(5) { grid-column: 2 / span 2; }
 /* 음식 그림은 이름표 위 남은 자리의 한가운데에 */
-#food-choice-grid .tile-art img { padding: 6% 12% 30%; object-position: 50% 50%; }
+#food-choice-grid .tile-art img { padding: 3% 5% 25%; object-position: 50% 50%; }
 @media (max-width: 600px) and (orientation: portrait) {
-  #food-choice-grid .tile-art img { padding: 5% 12% 42%; }
+  #food-choice-grid .tile-art img { padding: 2% 5% 36%; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   #food-choice-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
