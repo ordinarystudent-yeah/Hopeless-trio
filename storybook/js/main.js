@@ -346,6 +346,8 @@
         return;
       }
       var pg = el('div', { class: 'pg' + (p.tight ? ' pg--tight' : ''), 'data-place': p.place || 'top' });
+      if (p.fade) page.classList.add('is-fade');
+      if (p.low) pg.classList.add('pg--low');   // 글을 쪽 맨 아래 가까이 (#5 8쪽 보랏빛 연기 위)
       if (p.window) { page.classList.add('has-image', 'has-window'); page.append(roomWindow(leaf)); }
       // 그림 속 말풍선 안에 넣는 글 (#6: 내가 적은 착한 일)
       if (p.bubble) {
@@ -395,12 +397,19 @@
       if (p.text) {
         var body = typeof p.text === 'function' ? p.text(c) : scene.text(c);
       }
+      var block = null;
       if (p.text && body) {
-        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') + (p.narrow ? ' is-narrow' : '') + (p.board ? ' is-over-pad' : '') }, eyebrow(scene, index, p), paragraphs(body));
-        // 나레이션 아래 작은 안내 (#4 5쪽: 스티커 붙이기, #6 10쪽: 보드 꾸미기)
-        var noteText = p.note === 'food-sticker' ? (c.food ? foodStickerHint() : '') : typeof p.note === 'function' ? p.note(c) : '';
-        if (noteText) block.append(el('p', { class: 'hint pg-note' + (p.note === 'food-sticker' ? ' sticker-hint' : ''), text: noteText }));
+        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') + (p.narrow ? ' is-narrow' : '') + (p.align === 'end' ? ' is-end' : '') }, eyebrow(scene, index, p), paragraphs(body));
+        if (p.tilt) block.style.transform = 'rotate(' + p.tilt + 'deg)';
+        if (p.wide) block.style.maxWidth = p.wide * 100 + '%';   // 삽화의 물결을 따라 살짝 기울이기
         pg.append(block);
+      }
+      // 작은 안내 (#4 5쪽: 스티커 붙이기, #6 10쪽: 보드 꾸미기). noteAt 'bottom'이면 쪽 아래 왼쪽에 따로
+      var noteText = p.note === 'food-sticker' ? (c.food ? foodStickerHint() : '') : typeof p.note === 'function' ? p.note(c) : '';
+      if (noteText) {
+        var noteEl = el('p', { class: 'hint pg-note' + (p.note === 'food-sticker' ? ' sticker-hint' : '') + (p.noteAt === 'bottom' ? ' pg-note--bottom' : ''), text: noteText });
+        if (p.noteAt === 'bottom') page.append(noteEl);
+        else if (block) block.append(noteEl);
       }
       if (p.nameplate) page.append(nameplateInput(leaf, p.nameplate));
       (p.widgets || []).forEach(function (w) { append(pg, widget(w, c, leaf, index)); });
@@ -493,7 +502,7 @@
         : null;
       case 'taste': return tasteCarousel();
       case 'soup-ingredients': return soupIngredients(false);
-      case 'taste-draw': return state.taste === 'custom' ? drawPad(leaf, { key: IMG_TASTE, title: '무슨 맛이 났는지 그리기' }) : null;
+      case 'taste-draw': return state.taste === 'custom' ? drawPad(leaf, { key: IMG_TASTE, title: '무슨 맛이 났는지 그리기', clear: true, paper: true }) : null;
       // #8: 꾸민 착한 일 종이(메모지)를 스프가 놓인 식탁 한구석에
       case 'deed-note': return images[IMG_DEED]
         ? el('div', { class: 'soup-note', 'aria-label': '꾸민 착한 일 종이' }, el('img', { src: images[IMG_DEED], alt: '' }))
@@ -594,7 +603,8 @@
 
   function foodResult(c) {
     var f = c.food;
-    return el('div', { class: 'pg-text is-panel reveal' + (f ? '' : ' is-empty'), 'aria-live': 'polite' },
+    // 노란 빈자리 위에 상자 없이 진한 글씨로
+    return el('div', { class: 'pg-text is-panel is-ink reveal' + (f ? '' : ' is-empty'), 'aria-live': 'polite' },
       el('p', { class: 'eyebrow', text: f ? '한입 냠, ' + f.name : '음식을 고르면' }),
       el('p', { class: 'story story--sm', text: f ? f.desc : '아직 먹고 싶은 음식을 고르지 않았어요.' }),
       f ? null
@@ -764,6 +774,8 @@
      따로 창을 열거나 버튼을 누르지 않고 그 쪽에서 바로 그리며, 손을 뗄 때마다 저장된다. */
   function drawPad(leaf, o) {
     var host = el('div', { class: 'tdraw-host' });
+    // 바탕 종이를 그림판과 따로 깔면, 종이만 서서히 나타나게 하고 그린 선은 어디서나 또렷하게 보인다 (#9 16쪽)
+    if (o.paper) host.append(el('div', { class: 'tdraw-paper', 'aria-hidden': 'true' }));
     var mounted = false;
     var dock = null;
     var mount = function () {
@@ -783,6 +795,7 @@
         if (side) stageEl.style.setProperty('--dock-w', (dock.offsetWidth + 12) + 'px');
         else stageEl.style.setProperty('--dock-h', (dock.offsetHeight + 12) + 'px');
       };
+      if (dock.animate) dock.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
       if (window.ResizeObserver) { var dro = new ResizeObserver(fitDock); dro.observe(dock); leaf._teardown.push(function () { dro.disconnect(); }); }
       requestAnimationFrame(fitDock);
       window.StarSoupEditor.open({
@@ -1360,7 +1373,29 @@
 
   // 넘어가는 동안에는 새로 누른 '다음/이전'·밀기를 받지 않는다.
   // (넘기는 도중에 또 누르면 넘김이 처음부터 다시 시작되어 같은 움직임이 반복되고 끊겨 보였다)
+  // 쪽을 떠날 때 그 쪽의 그림 도구도 함께 부드럽게 사라지고, 도구 자리만큼 줄었던 책이 원래 크기로 돌아간다
+  function hideDocks() {
+    var docks = document.querySelectorAll('.tdraw-dock:not(.is-hiding)');
+    if (!docks.length) return;
+    var stageEl = book.parentNode;
+    docks.forEach(function (d) {
+      d.classList.add('is-hiding');
+      var done = function () {
+        d.style.display = 'none';
+        if (!document.querySelector('.tdraw-dock:not(.is-hiding)')) {
+          stageEl.classList.remove('has-dock', 'has-side-dock');
+          stageEl.style.removeProperty('--dock-h');
+          stageEl.style.removeProperty('--dock-w');
+        }
+      };
+      if (!d.animate) { done(); return; }
+      d.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(14px)' }],
+        { duration: 260, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }).finished.then(done, done);
+    });
+  }
+
   function arc(oldLeaf, newLeaf, dir) {
+    hideDocks();
     oldLeaf._from = dragFrom;
     if (dragFrom) oldLeaf.style.transform = dragFrom;
     oldLeaf.classList.add('is-leaving');
@@ -2243,6 +2278,7 @@
     controlsEl.hidden = true;
     stopAnims(card);
     if (!card.animate) { fn(); return; }
+    hideDocks();
     var g = ghostOf(card);
     fn();                       // 새 화면을 지금 그린다 (들어오는 움직임은 다음 프레임에 시작)
     var d = -ARC.deg * dir;

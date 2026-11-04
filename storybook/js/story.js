@@ -148,7 +148,8 @@
       image: 'assets/backgrounds/04-food-choice.jpg', alt: '맛있는 음식이 잔뜩 놓인 식탁에 앉은 주인공',
       // 음식 카드는 이 펼침면 앞의 '음식 고르기' 화면에서 고른다 (그림을 가리지 않게).
       // 이 펼침면에는 글과 고른 음식의 설명, 그리고 첫 쪽(5쪽)에 붙는 음식 스티커만 있다.
-      pages: [{ text: true, place: 'top', ink: 'dark', art: 'table', note: 'food-sticker' }, { widgets: ['food-result'], place: 'top', art: 'feast', artPos: 'bottom' }],
+      // 5쪽: 글은 위, 스티커 안내는 아래 식탁보 위 / 6쪽: 고른 음식 설명은 가운데 노란 빈자리
+      pages: [{ text: true, place: 'top', ink: 'dark', art: 'table', note: 'food-sticker', noteAt: 'bottom' }, { widgets: ['food-result'], place: 'center', art: 'feast', artPos: 'bottom' }],
       requireMessage: '먹고 싶은 음식을 하나 골라 주세요.',
       text: function () { return [['자리에 앉아 앞을 바라보니 맛있는 음식들이 잔뜩 있어요.\n어떤 것부터 먹고 싶나요?']]; }
     },
@@ -157,9 +158,10 @@
       image: 'assets/backgrounds/05-fairies-arrive.jpg', alt: '뚜껑 덮인 음식을 트레이에 끌고 오는 요정과 그 모습을 바라보는 주인공',
       // 왼쪽 쪽: 위에 트레이를 끌고 오는 요정, 그 아래 빈 자리에 글 / 오른쪽 쪽: 다 먹은 식탁에서 요정을 보는 주인공
       pages: [
-        { text: true, place: 'center', ink: 'dark', art: 'fairies', artPos: 'top' },
-        // 오른쪽 위는 요정 얼굴이라 글은 왼쪽 반에만
-        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'top', ink: 'dark', narrow: true }
+        // 7쪽: 글은 위쪽 연기 물결 안에 (물결을 따라 살짝 기울여)
+        { text: true, place: 'top', ink: 'dark', art: 'fairies', artPos: 'top', tilt: -2 },
+        // 8쪽: 글은 왼쪽 아래 보랏빛 연기 위에, 연기 흐름을 따라 비스듬히
+        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'bottom', wide: 0.52, tilt: -5, low: true }
       ],
       text: function () {
         return [
@@ -175,11 +177,10 @@
       // 왼쪽 쪽의 큰 말풍선 안에 내가 적은 착한 일 (나레이션은 #5 두 번째 쪽으로 옮김) / 오른쪽 쪽은 삽화만
       pages: [
         // 글은 그림 속 말풍선 몸통의 한가운데(쪽 기준 가로 59%, 세로 51%)에
-        { bubble: { x: 0.34, y: 0.29, w: 0.5, h: 0.44, text: function (c) { return c.deed ? { text: '“' + c.deed + '”' } : { text: '나의 착한 일', empty: true }; } } },
+        { bubble: { x: 0.34, y: 0.29, w: 0.5, h: 0.44, text: function (c) { return c.deed ? { text: '“' + c.deed + '”' } : { text: '나의 착한 일', empty: true }; } },
+          text: function (c) { return [['요정이 '].concat(you(c), ['의 착한 일을 적어 보여주었어요.'])]; }, place: 'bottom', ink: 'dark', align: 'end' },
         // 10쪽: 나에 대해 적는 보드 (tools/board_art.py). 착한 일 메모지·좋아하는 음식 메모지가 붙고, 그 위에 그림을 그린다
-        { image: 'assets/backgrounds/06-board.jpg', widgets: ['board-draw'], place: 'top', ink: 'dark', board: true,
-          text: function (c) { return [['요정이 '].concat(you(c), ['의 착한 일을 적어 보여주었어요.'])]; },
-          note: function () { return '보드를 마음껏 꾸며보세요.'; } }
+        { image: 'assets/backgrounds/06-board.jpg', widgets: ['board-draw'], note: function () { return '보드를 마음껏 꾸며보세요.'; }, noteAt: 'bottom' }
       ],
       text: function () { return []; },
       // 펼침면 앞의 묻는 화면에 나오는 질문
@@ -206,8 +207,8 @@
       id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles', sparkles: 12, asks: ['soup', 'stir'],
       image: null, alt: '위에서 내려다본 별빛스프',
       pages: [
-        { image: 'assets/backgrounds/08-soup-top.jpg', widgets: ['soup-ingredients', 'deed-note'] },
-        { text: true, place: 'top', art: 'starsky', artPos: 'bottom' }
+        { image: 'assets/backgrounds/08-soup-top.jpg', widgets: ['soup-ingredients', 'deed-note'], text: true, place: 'top', ink: 'dark' },
+        { art: 'starsky', artPos: 'bottom' }
       ],
       text: function (c) {
         return [
@@ -226,6 +227,8 @@
           // '직접 그리기'를 고르면 이 쪽이 도화지가 되어 바로 그릴 수 있다
           image: function (c) { return c.taste && c.taste.id !== 'custom' ? 'assets/backgrounds/09-taste-' + c.taste.id + '.jpg' : null; },
           widgets: ['taste-draw'],
+          // 15쪽 삽화가 이어지게: 왼쪽 1/3은 투명, 거기서부터 서서히 나타난다
+          fade: true,
           art: 'starsky'
         }
       ],
@@ -413,7 +416,7 @@
   };
 
   window.StarSoup = {
-    version: '6.0',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '6.1',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

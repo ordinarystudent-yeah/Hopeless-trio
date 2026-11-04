@@ -1509,3 +1509,24 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .memo-body--food .memo-head { color: #c0624a; }
 .has-image .pg-text.is-ink .pg-note { color: #7a5a38; opacity: 1; }
 .pg-text:not(.is-ink) .pg-note { color: var(--milk); opacity: 0.85; }
+
+/* 쪽 아래 왼쪽에 따로 놓는 작은 안내 (#4 5쪽 식탁보 위, #6 10쪽 보드 안쪽) */
+.pg-note--bottom {
+  position: absolute; left: 9cqh; bottom: 8cqh; z-index: 7; max-width: 62%;
+  margin: 0; padding: 1.2cqh 2.6cqh; border-radius: 99px;
+  background: rgb(255 252 244 / 0.82); color: #6a4a2a !important; opacity: 1 !important;
+  font-size: max(9px, 2.9cqh); line-height: 1.4; pointer-events: none;
+  box-shadow: 0 0.6cqh 1.6cqh -0.6cqh rgb(0 0 0 / 0.25);
+}
+.page--left .pg-note--bottom { left: 9cqh; }
+.page--right .pg-note--bottom { left: 13cqh; bottom: 13cqh; }
+.pg-text.is-end { align-self: flex-end; max-width: 70%; text-align: right; }
+/* #9 16쪽: 왼쪽 1/3은 투명, 거기서부터 서서히 나타나 15쪽 삽화와 이어진다 */
+.page.is-fade .page-img, .page.is-fade .tdraw-paper {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 33%, #000 78%);
+          mask-image: linear-gradient(90deg, transparent 0%, transparent 33%, #000 78%);
+}
+.tdraw-paper { position: absolute; inset: 0; background: #fdfaf4; pointer-events: none; }
+/* 그림 도구 자리만큼 줄었던 책이 부드럽게 원래 크기로 */
+.stage .book { transition: width 0.45s cubic-bezier(.2,.8,.2,1); }
+.pg.pg--low { padding-bottom: 3cqh; padding-left: 5cqh; }
