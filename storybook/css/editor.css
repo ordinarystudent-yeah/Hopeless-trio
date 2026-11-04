@@ -323,3 +323,5 @@
 .tdraw-dock.is-side .ed-actions { grid-template-columns: 1fr 1fr; gap: 4px; }
 .tdraw-dock.is-side .ed-actions .ed-clear { grid-column: 1 / -1; }
 .tdraw-dock.is-side .ed-actions .btn { min-height: 26px; font-size: 0.62rem; padding: 0 4px; }
+/* 바탕(보드 그림)이 비치는 쪽 안 그림판 */
+.editor.is-inline.is-clear .ed-canvas-wrap { background: none; }

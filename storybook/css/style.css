@@ -542,7 +542,7 @@ textarea.input { resize: none; }
 
 /* ---------- 스티커 ----------
    하얀 테두리와 그림자로 '붙인 스티커'처럼 보이게 한다. 위치·크기는 펼침면 비율로 지정된다. */
-.stickers { position: absolute; inset: 0; pointer-events: none; container-type: size; z-index: 3; }
+.stickers { position: absolute; inset: 0; pointer-events: none; container-type: size; z-index: 6; }   /* 쪽 안 그림판(z 4)보다 위: 보드 메모지를 그림 위에서 잡을 수 있게 */
 .sticker {
   position: absolute;
   pointer-events: auto;
@@ -944,7 +944,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .choice-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
   .choice-grid .tile-art { aspect-ratio: 1; }
   .choice-grid .tile-label { font-size: 0.66rem; }
-  #ask-note { display: none; }
+  .choice-card .ask-note { display: none; }
   #ask .intro-actions .btn { min-height: 40px; }
 }
 
@@ -1025,7 +1025,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* ---------- 묻는 화면 공용 ---------- */
 .ask-body { width: 100%; display: flex; flex-direction: column; align-items: center; }
 .ask-body > * { width: 100%; }
-#ask .choice-text .story { text-wrap: balance; word-break: keep-all; }
+.choice-card .choice-text .story { text-wrap: balance; word-break: keep-all; }   /* #ask 대신 카드 클래스로: 넘어갈 때 띄우는 복제본에도 똑같이 적용되게 */
 /* 착한 일: 책 밖 화면이라 화면 기준 크기 */
 .ask-deed { display: flex; flex-direction: column; gap: 10px; max-width: 520px; }
 .ask-body .input { font-size: 16px; padding: 12px 14px; border-radius: 14px; line-height: 1.5; min-height: 84px; }
@@ -1430,8 +1430,8 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 
 /* 휴대폰 글씨 한 단계 더 작게 (묻는 화면·안내·버튼) */
 @media (max-width: 600px) and (orientation: portrait) {
-  #ask .choice-text .story { font-size: 0.92rem; }
-  #ask .prompt-text { font-size: 0.84rem; }
+  .choice-card .choice-text .story { font-size: 0.92rem; }
+  .choice-card .prompt-text { font-size: 0.84rem; }
 }
 @media (max-width: 600px) and (orientation: portrait), (max-height: 500px) and (orientation: landscape) {
   /* #10 창: 열린 뒤 글 상자가 창 너머를 가리지 않게 창을 위로, 글은 아래에 작게 */
@@ -1480,3 +1480,23 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .choice-grid .tile-art img { padding: 4% 10% 40%; }
   .choice-grid .tile-label { font-size: 0.66rem; line-height: 1.2; }
 }
+
+/* 글 메모지 (#6 10쪽 보드): 착한 일, 가장 좋아하는 음식. 크기는 스티커 너비(--w)를 따라 커지고 작아진다 */
+.memo-body {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: calc(var(--w) * 4cqw);
+  padding: calc(var(--w) * 14cqw) calc(var(--w) * 10cqw) calc(var(--w) * 12cqw);
+  background: #fff2b3; color: #3b2c18; border-radius: calc(var(--w) * 3cqw);
+  box-shadow: 0 1.6cqh 3cqh -1cqh rgb(0 0 0 / 0.4);
+  filter: none; text-align: center; word-break: keep-all; overflow-wrap: anywhere;
+}
+.memo-body--food { background: #dff3e4; }
+.memo-tape { position: absolute; top: calc(var(--w) * -3cqw); left: 50%; width: 36%; height: calc(var(--w) * 9cqw); transform: translateX(-50%) rotate(-3deg); background: rgb(255 198 90 / 0.8); }
+.memo-body--food .memo-tape { background: rgb(150 196 255 / 0.75); }
+.memo-head { font-family: var(--font-display); font-size: calc(var(--w) * 12cqw); color: #9a7323; line-height: 1.2; }
+.memo-body--food .memo-head { color: #3f8a5e; }
+.memo-pic { display: grid; place-items: center; width: 82%; }
+.memo-pic img { width: 100%; height: auto; pointer-events: none; }
+.memo-emoji { font-size: calc(var(--w) * 40cqw); line-height: 1.1; }
+.memo-text { font-family: var(--font-display); font-size: calc(var(--w) * 11cqw); line-height: 1.35; }
+.paper-body figcaption { font-size: calc(var(--w, 0.15) * 10cqw); }
+.sticker--paper.is-selected .st-handle { display: grid; }

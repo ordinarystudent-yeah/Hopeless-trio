@@ -162,6 +162,7 @@
       // 쪽 안에 붙이기: 그림판 전체를 그 자리로 옮긴다 (닫을 때 원래 자리로)
       inline = { host: opts.inline, onChange: opts.onChange, home: root.parentNode, next: root.nextSibling, timer: 0, dock: opts.dock || null };
       root.classList.add('is-inline');
+      root.classList.toggle('is-clear', !!opts.clear);   // 바탕이 비치는 그림판 (#6 보드)
       root.classList.toggle('is-docked', !!opts.dock);
       root.removeAttribute('aria-modal');
       opts.inline.append(root);
@@ -205,7 +206,7 @@
       root.querySelector('.ed-top').insertBefore(undoBtn, $('ed-done'));
       root.querySelector('.ed-main').append(it.dock.querySelector('.ed-panel'));
     }
-    root.classList.remove('is-inline', 'is-docked');
+    root.classList.remove('is-inline', 'is-docked', 'is-clear');
     root.setAttribute('aria-modal', 'true');
     root.hidden = true;
     if (it.home) it.home.insertBefore(root, it.next && it.next.parentNode === it.home ? it.next : null);

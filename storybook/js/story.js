@@ -176,7 +176,8 @@
       pages: [
         // 글은 그림 속 말풍선 몸통의 한가운데(쪽 기준 가로 59%, 세로 51%)에
         { bubble: { x: 0.34, y: 0.29, w: 0.5, h: 0.44, text: function (c) { return c.deed ? { text: '“' + c.deed + '”' } : { text: '나의 착한 일', empty: true }; } } },
-        {}
+        // 10쪽: 나에 대해 적는 보드 (tools/board_art.py). 착한 일 메모지·좋아하는 음식 메모지가 붙고, 그 위에 그림을 그린다
+        { image: 'assets/backgrounds/06-board.jpg', widgets: ['board-draw'] }
       ],
       text: function () { return []; },
       // 펼침면 앞의 묻는 화면에 나오는 질문
@@ -186,7 +187,7 @@
       // 한 쪽짜리 장면: 11쪽(뚜껑을 연 음식 + 글)만 보고 바로 별빛스프 꾸미기로 (한 쪽씩 보기에서 12쪽은 건너뜀)
       id: 'serve', act: 2, tone: 'gold', no: '7', onePage: true,
       image: 'assets/backgrounds/07-fairies-serve.jpg', alt: '박수를 치며 음식을 놓아 주는 요정들',
-      pages: [{ text: true, place: 'top', ink: 'dark', widgets: ['deed-hint'] }, {}],
+      pages: [{ text: true, place: 'top', ink: 'dark' }, {}],
       // 와! 당신이 한 (착한 일)로 요정들은 박수를 보내며 당신의 앞에 그 음식을 놓아주었어요.
       text: function (c) {
         // 문장으로 끝나는 착한 일(…했어요)은 '‘…’라는 착한 일로', 짧은 말(설거지 돕기)은 '…로'
@@ -255,7 +256,9 @@
   var stickerSpots = {
     // 음식 스티커는 음식을 고른 다음 화면에 나타난다
     food: { x: 0.27, y: 0.7, w: 0.11, r: -6 },      // #4 첫 쪽(5쪽) 식탁 위
-    serve: { x: 0.37, y: 0.66, w: 0.13, r: 5 }      // 착한 일 종이(그림+메모지): #7 왼쪽 쪽(11쪽) 오른쪽 아래 (위에는 글)
+    serve: { x: 0.37, y: 0.66, w: 0.13, r: 5 },     // (예전) #7 11쪽 착한 일 종이
+    boardDeed: { x: 0.66, y: 0.44, w: 0.15, r: -4 },  // #6 10쪽 보드: 착한 일 메모지
+    boardFood: { x: 0.86, y: 0.56, w: 0.12, r: 5 }    // #6 10쪽 보드: 가장 좋아하는 음식 메모지
   };
 
   /* ---------- 임시 그림 (실제 삽화가 들어오기 전까지만 사용) ---------- */
@@ -408,7 +411,7 @@
   };
 
   window.StarSoup = {
-    version: '5.8',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '5.9',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
