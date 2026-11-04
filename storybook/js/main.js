@@ -477,7 +477,8 @@
       glow, view, el('span', { class: 'win-frame', 'aria-hidden': 'true' }), paneL, paneR, el('span', { class: 'win-sill', 'aria-hidden': 'true' }), hint);
     // 움직임은 JS로 (기기의 '움직임 줄이기'에도 멈추지 않게)
     var OPEN_L = 'rotateY(76deg)', OPEN_R = 'rotateY(-76deg)';   // 원근은 .win의 perspective로
-    if (chosen) { paneL.style.transform = OPEN_L; paneR.style.transform = OPEN_R; }
+    // 열린 모습은 CSS(.win.is-open)에서 덧창을 창 양옆에 평면으로 펼쳐 둔다 — 앱과 PDF 저장본이 같은 모양
+    if (chosen) { /* is-open 클래스로 */ }
     else if (glow.animate) {
       // 닫힌 창: 금빛이 천천히 숨 쉬듯 번지고, 창이 살짝 들썩여 눌러 보고 싶게
       glow.animate([{ opacity: 0.15, transform: 'scale(0.98)' }, { opacity: 0.9, transform: 'scale(1.03)' }, { opacity: 0.15, transform: 'scale(0.98)' }],
@@ -495,10 +496,12 @@
       btn.classList.remove('is-closed');
       [glow, paneL, paneR, hint].forEach(function (n) { n.getAnimations().forEach(function (a) { a.cancel(); }); });
       hint.style.opacity = '0';
-      paneL.animate([{ transform: 'none' }, { transform: OPEN_L }], { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
-      paneR.animate([{ transform: 'none' }, { transform: OPEN_R }], { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' })
+      // 덧창이 바깥으로 활짝 펼쳐지며 창 양옆에 접힌다 (닫힌 자리 → 양옆)
+      var openL = [{ left: '3cqh', width: 'calc(50% - 3cqh)' }, { left: '-15%', width: '15%' }];
+      var openR = [{ right: '3cqh', width: 'calc(50% - 3cqh)' }, { right: '-15%', width: '15%' }];
+      paneL.animate(openL, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+      paneR.animate(openR, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' })
         .finished.then(function () {
-          paneL.style.transform = OPEN_L; paneR.style.transform = OPEN_R;   // 화면이 넘어가는 동안에도 열린 모습 그대로
           setTimeout(function () { if (btn.isConnected) showAsk('wake', 1); }, 250);
         });
     });

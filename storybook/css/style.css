@@ -1750,3 +1750,15 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .book.is-print .win-frame { outline: none !important; border-color: #f3e3c2; box-shadow: 0 0 0 0.5cqh #c9ad7e !important; }
 /* PDF 저장본: 반투명 글 상자는 흐림 효과가 없어 탁해 보이므로, 또렷한 남색 상자로 */
 .book.is-print .has-image .pg-text.is-panel:not(.is-ink), .book.is-print .page.has-window .pg-text.is-panel:not(.is-ink) { background: rgb(28 32 70 / 0.72) !important; }
+
+/* 열린 창문: 앱과 PDF 저장본이 같은 모양 — 덧창은 창 양옆에 평면으로 펼쳐져 있다 */
+.win-pane { background: linear-gradient(180deg, #d9ecfa, #bfdaf1); }
+.win.is-open .win-pane--l { left: -15%; right: auto; width: 15%; transform: none !important; border-right-color: #e6d3ad; }
+.win.is-open .win-pane--r { right: -15%; left: auto; width: 15%; transform: none !important; border-left-color: #e6d3ad; }
+.win.is-open .win-frame { box-shadow: 0 0 0 0.5cqh #c9ad7e, 0 2cqh 3cqh -1cqh rgb(70 40 10 / 0.35); }
+/* 열린 창문 크기·자리와 벽을 앱·PDF 같게: 창은 위쪽, 글은 아래 */
+.win.is-open { height: 50cqh; width: 70cqh; top: 4cqh; margin: 0 0 0 -35cqh; }
+.page.has-window { background: linear-gradient(180deg, #f3dcc0 0%, #ecc9a6 100%); }
+.page.has-window .story { font-size: 3.8cqh; line-height: 1.45; }
+.page.has-window .story.is-coda { font-size: 4.2cqh; }
+.page.has-window .pg-text.is-panel { padding: 2.6cqh 3.6cqh; gap: 1.2cqh; }
