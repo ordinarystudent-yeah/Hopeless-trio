@@ -2081,7 +2081,7 @@
   function inlineAsk(id) {
     var cfg = ASK[id], sc = S.scenes[askScene(id)];
     var note = el('p', { class: 'prompt-text ask-note inline-note', text: cfg.note() });
-    var box = el('div', { class: 'inline-ask' + (id === 'soup' ? ' is-ink' : ''), 'data-ask': id },
+    var box = el('div', { class: 'inline-ask', 'data-ask': id },
       el('div', { class: 'choice-text' }, paragraphs(cfg.text(sc, ctx()))),
       el('div', { class: 'ask-body' }, cfg.body()), note);
     return box;

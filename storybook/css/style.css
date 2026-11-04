@@ -1614,7 +1614,6 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 @keyframes pdf-spin { to { transform: rotate(360deg); } }
 .nameplate-print { display: flex; align-items: center; justify-content: center; }
 /* 저장본: 3D로 열린 창문은 평면으로만 그려져 창 너머를 가리므로 열린 창의 덧창은 뺀다 */
-.book.is-print .win.is-open .win-pane { display: none; }
 .book.is-print .nameplate-print { border-bottom-color: transparent; }
 .book.is-print .win-frame, .book.is-print .win-pane { box-shadow: none !important; }
 .ask-carousel .c-art { aspect-ratio: 1; } .ask-carousel .c-art img:not(.c-draw) { object-fit: cover; object-position: 68% 50%; border-radius: 50%; box-shadow: 0 0 0 3px rgb(255 255 255 / 0.8); }
@@ -1729,3 +1728,18 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .inline-ask .choice-text .story { font-size: 3.2cqh !important; line-height: 1.4; }
 .page .pg:has(.inline-ask) { padding: 3cqh 5cqh 6cqh; }
 .inline-ask .soup-add, .ask-body .soup-add { align-self: center; }
+
+/* PDF 저장본: 열린 창문 덧창은 3D 대신 평면으로 양옆에 접힌 모습, 창틀은 테두리로 또렷하게 */
+.book.is-print .win.is-open .win-pane { display: block; }
+.book.is-print .win.is-open .win-pane--l { transform: translateX(-100%) scaleX(0.38) !important; transform-origin: 100% 50%; }
+.book.is-print .win.is-open .win-pane--r { transform: translateX(100%) scaleX(0.38) !important; transform-origin: 0 50%; }
+.book.is-print .win-frame { box-shadow: 0 0 0 0.5cqh #c9ad7e, 0 2cqh 3cqh -1cqh rgb(70 40 10 / 0.35) !important; }
+.book.is-print .win-pane { border-color: #f6e8c8; outline: 0.4cqh solid #c9ad7e; outline-offset: -0.4cqh; }
+
+/* 펼침 화면 12·14쪽의 고르는 화면: 다른 UI처럼 남색 바탕 */
+.page .pg:has(.inline-ask) { background: linear-gradient(180deg, var(--night-3), var(--night-2)); z-index: 2; }
+.inline-ask .choice-text .story { color: var(--milk) !important; }
+.inline-ask .inline-note { color: var(--soft) !important; }
+.book.is-print .win.is-open .win-pane--l { transform: none !important; left: -15%; right: auto; width: 15%; }
+.book.is-print .win.is-open .win-pane--r { transform: none !important; right: -15%; left: auto; width: 15%; }
+.book.is-print .win-frame { border-color: #f6e6c4; outline: 0.6cqh solid #c9ad7e; outline-offset: -0.3cqh; }
