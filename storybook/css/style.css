@@ -1618,3 +1618,17 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .book.is-print .nameplate-print { border-bottom-color: transparent; }
 .book.is-print .win-frame, .book.is-print .win-pane { box-shadow: none !important; }
 .ask-carousel .c-art { aspect-ratio: 1; } .ask-carousel .c-art img:not(.c-draw) { object-fit: cover; object-position: 68% 50%; border-radius: 50%; box-shadow: 0 0 0 3px rgb(255 255 255 / 0.8); }
+
+/* 음식 고르기: 카드 7장(4+3)의 아랫줄도 가운데로 — 8칸 격자에 카드마다 2칸, 아랫줄 첫 카드는 둘째 칸부터 */
+#food-choice-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+#food-choice-grid > .tile { grid-column: span 2; }
+#food-choice-grid > .tile:nth-child(5) { grid-column: 2 / span 2; }
+/* 음식 그림은 이름표 위 남은 자리의 한가운데에 */
+#food-choice-grid .tile-art img { padding: 6% 12% 30%; object-position: 50% 50%; }
+@media (max-width: 600px) and (orientation: portrait) {
+  #food-choice-grid .tile-art img { padding: 5% 12% 42%; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #food-choice-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  #food-choice-grid > .tile, #food-choice-grid > .tile:nth-child(5) { grid-column: auto; }
+}
