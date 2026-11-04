@@ -159,9 +159,9 @@
       // 왼쪽 쪽: 위에 트레이를 끌고 오는 요정, 그 아래 빈 자리에 글 / 오른쪽 쪽: 다 먹은 식탁에서 요정을 보는 주인공
       pages: [
         // 7쪽: 글은 위쪽 연기 물결 안에 (물결을 따라 살짝 기울여)
-        { text: true, place: 'top', ink: 'dark', art: 'fairies', artPos: 'top', tilt: -2 },
+        { text: true, place: 'top', ink: 'dark', art: 'fairies', artPos: 'top', wave: { amp: 1.4, len: 0.8, phase: 0.2 } },
         // 8쪽: 글은 왼쪽 아래 보랏빛 연기 위에, 연기 흐름을 따라 비스듬히
-        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'bottom', wide: 0.52, tilt: -5, low: true }
+        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'bottom', wide: 0.56, low: true, bare: true, wave: { amp: 1.6, len: 0.9, phase: 2.4, rise: -6 } }
       ],
       text: function () {
         return [
@@ -177,10 +177,11 @@
       // 왼쪽 쪽의 큰 말풍선 안에 내가 적은 착한 일 (나레이션은 #5 두 번째 쪽으로 옮김) / 오른쪽 쪽은 삽화만
       pages: [
         // 글은 그림 속 말풍선 몸통의 한가운데(쪽 기준 가로 59%, 세로 51%)에
-        { bubble: { x: 0.34, y: 0.29, w: 0.5, h: 0.44, text: function (c) { return c.deed ? { text: '“' + c.deed + '”' } : { text: '나의 착한 일', empty: true }; } },
-          text: function (c) { return [['요정이 '].concat(you(c), ['의 착한 일을 적어 보여주었어요.'])]; }, place: 'bottom', ink: 'dark', align: 'end' },
+        { bubble: { x: 0.34, y: 0.29, w: 0.5, h: 0.44, text: function (c) { return c.deed ? { text: '“' + c.deed + '”' } : { text: '나의 착한 일', empty: true }; } } },
         // 10쪽: 나에 대해 적는 보드 (tools/board_art.py). 착한 일 메모지·좋아하는 음식 메모지가 붙고, 그 위에 그림을 그린다
-        { image: 'assets/backgrounds/06-board.jpg', widgets: ['board-draw'], note: function () { return '보드를 마음껏 꾸며보세요.'; }, noteAt: 'bottom' }
+        { image: 'assets/backgrounds/06-board.jpg', widgets: ['board-draw'], place: 'top', ink: 'dark', board: true,
+          text: function (c) { return [['요정이 '].concat(you(c), ['의 착한 일을 적어 보여주었어요.'])]; },
+          note: function () { return '보드를 마음껏 꾸며보세요.'; } }
       ],
       text: function () { return []; },
       // 펼침면 앞의 묻는 화면에 나오는 질문
@@ -262,8 +263,8 @@
     // 음식 스티커는 음식을 고른 다음 화면에 나타난다
     food: { x: 0.27, y: 0.7, w: 0.11, r: -6 },      // #4 첫 쪽(5쪽) 식탁 위
     serve: { x: 0.37, y: 0.66, w: 0.13, r: 5 },     // (예전) #7 11쪽 착한 일 종이
-    boardDeed: { x: 0.66, y: 0.56, w: 0.15, r: -4 },  // #6 10쪽 보드: 착한 일 메모지
-    boardFood: { x: 0.86, y: 0.6, w: 0.12, r: 5 }    // #6 10쪽 보드: 가장 좋아하는 음식 메모지
+    boardDeed: { x: 0.66, y: 0.62, w: 0.14, r: -4 },  // #6 10쪽 보드: 착한 일 메모지
+    boardFood: { x: 0.86, y: 0.64, w: 0.11, r: 5 }    // #6 10쪽 보드: 가장 좋아하는 음식 메모지
   };
 
   /* ---------- 임시 그림 (실제 삽화가 들어오기 전까지만 사용) ---------- */
@@ -416,7 +417,7 @@
   };
 
   window.StarSoup = {
-    version: '6.1',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '6.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

@@ -399,7 +399,8 @@
       }
       var block = null;
       if (p.text && body) {
-        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') + (p.narrow ? ' is-narrow' : '') + (p.align === 'end' ? ' is-end' : '') }, eyebrow(scene, index, p), paragraphs(body));
+        var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') + (p.narrow ? ' is-narrow' : '') + (p.align === 'end' ? ' is-end' : '') + (p.board ? ' is-over-pad' : '') + (p.bare ? ' is-bare' : '') }, eyebrow(scene, index, p), paragraphs(body));
+        if (p.wave) waveText(block, p.wave);
         if (p.tilt) block.style.transform = 'rotate(' + p.tilt + 'deg)';
         if (p.wide) block.style.maxWidth = p.wide * 100 + '%';   // 삽화의 물결을 따라 살짝 기울이기
         pg.append(block);
@@ -489,6 +490,38 @@
         });
     });
     return btn;
+  }
+
+  /* ---------- 물결 글씨: 삽화의 흐름을 따라 글자가 위아래로 굽이친다 ----------
+     글자마다 span으로 나누고, 상자 안 가로 위치(상자 너비 대비)에 따라 sin 곡선만큼 올리고 내린다.
+     rise는 오른쪽으로 갈수록 올라가는 정도(cqh). 크기가 바뀌면 다시 계산한다. */
+  function waveText(block, w) {
+    var chars = [];
+    block.querySelectorAll('.story').forEach(function (p) {
+      var walk = document.createTreeWalker(p, NodeFilter.SHOW_TEXT), nodes = [], n;
+      while ((n = walk.nextNode())) nodes.push(n);
+      nodes.forEach(function (t) {
+        var frag = document.createDocumentFragment();
+        Array.from(t.nodeValue).forEach(function (ch) {
+          if (ch === '\n') { frag.append(document.createElement('br')); return; }
+          var sp = el('span', { class: 'wch', text: ch });
+          chars.push(sp); frag.append(sp);
+        });
+        t.replaceWith(frag);
+      });
+    });
+    var place = function () {
+      var r = block.getBoundingClientRect(), bw = block.clientWidth || 1;
+      if (!r.width) return;
+      var scale = r.width / bw;
+      chars.forEach(function (sp) {
+        var x = (sp.getBoundingClientRect().left - r.left) / scale / bw;
+        var y = w.amp * Math.sin((x / w.len) * Math.PI * 2 + (w.phase || 0)) + (w.rise || 0) * x;
+        sp.style.transform = 'translateY(' + y.toFixed(2) + 'cqh)';
+      });
+    };
+    requestAnimationFrame(function () { requestAnimationFrame(place); });
+    if (window.ResizeObserver) new ResizeObserver(function () { place(); }).observe(block);
   }
 
   /* ---------- 쪽 위의 입력 도구 ---------- */

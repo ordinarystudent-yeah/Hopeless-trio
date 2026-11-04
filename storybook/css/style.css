@@ -1530,3 +1530,12 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* 그림 도구 자리만큼 줄었던 책이 부드럽게 원래 크기로 */
 .stage .book { transition: width 0.45s cubic-bezier(.2,.8,.2,1); }
 .pg.pg--low { padding-bottom: 3cqh; padding-left: 5cqh; }
+
+/* 물결 글씨 */
+.wch { display: inline-block; white-space: pre; }
+/* 상자 없는 나레이션 (#5 8쪽 보랏빛 연기 위): 밝은 글씨 + 그림자 */
+.has-image .pg-text.is-panel.is-bare { background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0 1cqh; }
+.pg-text.is-bare .story { color: #fff; text-shadow: 0 0 1.2cqh rgb(60 30 100 / 0.9), 0 0 0.4cqh rgb(60 30 100 / 0.9); }
+/* 아래 안내도 상자 없이 */
+.pg-note--bottom { background: none; box-shadow: none; padding: 0; text-shadow: 0 0 1cqh rgb(255 252 240), 0 0 0.4cqh rgb(255 252 240); color: #5a3d1c !important; }
+.pg-text.is-bare .eyebrow { text-shadow: 0 0 1cqh rgb(60 30 100 / 0.9); }
