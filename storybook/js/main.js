@@ -2055,6 +2055,7 @@
       paintAsk();
       showScreen('ask');
       measureAskNote();
+      fitSoupPot();
       enterCard(document.getElementById('ask-card'), dir);
     };
     if (fromEl) leaveThen(fromEl, dir, show);
@@ -2076,7 +2077,22 @@
     note.style.minHeight = '';
     paintAskNote();
     measureAskNote();
+    fitSoupPot();
   }
+
+  // 스프 그릇(재료 넣기·젓기)은 화면에 남은 공간만큼 최대한 크게: 카드 너비까지 키운 뒤, 화면을 넘치면 넘친 만큼 줄인다
+  function fitSoupPot() {
+    var pot = document.querySelector('#ask-body .soup-pot');
+    if (!pot || !pot.offsetParent) return;
+    var box = pot.parentNode;
+    pot.style.width = box.clientWidth + 'px';
+    var over = document.documentElement.scrollHeight - window.innerHeight;
+    if (over > 0) {
+      var h = pot.getBoundingClientRect().height - over - 6;
+      pot.style.width = Math.max(150, Math.min(box.clientWidth, h * 1.414)) + 'px';
+    }
+  }
+  window.addEventListener('resize', function () { if (askId === 'soup' || askId === 'stir') fitSoupPot(); });
 
   // 이 화면에서 나올 수 있는 안내 문장 중 가장 긴 것의 높이로 자리를 잡는다 (보이는 상태에서만 잴 수 있다)
   function measureAskNote() {

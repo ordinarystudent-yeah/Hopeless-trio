@@ -1674,3 +1674,26 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .food-grid .tile[data-id="bread"] .tile-art img, .food-grid .tile[data-id="rice-ball"] .tile-art img { transform: scale(0.95); }
 .food-grid .tile[data-id="chicken"] .tile-art img { transform: scale(1.05); }
 .spread-bg img.is-instant, .page-img.is-instant { transition: none; }
+
+/* 스프 재료 넣기·젓기 화면: 카드를 넓게, 그릇 크기는 화면에 남은 공간에 맞춰 스크립트가 정한다(fitSoupPot) */
+.choice-card[data-ask="soup"], .choice-card[data-ask="stir"] { width: min(100%, 1100px); }
+.choice-card[data-ask="soup"] .soup-cook, .choice-card[data-ask="stir"] .soup-cook { width: 100%; }
+.choice-card[data-ask="soup"] .soup-pot, .choice-card[data-ask="stir"] .soup-pot { max-width: 100%; }
+/* 넓은 가로 화면(아이패드·PC): 글은 왼쪽, 그릇은 오른쪽에 크게 */
+@media (min-width: 640px) and (orientation: landscape) {
+  .choice-card[data-ask="soup"], .choice-card[data-ask="stir"] {
+    display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr auto; column-gap: 28px; row-gap: 12px; align-items: start; text-align: left;
+    width: min(100%, 1500px);
+  }
+  .choice-card[data-ask="soup"] > .prompt-kicker, .choice-card[data-ask="stir"] > .prompt-kicker { grid-column: 1; grid-row: 1; }
+  .choice-card[data-ask="soup"] > .choice-text, .choice-card[data-ask="stir"] > .choice-text { grid-column: 1; grid-row: 2; }
+  .choice-card[data-ask="soup"] > .choice-text .story, .choice-card[data-ask="stir"] > .choice-text .story { text-align: left; }
+  .choice-card[data-ask="soup"] > .ask-body, .choice-card[data-ask="stir"] > .ask-body { grid-column: 2; grid-row: 1 / span 4; align-self: center; }
+  .choice-card[data-ask="soup"] > .ask-note, .choice-card[data-ask="stir"] > .ask-note { grid-column: 1; grid-row: 3; align-self: end; text-align: left; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .choice-card[data-ask="soup"], .choice-card[data-ask="stir"] { grid-template-columns: minmax(170px, 230px) minmax(0, 1fr); column-gap: 14px; row-gap: 6px; }
+  .choice-card[data-ask="soup"] .ask-note, .choice-card[data-ask="stir"] .ask-note { display: block; font-size: 0.72rem; }
+  .choice-card[data-ask="soup"] .choice-text .story, .choice-card[data-ask="stir"] .choice-text .story { font-size: 0.82rem; }
+}
