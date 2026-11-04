@@ -1539,3 +1539,15 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* 아래 안내도 상자 없이 */
 .pg-note--bottom { background: none; box-shadow: none; padding: 0; text-shadow: 0 0 1cqh rgb(255 252 240), 0 0 0.4cqh rgb(255 252 240); color: #5a3d1c !important; }
 .pg-text.is-bare .eyebrow { text-shadow: 0 0 1cqh rgb(60 30 100 / 0.9); }
+
+/* 곡선 글씨 */
+.curve-text { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.curve-chars { position: absolute; inset: 0; }
+.cch { position: absolute; white-space: pre; line-height: 1; transform-origin: 50% 78%; }
+.curve-text--dark .cch { color: var(--plate-ink); text-shadow: 0 0 0.8cqh rgb(255 252 240 / 0.9); }
+.curve-text--dark .cch--head { color: #a5671a; font-family: var(--font-display); }
+.curve-text--light .cch { color: #fff; text-shadow: 0 0 1.1cqh rgb(60 30 100 / 0.95), 0 0 0.4cqh rgb(60 30 100 / 0.9); }
+.curve-eyebrow { position: absolute; margin: 0; transform: translateY(-50%); }
+.curve-text--dark .curve-eyebrow { color: #a5671a; }
+.curve-text--dark .curve-eyebrow .no { color: #8a7560; }
+.curve-text--light .curve-eyebrow { color: #ffd98a; text-shadow: 0 0 1cqh rgb(60 30 100 / 0.9); }

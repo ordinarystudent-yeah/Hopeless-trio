@@ -398,7 +398,16 @@
         var body = typeof p.text === 'function' ? p.text(c) : scene.text(c);
       }
       var block = null;
-      if (p.text && body) {
+      // 그려 준 곡선을 따라 글자를 한 자씩 놓는 나레이션 (curve). 이때는 보통 글 상자를 만들지 않는다
+      var curveDone = false;
+      if (p.curve) {
+        var ct = p.curve.text ? p.curve.text(c) : (body ? { body: flatText(body) } : null);
+        if (ct) {
+          page.append(curveText(page, p.curve, ct, p.curve.eyebrowAt ? eyebrow(scene, index, p) : null));
+          curveDone = true;
+        }
+      }
+      if (p.text && body && !curveDone) {
         var block = el('div', { class: 'pg-text is-panel' + (p.ink === 'dark' ? ' is-ink' : '') + (p.narrow ? ' is-narrow' : '') + (p.align === 'end' ? ' is-end' : '') + (p.board ? ' is-over-pad' : '') + (p.bare ? ' is-bare' : '') }, eyebrow(scene, index, p), paragraphs(body));
         if (p.wave) waveText(block, p.wave);
         if (p.tilt) block.style.transform = 'rotate(' + p.tilt + 'deg)';
@@ -413,7 +422,7 @@
         else if (block) block.append(noteEl);
       }
       if (p.nameplate) page.append(nameplateInput(leaf, p.nameplate));
-      (p.widgets || []).forEach(function (w) { append(pg, widget(w, c, leaf, index)); });
+      (p.widgets || []).forEach(function (w) { if (!(curveDone && p.curve.replacesWidgets)) append(pg, widget(w, c, leaf, index)); });
       page.append(pg, el('span', { class: 'folio', 'aria-hidden': 'true', text: index * 2 + pi + 1 }));
       spread.append(page);
     });
@@ -490,6 +499,99 @@
         });
     });
     return btn;
+  }
+
+  /* ---------- 곡선 글씨: 삽화 위에 그려 준 선을 따라 글자를 한 자씩 놓는다 ----------
+     lines: 곡선 목록(쪽 기준 0~1 좌표 점들, 부드럽게 이어 그림). head 곡선에는 제목, 나머지에는 본문을 단어 단위로 채운다.
+     글이 곡선보다 길면 글씨를 줄여 맞춘다. 쪽 크기가 바뀌면 다시 놓는다. */
+  function flatText(body) {
+    return body.map(function (para) {
+      var parts = Array.isArray(para) ? para : para.parts;
+      return parts.map(function (x) { return typeof x === 'string' ? x : x.v; }).join('');
+    }).join(' ').replace(/\s+/g, ' ').trim();
+  }
+  function curveText(page, cv, ct, eyebrowEl) {
+    var box = el('div', { class: 'curve-text curve-text--' + (cv.ink || 'dark'), 'aria-label': [ct.head, ct.body].filter(Boolean).join(' ') });
+    if (eyebrowEl) {
+      eyebrowEl.classList.add('curve-eyebrow');
+      eyebrowEl.style.left = cv.eyebrowAt[0] * 100 + '%';
+      eyebrowEl.style.top = cv.eyebrowAt[1] * 100 + '%';
+      box.append(eyebrowEl);
+    }
+    var layer = el('div', { class: 'curve-chars', 'aria-hidden': 'true' });
+    box.append(layer);
+    var measure = document.createElement('canvas').getContext('2d');
+    // Catmull-Rom으로 점들을 부드럽게 이어 촘촘한 점 목록으로
+    var sample = function (pts, W, H) {
+      var P = pts.map(function (q) { return [q[0] * W, q[1] * H]; }), out = [];
+      if (P.length === 2) P = [P[0], [(P[0][0] + P[1][0]) / 2, (P[0][1] + P[1][1]) / 2], P[1]];
+      for (var i = 0; i < P.length - 1; i++) {
+        var p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || P[i + 1];
+        for (var k = 0; k < 24; k++) {
+          var t = k / 24, t2 = t * t, t3 = t2 * t;
+          out.push([0, 1].map(function (j) {
+            return 0.5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t3);
+          }));
+        }
+      }
+      out.push(P[P.length - 1]);
+      var acc = [0];
+      for (var m = 1; m < out.length; m++) acc.push(acc[m - 1] + Math.hypot(out[m][0] - out[m - 1][0], out[m][1] - out[m - 1][1]));
+      return { pts: out, acc: acc, len: acc[acc.length - 1] };
+    };
+    var at = function (S, d) {
+      var i = 1; while (i < S.acc.length - 1 && S.acc[i] < d) i++;
+      var a = S.pts[i - 1], b = S.pts[i], seg = (S.acc[i] - S.acc[i - 1]) || 1, t = Math.min(1, Math.max(0, (d - S.acc[i - 1]) / seg));
+      return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, ang: Math.atan2(b[1] - a[1], b[0] - a[0]) };
+    };
+    var family = getComputedStyle(document.body).fontFamily;
+    var layout = function () {
+      var W = page.clientWidth, H = page.clientHeight;
+      if (!W) return;
+      layer.replaceChildren();
+      var heads = [], bodies = [];
+      cv.lines.forEach(function (ln) { (ln.head ? heads : bodies).push(sample(ln.pts, W, H)); });
+      // 단어 단위로 곡선에 채워 본다. 마지막 곡선을 넘치면 글씨를 조금씩 줄여 다시 (최대 16번)
+      var fill = function (curves, text, fs, font, cls) {
+        if (!text || !curves.length) return;
+        var words = text.split(' ');
+        for (var tries = 0; tries < 16; tries++) {
+          measure.font = fs + 'px ' + font;
+          var space = measure.measureText(' ').width, li = 0, d = 0, out = [], over = false;
+          for (var wi = 0; wi < words.length && !over; wi++) {
+            var w = words[wi], ww = measure.measureText(w).width;
+            while (d > 0 && d + ww > curves[li].len) {
+              if (li === curves.length - 1) { over = true; break; }
+              li++; d = 0;
+            }
+            if (over) break;
+            if (d + ww > curves[li].len) { over = true; break; }
+            Array.from(w).forEach(function (ch) {
+              var cw = measure.measureText(ch).width;
+              out.push({ ch: ch, S: curves[li], d: d + cw / 2 }); d += cw;
+            });
+            d += space;
+          }
+          if (!over) {
+            out.forEach(function (o) {
+              var q = at(o.S, o.d), sp = el('span', { class: cls, text: o.ch });
+              sp.style.left = q.x + 'px'; sp.style.top = q.y + 'px'; sp.style.fontSize = fs + 'px';
+              sp.style.transform = 'translate(-50%, -78%) rotate(' + (q.ang * 180 / Math.PI).toFixed(1) + 'deg)';
+              layer.append(sp);
+            });
+            return;
+          }
+          fs *= 0.93;
+        }
+      };
+      var base = H * (mode === 'single' && Math.min(window.innerWidth, window.innerHeight) < 600 ? 0.042 : 0.047);
+      fill(heads, ct.head, base * 0.8, family, 'cch cch--head');
+      fill(bodies, ct.body, base, family, 'cch');
+    };
+    requestAnimationFrame(function () { requestAnimationFrame(layout); });
+    if (window.ResizeObserver) { var last = 0; new ResizeObserver(function () { if (page.clientWidth !== last) { last = page.clientWidth; layout(); } }).observe(page); }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+    return box;
   }
 
   /* ---------- 물결 글씨: 삽화의 흐름을 따라 글자가 위아래로 굽이친다 ----------

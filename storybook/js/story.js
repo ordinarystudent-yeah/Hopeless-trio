@@ -149,7 +149,20 @@
       // 음식 카드는 이 펼침면 앞의 '음식 고르기' 화면에서 고른다 (그림을 가리지 않게).
       // 이 펼침면에는 글과 고른 음식의 설명, 그리고 첫 쪽(5쪽)에 붙는 음식 스티커만 있다.
       // 5쪽: 글은 위, 스티커 안내는 아래 식탁보 위 / 6쪽: 고른 음식 설명은 가운데 노란 빈자리
-      pages: [{ text: true, place: 'top', ink: 'dark', art: 'table', note: 'food-sticker', noteAt: 'bottom' }, { widgets: ['food-result'], place: 'center', art: 'feast', artPos: 'bottom' }],
+      pages: [{ text: true, place: 'top', ink: 'dark', art: 'table', note: 'food-sticker', noteAt: 'bottom' }, {
+        widgets: ['food-result'], place: 'center', art: 'feast', artPos: 'bottom',
+        // 6쪽: 고른 음식 설명을 노란 빛 아래 미소 모양 곡선을 따라 (첫 곡선은 제목)
+        curve: {
+          ink: 'dark', replacesWidgets: true,
+          text: function (c) { return c.food ? { head: '한입 냠, ' + c.food.name, body: c.food.desc } : null; },
+          lines: [
+            { head: true, pts: [[0.18, 0.34], [0.26, 0.42], [0.40, 0.44]] },
+            { pts: [[0.14, 0.39], [0.31, 0.51], [0.45, 0.56], [0.62, 0.49], [0.74, 0.33]] },
+            { pts: [[0.16, 0.51], [0.31, 0.63], [0.45, 0.68], [0.62, 0.63], [0.78, 0.45]] },
+            { pts: [[0.36, 0.73], [0.50, 0.77], [0.67, 0.69], [0.81, 0.59]] }
+          ]
+        }
+      }],
       requireMessage: '먹고 싶은 음식을 하나 골라 주세요.',
       text: function () { return [['자리에 앉아 앞을 바라보니 맛있는 음식들이 잔뜩 있어요.\n어떤 것부터 먹고 싶나요?']]; }
     },
@@ -159,9 +172,19 @@
       // 왼쪽 쪽: 위에 트레이를 끌고 오는 요정, 그 아래 빈 자리에 글 / 오른쪽 쪽: 다 먹은 식탁에서 요정을 보는 주인공
       pages: [
         // 7쪽: 글은 위쪽 연기 물결 안에 (물결을 따라 살짝 기울여)
-        { text: true, place: 'top', ink: 'dark', art: 'fairies', artPos: 'top', wave: { amp: 1.4, len: 0.8, phase: 0.2 } },
+        { text: true, place: 'top', ink: 'dark', art: 'fairies', artPos: 'top',
+          curve: { ink: 'dark', eyebrowAt: [0.24, 0.04], lines: [
+            { pts: [[0.24, 0.10], [0.39, 0.15], [0.54, 0.12]] },
+            { pts: [[0.18, 0.25], [0.43, 0.26], [0.58, 0.22], [0.72, 0.25]] },
+            { pts: [[0.45, 0.37], [0.63, 0.35], [0.82, 0.40]] }
+          ] } },
         // 8쪽: 글은 왼쪽 아래 보랏빛 연기 위에, 연기 흐름을 따라 비스듬히
-        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'bottom', wide: 0.56, low: true, bare: true, wave: { amp: 1.6, len: 0.9, phase: 2.4, rise: -6 } }
+        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'bottom',
+          curve: { ink: 'light', eyebrowAt: [0.30, 0.71], lines: [
+            { pts: [[0.30, 0.79], [0.46, 0.82], [0.63, 0.87]] },
+            { pts: [[0.26, 0.86], [0.43, 0.89], [0.61, 0.93]] },
+            { pts: [[0.23, 0.91], [0.33, 0.95]] }
+          ] } }
       ],
       text: function () {
         return [
@@ -181,7 +204,7 @@
         // 10쪽: 나에 대해 적는 보드 (tools/board_art.py). 착한 일 메모지·좋아하는 음식 메모지가 붙고, 그 위에 그림을 그린다
         { image: 'assets/backgrounds/06-board.jpg', widgets: ['board-draw'], place: 'top', ink: 'dark', board: true,
           text: function (c) { return [['요정이 '].concat(you(c), ['의 착한 일을 적어 보여주었어요.'])]; },
-          note: function () { return '보드를 마음껏 꾸며보세요.'; } }
+          note: function () { return '보드를 마음껏 꾸며보세요.'; }, noteAt: 'bottom' }
       ],
       text: function () { return []; },
       // 펼침면 앞의 묻는 화면에 나오는 질문
@@ -417,7 +440,7 @@
   };
 
   window.StarSoup = {
-    version: '6.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '6.3',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

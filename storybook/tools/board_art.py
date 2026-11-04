@@ -14,7 +14,7 @@ img = Image.new('RGBA', (W, H), (252, 249, 242, 255))
 
 # 보드 틀(연한 나무색) + 안쪽 판(파스텔 민트)
 F = 40
-TOP = 236   # 보드 위쪽 (그 위 빈 종이에 나레이션)
+TOP = 168   # 보드 위쪽 (그 위 빈 종이에 나레이션)
 frame = layer(); fd = ImageDraw.Draw(frame)
 fd.rounded_rectangle((60, TOP, W - 60, H - 54), radius=30, fill=(232, 204, 164, 255))
 fd.rounded_rectangle((60 + F, TOP + F, W - 60 - F, H - 54 - F), radius=16, fill=(196, 234, 222, 255))
@@ -49,7 +49,7 @@ img.alpha_composite(fr.filter(ImageFilter.GaussianBlur(0.6)))
 
 # 구석의 작은 장식: 색 압정 몇 개와 별 스티커
 dec = layer(); dd = ImageDraw.Draw(dec)
-for (u, v, c) in [(0.17, 0.43, (255, 160, 170)), (0.83, 0.43, (150, 200, 255)), (0.17, 0.84, (170, 225, 170)), (0.83, 0.84, (255, 214, 120))]:
+for (u, v, c) in [(0.17, 0.34, (255, 160, 170)), (0.83, 0.34, (150, 200, 255)), (0.17, 0.84, (170, 225, 170)), (0.83, 0.84, (255, 214, 120))]:
     x, y = u * W, v * H
     dd.ellipse((x - 13 + 3, y - 13 + 5, x + 13 + 3, y + 13 + 5), fill=(120, 80, 50, 70))
     dd.ellipse((x - 13, y - 13, x + 13, y + 13), fill=c + (255,))
