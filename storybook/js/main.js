@@ -637,6 +637,7 @@
         : null;
       case 'taste': return tasteCarousel();
       case 'soup-ingredients': return soupIngredients(false);
+      case 'soup-scoop': return soupScoop();
       case 'taste-draw': return state.taste === 'custom' ? drawPad(leaf, { key: IMG_TASTE, title: '무슨 맛이 났는지 그리기', clear: true, paper: true }) : null;
       // #8: 꾸민 착한 일 종이(메모지)를 스프가 놓인 식탁 한구석에
       case 'deed-note': return images[IMG_DEED]
@@ -1669,7 +1670,7 @@
       },
       body: function () {
         var full = state.soup.length >= S.limits.ingredients;
-        var pot = el('div', { class: 'soup-pot' }, el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '위에서 내려다본 별빛스프' }), el('div', { class: 'soup-galaxy' }), soupIngredients(true));
+        var pot = el('div', { class: 'soup-pot' }, el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '위에서 내려다본 별빛스프' }), el('div', { class: 'soup-galaxy' }), soupIngredients(true), potSpoon());
         var add = el('button', {
           type: 'button', class: 'btn btn-soft btn-small soup-add', disabled: full,
           text: full ? '재료를 다섯 개 다 넣었어요' : '+ 재료 넣기 (' + state.soup.length + '/' + S.limits.ingredients + ')',
@@ -1705,7 +1706,7 @@
         var count = el('div', { class: 'stir-count', 'aria-live': 'polite' });
         var pot = el('button', { type: 'button', class: 'soup-pot stir-pot', 'aria-label': '스프 젓기 (눌러서 저어요)' },
           el('img', { class: 'soup-pot-img', src: 'assets/backgrounds/08-soup-top.jpg', alt: '' }),
-          el('div', { class: 'stir-floor', 'aria-hidden': 'true' }), surface, floats, count);
+          el('div', { class: 'stir-floor', 'aria-hidden': 'true' }), surface, floats, potSpoon(), count);
         // 물성: 걸쭉한 스프를 숟가락으로 미는 느낌
         //  - 힘이 서서히 실려 천천히 출발(슬로우 인), 관성으로 살짝 지나쳤다가 되돌아와 멈춤
         //  - 재료는 액체보다 늦게, 더 크게 흔들리며 따라옴
@@ -1874,7 +1875,7 @@
         if (window.ResizeObserver) new ResizeObserver(function () { if (!phy.raf) drawGoo(); }).observe(goo);
         else requestAnimationFrame(function () { requestAnimationFrame(drawGoo); });
         pot.addEventListener('pointerdown', function (e) {
-          if (state.soupStirs >= 10) { scoop(pot, e); return; }   // 다 저은 뒤에는 누르면 한 숟갈 떠먹는다
+          if (state.soupStirs >= 10) return;
           state.soupStirs++;
           paint();
           phy.tap = performance.now();
@@ -1919,8 +1920,8 @@
         });
         return el('div', { class: 'soup-cook' }, pot);
       },
-      note: function () { return state.soupStirs >= 10 ? '보글보글, 별빛스프가 완성됐어요! 스프를 누르면 한 숟갈 떠먹어요.' : '스프를 눌러 저어요. 한 번 누를 때마다 휘휘 돌아가요.'; },
-      notes: function () { return ['보글보글, 별빛스프가 완성됐어요! 스프를 누르면 한 숟갈 떠먹어요.', '스프를 눌러 저어요. 한 번 누를 때마다 휘휘 돌아가요.']; },
+      note: function () { return state.soupStirs >= 10 ? '보글보글, 별빛스프가 완성됐어요!' : '스프를 눌러 저어요. 한 번 누를 때마다 휘휘 돌아가요.'; },
+      notes: function () { return ['보글보글, 별빛스프가 완성됐어요!', '스프를 눌러 저어요. 한 번 누를 때마다 휘휘 돌아가요.']; },
       ready: function () { return state.soupStirs >= 10; },
       requireMessage: '스프를 10번 눌러서 다 저어 주세요.'
     },
@@ -2172,46 +2173,69 @@
     if (state.scene > 0) go(state.scene - 1, lastPage(S.scenes[state.scene - 1]));
   }
 
-  /* ---------- 떠먹기: 다 저은 스프를 누르면 은숟가락이 내려와 한 숟갈 떠서 들어 올린다 ----------
-     숟가락이 비스듬히 들어와(슬로우 인) 스프에 잠기며 파문이 일고, 금빛 스프를 담아 위로 올라가며 사라진다 */
-  function scoop(pot, e) {
-    if (pot._scooping) return;
-    pot._scooping = true;
-    var r = pot.getBoundingClientRect();
-    // 누른 곳을 스프 원 안으로 당겨 온다 (원: 가로 23.35%, 세로 33%)
-    var cx = r.width * 0.5, cy = r.height * 0.51, rx = r.width * 0.2335 * 0.8, ry = r.height * 0.33 * 0.8;
-    var dx = (e.clientX - r.left - cx) / rx, dy = (e.clientY - r.top - cy) / ry, dd = Math.hypot(dx, dy);
-    if (dd > 1) { dx /= dd; dy /= dd; }
-    var x = cx + dx * rx, y = cy + dy * ry, S = r.width * 0.3;
-    var spoon = el('div', { class: 'scoop', 'aria-hidden': 'true' });
-    spoon.innerHTML = '<svg viewBox="0 0 60 200" width="100%" height="100%"><defs><linearGradient id="spg" x1="0" x2="1"><stop offset="0" stop-color="#cfd6e0"/><stop offset=".5" stop-color="#f4f7fa"/><stop offset="1" stop-color="#aeb8c6"/></linearGradient></defs>' +
-      '<rect x="25" y="62" width="10" height="134" rx="5" fill="url(#spg)" stroke="#9aa5b4" stroke-width="1.5"/>' +
-      '<ellipse cx="30" cy="34" rx="24" ry="32" fill="url(#spg)" stroke="#9aa5b4" stroke-width="1.5"/>' +
-      '<ellipse class="scoop-soup" cx="30" cy="36" rx="18" ry="24" fill="#f6b94a" opacity="0"/>' +
-      '<ellipse cx="22" cy="24" rx="5" ry="9" fill="#fff" opacity=".7"/></svg>';
-    spoon.style.left = x + 'px'; spoon.style.top = y + 'px'; spoon.style.width = S * 0.3 + 'px'; spoon.style.height = S + 'px';
-    pot.append(spoon);
-    var fill = spoon.querySelector('.scoop-soup');
-    var t = 'translate(-50%, -18%) ';
-    var anim = spoon.animate([
-      { transform: t + 'translate(40%, -70%) rotate(28deg) scale(1.05)', opacity: 0 },
-      { transform: t + 'translate(10%, -20%) rotate(18deg)', opacity: 1, offset: 0.25 },
-      { transform: t + 'translate(0, 4%) rotate(6deg) scale(0.96)', opacity: 1, offset: 0.45 },     // 스프에 잠김
-      { transform: t + 'translate(-6%, 2%) rotate(-4deg) scale(0.96)', opacity: 1, offset: 0.6 },   // 떠 올림
-      { transform: t + 'translate(-10%, -60%) rotate(-12deg) scale(1.04)', opacity: 1, offset: 0.85 },
-      { transform: t + 'translate(-14%, -95%) rotate(-16deg) scale(1.08)', opacity: 0 }
-    ], { duration: 2000, easing: 'cubic-bezier(.45,.05,.35,1)' });
-    fill.animate([{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1, offset: 0.6 }, { opacity: 1 }], { duration: 2000, fill: 'forwards' });
-    // 숟가락이 잠기는 순간 파문
-    setTimeout(function () {
-      var ring = el('span', { class: 'scoop-ring', 'aria-hidden': 'true' });
-      ring.style.left = x + 'px'; ring.style.top = y + 'px'; ring.style.width = ring.style.height = S * 0.5 + 'px';
-      pot.append(ring);
-      if (ring.animate) ring.animate([{ transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0.9 }, { transform: 'translate(-50%, -50%) scale(1.6)', opacity: 0 }], { duration: 800, easing: 'ease-out', fill: 'forwards' });
-      setTimeout(function () { ring.remove(); }, 820);
-    }, 850);
-    var done = function () { spoon.remove(); pot._scooping = false; };
-    anim.finished.then(done, done);
+  /* ---------- 별빛스프 숟가락 ----------
+     그릇 그림(08-soup-top.jpg)에는 숟가락이 없고, 같은 자리에 따로 놓는다 (tools/soup_top.py가 08-spoon.png와 자리를 만든다).
+     그림과 같은 297:210 상자 안에서 % 위치라 재료 화면·젓기 화면·#8 13쪽 어디서나 같은 자리 */
+  var SPOON = { x: 0.761, y: 0.069, w: 0.256, h: 0.912, hx: 0.58, hy: 0.13 };   // hx·hy: 숟가락 머리(오목한 곳) 위치
+  function potSpoon() {
+    var wrap = el('div', { class: 'pot-spoon', 'aria-hidden': 'true' },
+      el('img', { src: 'assets/backgrounds/08-spoon.png', alt: '', draggable: 'false' }),
+      el('span', { class: 'pot-spoon-soup' }));
+    wrap.style.left = SPOON.x * 100 + '%'; wrap.style.top = SPOON.y * 100 + '%';
+    wrap.style.width = SPOON.w * 100 + '%'; wrap.style.height = SPOON.h * 100 + '%';
+    wrap.style.transformOrigin = SPOON.hx * 100 + '% ' + SPOON.hy * 100 + '%';
+    var soup = wrap.querySelector('.pot-spoon-soup');
+    soup.style.left = SPOON.hx * 100 + '%'; soup.style.top = SPOON.hy * 100 + '%';
+    return wrap;
+  }
+
+  /* ---------- #8 13쪽: 떠먹기 ----------
+     그릇 가운데에 점선 원이 느릿하게 깜빡인다. 누르면 옆에 놓인 숟가락이 날아와 스프에 잠기고(파문),
+     금빛 스프를 한 숟갈 떠서 들어 올렸다가 제자리로 돌아간다 */
+  function soupScoop() {
+    var box = el('div', { class: 'scoop-layer' });
+    var spoon = potSpoon();
+    var ring = el('button', { type: 'button', class: 'scoop-target', 'aria-label': '별빛스프 한 숟갈 떠먹기' });
+    box.append(spoon, ring);
+    var blink = ring.animate ? ring.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 1600, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' }) : null;
+    var busy = false;
+    ring.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (busy || !spoon.animate) return;
+      busy = true;
+      if (blink) blink.pause();
+      ring.animate([{ opacity: getComputedStyle(ring).opacity }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
+      var W = box.clientWidth, H = box.clientHeight;
+      // 숟가락 머리를 그릇 가운데(점선 원)로
+      var hx = (SPOON.x + SPOON.w * SPOON.hx) * W, hy = (SPOON.y + SPOON.h * SPOON.hy) * H;
+      var tx = 0.5 * W - hx, ty = 0.51 * H - hy;
+      var f = function (k, rot, sc) { return 'translate(' + (tx * k).toFixed(1) + 'px,' + (ty * k).toFixed(1) + 'px) rotate(' + rot + 'deg) scale(' + sc + ')'; };
+      var a = spoon.animate([
+        { transform: f(0, 0, 1) },
+        { transform: f(0.15, -10, 1.06), offset: 0.12 },                                  // 집어 들기
+        { transform: 'translate(' + tx.toFixed(1) + 'px,' + (ty - H * 0.08).toFixed(1) + 'px) rotate(-38deg) scale(1.08)', offset: 0.36 },
+        { transform: f(1, -30, 0.96), offset: 0.48 },                                     // 스프에 잠김
+        { transform: f(1, -44, 0.96), offset: 0.6 },                                      // 떠 올림
+        { transform: 'translate(' + tx.toFixed(1) + 'px,' + (ty - H * 0.16).toFixed(1) + 'px) rotate(-40deg) scale(1.1)', offset: 0.76 },
+        { transform: f(0, 0, 1) }
+      ], { duration: 2800, easing: 'cubic-bezier(.45,.05,.35,1)' });
+      spoon.querySelector('.pot-spoon-soup').animate(
+        [{ opacity: 0 }, { opacity: 0, offset: 0.55 }, { opacity: 1, offset: 0.62 }, { opacity: 1, offset: 0.82 }, { opacity: 0, offset: 0.92 }, { opacity: 0 }],
+        { duration: 2800 });
+      setTimeout(function () {
+        var rip = el('span', { class: 'scoop-ring', 'aria-hidden': 'true' });
+        box.append(rip);
+        rip.animate([{ transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0.9 }, { transform: 'translate(-50%, -50%) scale(1.7)', opacity: 0 }], { duration: 900, easing: 'ease-out', fill: 'forwards' });
+        setTimeout(function () { rip.remove(); }, 920);
+      }, 2800 * 0.47);
+      var done = function () {
+        busy = false;
+        ring.getAnimations().forEach(function (x) { if (x !== blink) x.cancel(); });
+        if (blink) blink.play();
+      };
+      a.finished.then(done, done);
+    });
+    return box;
   }
 
   /* ---------- 스프 완성: 그릇 가운데에서 별이 팡 튀어 오르고 금빛이 번진다 ----------
@@ -2256,7 +2280,7 @@
   var swipe = null;
   book.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' || swipe || switching) return;
-    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw-host, .win')) return;
+    if (e.target.closest('.sticker, input, textarea, .chips, .carousel, .tdraw-host, .win, .scoop-target')) return;
     swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dir: null, leaf: currentLeaf() };
   });
   book.addEventListener('pointermove', function (e) {

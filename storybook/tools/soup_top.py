@@ -105,11 +105,13 @@ spd.ellipse((70, 50, 104, 110), fill=(236, 242, 246, 200))                      
 spd.line((104, 230, 104, SL - 20), fill=(214, 222, 228, 170), width=6)                     # 자루 빛
 spl = spl.rotate(-7, resample=Image.BICUBIC, expand=True)
 shadow = Image.new('RGBA', spl.size, (40, 80, 60, 0)); shadow.putalpha(spl.getchannel('A').point(lambda v: v * 0.35))
-sp = layer()
+# 숟가락은 그림에 그려 넣지 않고 따로 저장한다 (#8에서 떠먹을 때 그 숟가락이 움직인다)
 px, py = CX + R_OUT + 140 - spl.width // 2, CY - spl.height // 2
-sp.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(10)), (px + 14, py + 18))
-sp.alpha_composite(spl, (px, py))
-img.alpha_composite(sp)
+spo = Image.new('RGBA', (spl.width + 40, spl.height + 50), (255, 255, 255, 0))
+spo.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(10)), (14 + 10, 18 + 10))
+spo.alpha_composite(spl, (10, 10))
+spo.save(sys.argv[1].rstrip('/') + '/08-spoon.png', optimize=True)
+print('spoon box (x, y, w, h as fraction):', round((px - 10) / W, 4), round((py - 10) / H, 4), round(spo.width / W, 4), round(spo.height / H, 4))
 
 # 종이 결
 a = np.asarray(img.convert('RGB')).astype(float)

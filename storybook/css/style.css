@@ -1562,3 +1562,22 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   background: rgb(255 252 244 / 0.86) !important; color: #6a4a2a !important; opacity: 1 !important;
   box-shadow: 0 0.6cqh 1.6cqh -0.6cqh rgb(0 0 0 / 0.25) !important; text-shadow: none !important;
 }
+/* 설명 문장: 1/3 작게 */
+.pg-note, .pg-note--bottom { font-size: max(7px, 2cqh) !important; padding: 0.7cqh 1.8cqh !important; line-height: 1.35; }
+
+/* 별빛스프 숟가락 (그릇 그림과 같은 상자 안 % 위치) */
+.pot-spoon { position: absolute; z-index: 3; pointer-events: none; will-change: transform; }
+.pot-spoon img { display: block; width: 100%; height: 100%; }
+.pot-spoon-soup { position: absolute; width: 30%; height: 11%; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle at 40% 40%, #ffe6a0, #f6b94a 60%, #e89a2c); opacity: 0; }
+.stir-pot .pot-spoon, .soup-pot .pot-spoon { z-index: 1; }
+/* #8 13쪽 떠먹기 */
+.scoop-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.scoop-target {
+  position: absolute; left: 50%; top: 51%; width: 26%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%; border: max(2px, 0.7cqh) dashed rgb(255 252 236 / 0.95); background: rgb(255 246 210 / 0.12);
+  box-shadow: 0 0 2cqh rgb(255 220 140 / 0.6); padding: 0; cursor: pointer; pointer-events: auto;
+}
+.scoop-layer .scoop-ring { left: 50%; top: 51%; width: 18%; aspect-ratio: 1; height: auto; }
+.scoop-target { width: 30%; border: max(3px, 1cqh) dashed #fff; background: rgb(255 255 255 / 0.18);
+  box-shadow: 0 0 0 max(2px, 0.5cqh) rgb(196 120 30 / 0.55), inset 0 0 0 max(2px, 0.5cqh) rgb(196 120 30 / 0.4), 0 0 3cqh rgb(255 230 150 / 0.8); }
+.stir-count { z-index: 2; }

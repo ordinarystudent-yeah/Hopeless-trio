@@ -232,7 +232,7 @@
       id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles', sparkles: 12, asks: ['soup', 'stir'], onePage: true,
       image: null, alt: '위에서 내려다본 별빛스프',
       pages: [
-        { image: 'assets/backgrounds/08-soup-top.jpg', widgets: ['soup-ingredients', 'deed-note'], text: true, place: 'top', ink: 'dark' },
+        { image: 'assets/backgrounds/08-soup-top.jpg', widgets: ['soup-ingredients', 'deed-note', 'soup-scoop'], text: true, place: 'top', ink: 'dark' },
         { art: 'starsky', artPos: 'bottom' }
       ],
       text: function (c) {
@@ -441,7 +441,7 @@
   };
 
   window.StarSoup = {
-    version: '6.4',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '6.5',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
