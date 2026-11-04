@@ -1620,17 +1620,17 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .ask-carousel .c-art { aspect-ratio: 1; } .ask-carousel .c-art img:not(.c-draw) { object-fit: cover; object-position: 68% 50%; border-radius: 50%; box-shadow: 0 0 0 3px rgb(255 255 255 / 0.8); }
 
 /* 음식 고르기: 카드 7장(4+3)의 아랫줄도 가운데로 — 8칸 격자에 카드마다 2칸, 아랫줄 첫 카드는 둘째 칸부터 */
-#food-choice-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
-#food-choice-grid > .tile { grid-column: span 2; }
-#food-choice-grid > .tile:nth-child(5) { grid-column: 2 / span 2; }
+.food-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.food-grid > .tile { grid-column: span 2; }
+.food-grid > .tile:nth-child(5) { grid-column: 2 / span 2; }
 /* 음식 그림은 이름표 위 남은 자리의 한가운데에 */
-#food-choice-grid .tile-art img { padding: 3% 5% 25%; object-position: 50% 50%; }
+.food-grid .tile-art img { padding: 3% 5% 25%; object-position: 50% 50%; }
 @media (max-width: 600px) and (orientation: portrait) {
-  #food-choice-grid .tile-art img { padding: 2% 5% 36%; }
+  .food-grid .tile-art img { padding: 2% 5% 36%; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
-  #food-choice-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-  #food-choice-grid > .tile, #food-choice-grid > .tile:nth-child(5) { grid-column: auto; }
+  .food-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .food-grid > .tile, .food-grid > .tile:nth-child(5) { grid-column: auto; }
 }
 /* PC·태블릿(넓은 화면)에서만 그릇을 화면 높이에 맞춰 줄인다. 휴대폰 세로는 카드 너비를 꽉 채운다 */
 @media (min-width: 700px) and (min-height: 501px) {
@@ -1640,14 +1640,14 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .soup-pot { width: 100%; }
 }
 /* 음식 그림이 카드 테두리에 닿지 않게 둘레에 여유 */
-#food-choice-grid .tile-art img { padding: 9% 11% 28%; }
+.food-grid .tile-art img { padding: 9% 11% 28%; }
 @media (max-width: 600px) and (orientation: portrait) {
-  #food-choice-grid .tile-art img { padding: 8% 12% 38%; }
+  .food-grid .tile-art img { padding: 8% 12% 38%; }
 }
 @media (max-width: 600px) and (orientation: portrait) {
-  #food-choice-grid .tile-art { aspect-ratio: 1 / 1.08; }
-  #food-choice-grid .tile-label { padding: 8px 3px 4px; }
-  #food-choice-grid .tile-art img { padding: 9% 13% 46%; }
+  .food-grid .tile-art { aspect-ratio: 1 / 1.08; }
+  .food-grid .tile-label { padding: 8px 3px 4px; }
+  .food-grid .tile-art img { padding: 9% 13% 46%; }
 }
 
 /* 고르는 카드(음식·때·날씨)는 누를 때 크기가 변하지 않게: 줄어드는 대신 살짝 어두워진다 */
@@ -1671,4 +1671,6 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .ask-carousel .c-label { font-size: clamp(11px, 3.8cqw, 15px); }
 }
 /* 음식 카드: 빵·주먹밥은 5% 작게 */
-#food-choice-grid .tile[data-id="bread"] .tile-art img, #food-choice-grid .tile[data-id="rice-ball"] .tile-art img { transform: scale(0.95); }
+.food-grid .tile[data-id="bread"] .tile-art img, .food-grid .tile[data-id="rice-ball"] .tile-art img { transform: scale(0.95); }
+.food-grid .tile[data-id="chicken"] .tile-art img { transform: scale(1.05); }
+.spread-bg img.is-instant, .page-img.is-instant { transition: none; }

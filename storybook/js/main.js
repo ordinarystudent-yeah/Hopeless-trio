@@ -301,6 +301,8 @@
       img.onload = function () { leaf.classList.add('has-image'); img.classList.add('is-loaded'); };
       img.onerror = function () { img.remove(); };
       img.src = scene.image;
+      // 미리 불러 둔 그림이면 서서히 나타나지 않고 바로
+      if (img.complete && img.naturalWidth) { leaf.classList.add('has-image'); img.classList.add('is-loaded', 'is-instant'); }
       // #1처럼 삽화를 효과 레이어로 겹칠 때 (예: 스크린 70%) — 아래의 하늘색이 비쳐 보인다
       if (scene.imageBlend) { img.style.mixBlendMode = scene.imageBlend.mode; img.style.opacity = String(scene.imageBlend.opacity); }
       bg.append(img);
@@ -387,6 +389,7 @@
         pimg.onload = function () { page.classList.add('has-image'); pimg.classList.add('is-loaded'); };
         pimg.onerror = function () { pimg.remove(); };
         pimg.src = pageImage;
+        if (pimg.complete && pimg.naturalWidth) { page.classList.add('has-image'); pimg.classList.add('is-loaded', 'is-instant'); }
         page.append(pimg);
       }
       // 임시 그림(motif)은 삽화가 없는 쪽에만 그린다. 삽화가 있으면 그 아래에 아무것도 깔지 않는다
@@ -1944,7 +1947,7 @@
     },
     food: {
       text: function (sc, c) { return sc.text(c); },
-      body: function () { var g = foodGrid(); g.id = 'food-choice-grid'; return g; },
+      body: function () { var g = foodGrid(); g.id = 'food-choice-grid'; g.classList.add('food-grid'); return g; },   // 스타일은 클래스로: 넘어갈 때 띄우는 복제본(아이디가 지워짐)에도 똑같이
       note: function () { return '가장 좋아하는 음식을 골라보세요!'; },
       ready: function () { return !!state.food; },
       after: function () { spawnFoodSticker(ARC.duration * 0.8); }
@@ -2793,11 +2796,41 @@
     }));
   }
 
+  /* ---------- 그림 미리 불러 두기 ----------
+     책을 펴기 전에 삽화·음식·스프 그림을 차례로 받아 풀어 둔다(decode). 쪽에 들어갈 때 그림을 새로 받느라 멈칫하지 않게.
+     지금 장면 둘레부터 먼저, 한 번에 두 장씩 */
+  var preloaded = [];
+  function preloadArt() {
+    var urls = [];
+    var add = function (u) { if (u && typeof u === 'string' && !/^data:/.test(u) && urls.indexOf(u) < 0) urls.push(u); };
+    var order = S.scenes.map(function (sc, i) { return i; }).sort(function (a, b) { return Math.abs(a - state.scene) - Math.abs(b - state.scene); });
+    order.forEach(function (i) {
+      var sc = S.scenes[i];
+      add(sc.image); add(sc.overlay);
+      sc.pages.forEach(function (p) { if (typeof p.image === 'string') add(p.image); });
+    });
+    S.foods.forEach(function (f) { add(f.image); });
+    S.tastes.forEach(function (t) { add(t.image); });
+    ['assets/backgrounds/08-spoon.png', 'assets/backgrounds/08-soup-raw.png'].forEach(add);
+    var next = function () {
+      var u = urls.shift();
+      if (!u) return;
+      var im = new Image();
+      im.decoding = 'async';
+      im.src = u;
+      preloaded.push(im);
+      var go = function () { setTimeout(next, 30); };
+      (im.decode ? im.decode() : Promise.reject()).then(go, function () { im.onload = go; im.onerror = go; if (im.complete) go(); });
+    };
+    next(); next();
+  }
+
   function boot() {
     mode = pickMode();
     book.setAttribute('data-mode', mode);
     paintCover();
     showScreen('cover');
+    setTimeout(preloadArt, 300);   // 표지를 먼저 그린 뒤 그림을 미리 받아 둔다
     var res = store.load();
     if (res.error) toast('지난번 기록을 불러오지 못했어요. 처음부터 시작할게요.', 3600);
     if (res.data) state = sanitize(res.data);
