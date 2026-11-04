@@ -17,6 +17,9 @@
   var EXPORT_MAX = 640;    // 스티커로 내보낼 때 최대 변 길이
   var FILL_TOLERANCE = 72; // 페인트 통 색 허용 오차 (0~1020)
   var DEFAULTS = { tool: 'pen', size: 14, color: '#2b2118' };
+  var BG_COLORS = [null, '#ffffff', '#fff4d6', '#ffe1ea', '#dff0ff', '#e2f6df', '#ece4ff'];   // null = 바탕 없음(투명)
+  var GUIDES = ['bread', 'cotton-candy', 'omurice', 'chicken', 'rice-ball', 'pudding'];          // assets/guides/*.png
+  var bg = null, guide = null;
   var PALETTE = ['#2b2118', '#ffffff', '#ff5a5f', '#ff9f43', '#ffd23f', '#7bd389', '#2bb3a3', '#3fa7d6', '#5b6ee1', '#b07be0', '#ff8fc7', '#8b5a3c'];
   var TOOL_SCALE = { pen: 1, pencil: 0.45, brush: 1.8, eraser: 1.5 };
 
@@ -41,12 +44,36 @@
     if (inline && inline.dock) list = list.concat(Array.prototype.slice.call(inline.dock.querySelectorAll(sel)));
     return list;
   }
+  function setBg(c) {
+    bg = c;
+    wrap.style.setProperty('--ed-bg', c || 'transparent');
+    wrap.classList.toggle('has-bg', !!c);
+    toolsAll('.bg-swatch').forEach(function (b, i) { b.setAttribute('aria-pressed', BG_COLORS[i] === c ? 'true' : 'false'); });
+    if (inline) markDirty();
+  }
+  function setGuide(g) {
+    guide = g;
+    var gi = $('ed-guide');
+    gi.hidden = !g;
+    if (g) gi.src = 'assets/guides/' + g + '.png';
+    toolsAll('.guide-chip').forEach(function (b) { b.setAttribute('aria-pressed', (b.getAttribute('data-guide') || null) === g ? 'true' : 'false'); });
+  }
+  // 바탕색이 있으면 바탕을 깐 그림으로 (내보낼 때)
+  function withBg(src) {
+    if (!bg) return src;
+    var out = document.createElement('canvas'); out.width = src.width; out.height = src.height;
+    var o = out.getContext('2d'); o.fillStyle = bg; o.fillRect(0, 0, out.width, out.height); o.drawImage(src, 0, 0);
+    return out;
+  }
+  function hideHint() { var h = $('ed-hint'); if (h && !h.hidden) h.hidden = true; }
+
   function markDirty() {
+    hideHint();
     dirty = true;
     if (!inline || !inline.onChange) return;
     clearTimeout(inline.timer);
     var it = inline;
-    it.timer = setTimeout(function () { if (inline === it) it.onChange(canvas.toDataURL('image/png')); }, 300);
+    it.timer = setTimeout(function () { if (inline === it) it.onChange(withBg(canvas).toDataURL('image/png')); }, 300);
   }
 
   /* ---------- 준비 ---------- */
@@ -68,6 +95,33 @@
     photoImg = $('ed-photo-img');
     photoBar = $('ed-photo-bar');
     photoScale = $('ed-photo-scale');
+
+    // 바탕색
+    var bgBox = $('ed-bg-swatches');
+    BG_COLORS.forEach(function (c) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'swatch bg-swatch' + (c ? '' : ' is-none');
+      if (c) b.style.setProperty('--c', c);
+      b.setAttribute('aria-label', c ? '바탕색 ' + c : '바탕색 없음');
+      b.addEventListener('click', function () { setBg(c); });
+      bgBox.append(b);
+    });
+    // 따라 그리기 가이드 (음식 그림의 점선 윤곽)
+    var gl = $('ed-guide-list');
+    var none = document.createElement('button');
+    none.type = 'button'; none.className = 'guide-chip is-none'; none.textContent = '없음';
+    none.addEventListener('click', function () { setGuide(null); });
+    gl.append(none);
+    GUIDES.forEach(function (g) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'guide-chip'; b.setAttribute('data-guide', g);
+      var im = document.createElement('img'); im.src = 'assets/guides/' + g + '.png'; im.alt = '';
+      b.append(im);
+      b.setAttribute('aria-label', '따라 그리기 가이드');
+      b.addEventListener('click', function () { setGuide(g); });
+      gl.append(b);
+    });
 
     // 색 팔레트
     var swatches = $('ed-swatches');
@@ -146,6 +200,12 @@
     opts = opts || {};
     if (inline) unmount();
     allowNameOnly = !!opts.allowNameOnly;
+    // 바탕색·따라 그리기 가이드·안내 (가이드는 opts.guides가 있을 때만 고를 수 있다)
+    setBg(opts.bg || null);
+    $('ed-guide-row').hidden = !opts.guides;
+    setGuide(opts.guides ? (opts.guide === undefined ? GUIDES[0] : opts.guide) : null);
+    $('ed-bg-row').hidden = !!opts.memo;
+    $('ed-hint').hidden = !!(opts.image || opts.base);
     $('editor-title').textContent = opts.title || '그림 그리기';
     $('ed-done').textContent = opts.doneLabel || '다 그렸어요';
     $('ed-tip').textContent = opts.memo ? '메모지를 끌어서 원하는 곳에 옮겨 보세요. 그림 없이 넘어가도 괜찮아요.' : '사진 파일을 그림판에 끌어다 놓거나 붙여넣어도 들어가요.';
@@ -210,7 +270,7 @@
   function unmount(host) {
     if (!inline || (host && inline.host !== host)) return;
     var it = inline;
-    if (it.timer) { clearTimeout(it.timer); if (dirty && it.onChange) it.onChange(canvas.toDataURL('image/png')); }
+    if (it.timer) { clearTimeout(it.timer); if (dirty && it.onChange) it.onChange(withBg(canvas).toDataURL('image/png')); }
     if (photo) cancelPhoto();
     inline = null;
     if (it.dock) {
@@ -533,6 +593,7 @@
       photoImg.src = url;
       photoScale.value = 100;
       photoLayer.hidden = false;
+      hideHint();
       photoBar.hidden = false;
       placePhoto();
       ui().toast('사진을 끌어서 옮기고, 아래에서 크기를 맞춘 뒤 ‘사진 붙이기’를 눌러요.', 3600);
@@ -584,6 +645,8 @@
 
   /* ---------- 내보내기: 그림이 있는 부분만 잘라 투명 PNG로 ---------- */
   function exportTrimmed() {
+    // 바탕색을 칠했으면 잘라 내지 않고 바탕째 한 장으로
+    if (bg) return withBg(canvas).toDataURL('image/png');
     var d = g.getImageData(0, 0, CW, CH).data;
     var minX = CW, minY = CH, maxX = -1, maxY = -1;
     for (var y = 0; y < CH; y++) {
@@ -710,7 +773,7 @@
     var W = EXPORT_MAX;
     out.width = out.height = W;
     var o = out.getContext('2d');
-    o.fillStyle = '#fbf6ea';
+    o.fillStyle = bg || '#fbf6ea';
     o.fillRect(0, 0, W, W);
     o.drawImage(canvas, 0, 0, W, W);
     if (memo.text) drawMemo(o, W);

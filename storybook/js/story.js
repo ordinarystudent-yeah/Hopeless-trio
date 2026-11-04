@@ -86,7 +86,7 @@
   var deedExamples = [
     '동생에게 장난감을 양보했어요',
     '엄마의 설거지를 도와드렸어요',
-    '친구에게 먼저 인사했어요',
+    '혼자서 신발 끈을 묶었어요',
     '넘어진 친구를 일으켜 줬어요'
   ];
 
@@ -133,7 +133,7 @@
       id: 'name', act: 0, tone: 'table', no: '2·3',
       image: 'assets/backgrounds/02-03-dream-table.jpg', alt: '하늘에 떠 있는 꿈속 식탁과 빈 이름표가 놓인 나의 자리',
       pages: [
-        { no: '2', text: function () { return [['아이들의 앞에는 갖가지 음식이 차려진 식탁이 있네요?']]; }, place: 'bottom', art: 'table' },
+        { no: '2', text: function (c) { return [you(c).concat(['의 꿈속에는 ']).concat(you(c, '을/를'), [' 위한 식탁이 준비되어 있어요.'])]; }, place: 'bottom', art: 'table' },
         {
           no: '3', text: function () { return [['당신의 자리도 있어요.\n당신의 이름은 무엇인가요?']]; },
           place: 'top', ink: 'dark', art: 'seat', artPos: 'bottom',
@@ -208,7 +208,7 @@
       ],
       text: function () { return []; },
       // 펼침면 앞의 묻는 화면에 나오는 질문
-      question: function (c) { return [you(c, '이/가').concat([' 한 착한 일은 무엇인가요?'])]; }
+      question: function (c) { return [you(c, '이/가').concat([' 한 일 중 가장 뿌듯했던 일, 보람 있었던 일은 무엇인가요?'])]; }
     },
     {
       // 한 쪽짜리 장면: 11쪽(뚜껑을 연 음식 + 글)만 보고 바로 별빛스프 꾸미기로 (한 쪽씩 보기에서 12쪽은 건너뜀)
@@ -442,7 +442,7 @@
   };
 
   window.StarSoup = {
-    version: '8.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '8.4',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

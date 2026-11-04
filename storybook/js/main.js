@@ -266,6 +266,8 @@
     var spreadPage = Math.min(w / 2, h * ratio);   // 펼침면일 때 한 쪽의 너비
     var singlePage = Math.min(w, h * ratio);       // 한 쪽씩일 때 한 쪽의 너비
     // 두 쪽을 함께 볼 수 있으면 펼침면(가로 휴대폰·가로 아이패드·PC), 쪽이 너무 작아지면 한 쪽씩(세로 휴대폰·세로 아이패드).
+    // 가로로 넓은 화면(PC·가로 휴대폰)은 쪽이 너무 작지 않으면 늘 펼침면 (큰 모니터에서 한 쪽씩으로 바뀌던 문제)
+    if (window.innerWidth > window.innerHeight && spreadPage >= 220) return 'spread';
     return spreadPage >= 270 && spreadPage >= singlePage * 0.55 ? 'spread' : 'single';
   }
 
@@ -784,7 +786,7 @@
 
   function drawFood() {
     window.StarSoupEditor.open({
-      title: '음식 그리기', image: images[IMG_FOOD], askName: true, name: state.customFoodName
+      title: '음식 그리기', image: images[IMG_FOOD], askName: true, name: state.customFoodName, guides: true
     }).then(function (res) {
       if (!res) return;
       state.customFoodName = res.name.slice(0, S.limits.foodName);
@@ -1076,7 +1078,7 @@
     if (state.soup.length >= S.limits.ingredients) { toast('재료는 다섯 개까지 넣을 수 있어요.'); return; }
     window.StarSoupEditor.open({
       title: '별빛스프 재료 그리기', askName: true, name: '',
-      nameLabel: '어떤 재료인가요?', namePlaceholder: '예: 별사탕', allowNameOnly: true
+      nameLabel: '어떤 재료인가요?', namePlaceholder: '예: 별사탕', allowNameOnly: true, guides: true, guide: null
     }).then(function (res) {
       if (!res) return;
       var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -1558,6 +1560,7 @@
 
   function arc(oldLeaf, newLeaf, dir) {
     hideDocks();
+    if (window.StarSoupSound) window.StarSoupSound.flip();
     oldLeaf._from = dragFrom;
     if (dragFrom) oldLeaf.style.transform = dragFrom;
     oldLeaf.classList.add('is-leaving');
@@ -1686,7 +1689,7 @@
       requireMessage: '지금 기분과 닮은 때를 하나 골라 주세요.'
     },
     weather: weatherAsk({ key: 'weather', scene: 'intro', field: 'weather', nameField: 'customWeatherName', img: IMG_WEATHER,
-      question: '오늘의 날씨는 어떤가요?', where: '#1 하늘에 그 날씨가 펼쳐져요.' }),
+      question: '당신이 느끼는 오늘의 날씨는 어떤가요?', where: '#1 하늘에 그 날씨가 펼쳐져요.' }),
     wake: weatherAsk({ key: 'wake', scene: 'ending', field: 'wakeWeather', nameField: 'wakeWeatherName', img: IMG_WAKE,
       question: '한결 달라진 기분으로 창문을 여니…', where: '열린 창 너머로 그 날씨가 펼쳐져요.', landPage: 1 }),
     soup: {
@@ -2715,6 +2718,7 @@
     stopAnims(card);
     if (!card.animate) { fn(); return; }
     hideDocks();
+    if (window.StarSoupSound) window.StarSoupSound.flip();
     var g = ghostOf(card);
     fn();                       // 새 화면을 지금 그린다 (들어오는 움직임은 다음 프레임에 시작)
     var d = -ARC.deg * dir;
@@ -2820,7 +2824,21 @@
     }
   }
 
-  document.getElementById('btn-start').addEventListener('click', function () { start(document.getElementById('cover-card')); });
+  document.getElementById('btn-start').addEventListener('click', function () {
+    if (window.StarSoupSound) window.StarSoupSound.start();   // 처음 누를 때 배경 음악을 켠다 (브라우저는 누르기 전엔 소리를 막는다)
+    start(document.getElementById('cover-card'));
+  });
+  // 소리 켜기/끄기 (오른쪽 위)
+  var soundBtn = document.getElementById('btn-sound');
+  var paintSound = function () {
+    var on = window.StarSoupSound && window.StarSoupSound.isOn();
+    soundBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    soundBtn.setAttribute('aria-label', on ? '소리 끄기' : '소리 켜기');
+  };
+  if (soundBtn) {
+    paintSound();
+    soundBtn.addEventListener('click', function () { if (window.StarSoupSound) { window.StarSoupSound.toggle(); paintSound(); } });
+  }
   document.getElementById('btn-guide').addEventListener('click', openGuide);
   document.getElementById('btn-guide-back').addEventListener('click', backToCover);
   document.getElementById('btn-guide-start').addEventListener('click', function () { start(document.getElementById('guide-card')); });

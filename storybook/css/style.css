@@ -1762,3 +1762,13 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .page.has-window .story { font-size: 3.8cqh; line-height: 1.45; }
 .page.has-window .story.is-coda { font-size: 4.2cqh; }
 .page.has-window .pg-text.is-panel { padding: 2.6cqh 3.6cqh; gap: 1.2cqh; }
+/* 소리 버튼 (오른쪽 위) */
+.topbar { position: relative; }
+.sound-btn { flex: none; width: 34px; height: 34px; margin-left: 8px; color: var(--soft); }
+.sound-btn[aria-pressed="true"] { color: var(--soup); }
+.sound-btn .snd-off { display: none; }
+.sound-btn[aria-pressed="false"] .snd-on { display: none; }
+.sound-btn[aria-pressed="false"] .snd-off { display: block; }
+.topbar { padding-right: 42px; }
+.sound-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); margin: 0; }
+@media (max-width: 600px) and (orientation: portrait) { .sound-btn { top: 2px; transform: none; } }

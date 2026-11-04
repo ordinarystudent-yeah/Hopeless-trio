@@ -325,3 +325,45 @@
 .tdraw-dock.is-side .ed-actions .btn { min-height: 26px; font-size: 0.62rem; padding: 0 4px; }
 /* 바탕(보드 그림)이 비치는 쪽 안 그림판 */
 .editor.is-inline.is-clear .ed-canvas-wrap { background: none; }
+
+/* ---------- 바탕색·따라 그리기 가이드·안내 ---------- */
+.ed-canvas-wrap.has-bg { background: var(--ed-bg); }
+.ed-guide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0.3; pointer-events: none; }
+.ed-hint { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center;
+  color: rgb(70 52 40 / 0.55); font-family: var(--font-display); font-size: clamp(13px, 3.4vw, 18px); line-height: 1.4; pointer-events: none; }
+.ed-hint svg { opacity: 0.8; }
+.ed-guide:not([hidden]) ~ .ed-hint { align-content: end; padding-bottom: 6%; }
+.ed-row-label { font-family: var(--font-display); font-size: 0.85rem; color: var(--soft); flex: none; }
+.ed-bg, .ed-guides { display: flex; align-items: center; gap: 10px; }
+.ed-bg-swatches, .ed-guide-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.bg-swatch { width: 28px; height: 28px; }
+.bg-swatch.is-none { background: repeating-linear-gradient(-45deg, #fff 0 4px, #e8e3f3 4px 8px); }
+.bg-swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--night), 0 0 0 5px #cbb8ff; }
+.guide-chip { width: 40px; height: 40px; padding: 2px; border-radius: 10px; border: 2px solid var(--line); background: #fbf6ea; cursor: pointer; display: grid; place-items: center; }
+.guide-chip img { width: 100%; height: 100%; object-fit: contain; opacity: 0.8; }
+.guide-chip.is-none { width: auto; padding: 0 10px; font-family: var(--font-display); font-size: 0.78rem; color: #4a3a2a; }
+.guide-chip[aria-pressed="true"] { border-color: #b9a2ff; background: #ece4ff; box-shadow: 0 0 0 2px #cbb8ff; }
+
+/* ---------- 그림 도구 버튼: 노랑으로 강조, 고른 것은 연보라 ---------- */
+.tool { background: var(--soup); color: var(--soup-ink); border-color: transparent; }
+.tool[aria-pressed="true"] { background: #cbb8ff; color: #2b2150; border-color: #a58cf5; box-shadow: 0 0 0 2px rgb(203 184 255 / 0.5); }
+.ed-actions .btn, .tdraw-dock .ed-actions .btn { background: var(--soup); color: var(--soup-ink); border-color: transparent; }
+.ed-actions .is-warn { background: #ffd5c8; color: #8a2b1a; }
+.tdraw-dock .ed-bg .ed-row-label, .tdraw-dock .ed-guides .ed-row-label { font-size: 0.72rem; }
+.tdraw-dock .bg-swatch { width: 22px; height: 22px; }
+.editor.is-inline .ed-guides { display: none !important; }
+.tdraw-dock.is-side .ed-bg { flex-wrap: wrap; gap: 4px; }
+.tdraw-dock.is-side .bg-swatch { width: 17px; height: 17px; }
+.tdraw-dock.is-side .ed-row-label { display: none; }
+.ed-guide-list { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.ed-guides { min-width: 0; }
+.guide-chip { flex: none; }
+.guide-chip img { opacity: 1; filter: contrast(2.2); }
+@media (max-width: 600px) and (orientation: portrait) {
+  .ed-bg, .ed-guides { gap: 6px; }
+  .ed-row-label { font-size: 0.72rem; }
+  .bg-swatch { width: 22px; height: 22px; }
+  .guide-chip { width: 30px; height: 30px; border-radius: 8px; }
+  .guide-chip.is-none { height: 30px; font-size: 0.7rem; padding: 0 6px; }
+  .ed-panel { gap: 6px; }
+}
