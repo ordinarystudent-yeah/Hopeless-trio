@@ -228,7 +228,8 @@
     {
       // 이 펼침면 앞의 '요리' 화면에서 별빛스프에 넣을 재료(최대 5개)를 이름을 적고 그린다.
       // 왼쪽 쪽(13쪽)은 위에서 내려다본 스프 그릇(임시 아트워크, tools/soup_top.py), 그 위에 재료 스티커.
-      id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles', sparkles: 12, asks: ['soup', 'stir'],
+      // 한 쪽짜리 장면: 13쪽(스프 그릇 + 글)만 보고 바로 '무슨 맛이 났나요?'로 (한 쪽씩 보기에서 14쪽은 건너뜀)
+      id: 'soup', act: 2, tone: 'gold', no: '8', effect: 'sparkles', sparkles: 12, asks: ['soup', 'stir'], onePage: true,
       image: null, alt: '위에서 내려다본 별빛스프',
       pages: [
         { image: 'assets/backgrounds/08-soup-top.jpg', widgets: ['soup-ingredients', 'deed-note'], text: true, place: 'top', ink: 'dark' },
@@ -440,7 +441,7 @@
   };
 
   window.StarSoup = {
-    version: '6.3',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '6.4',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

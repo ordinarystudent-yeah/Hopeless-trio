@@ -1523,8 +1523,8 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .pg-text.is-end { align-self: flex-end; max-width: 70%; text-align: right; }
 /* #9 16쪽: 왼쪽 1/3은 투명, 거기서부터 서서히 나타나 15쪽 삽화와 이어진다 */
 .page.is-fade .page-img, .page.is-fade .tdraw-paper {
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 33%, #000 78%);
-          mask-image: linear-gradient(90deg, transparent 0%, transparent 33%, #000 78%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 25%, #000 72%);
+          mask-image: linear-gradient(90deg, transparent 0%, transparent 25%, #000 72%);
 }
 .tdraw-paper { position: absolute; inset: 0; background: #fdfaf4; pointer-events: none; }
 /* 그림 도구 자리만큼 줄었던 책이 부드럽게 원래 크기로 */
@@ -1551,3 +1551,14 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .curve-text--dark .curve-eyebrow { color: #a5671a; }
 .curve-text--dark .curve-eyebrow .no { color: #8a7560; }
 .curve-text--light .curve-eyebrow { color: #ffd98a; text-shadow: 0 0 1cqh rgb(60 30 100 / 0.9); }
+
+/* 떠먹기 숟가락 */
+.scoop { position: absolute; z-index: 5; pointer-events: none; filter: drop-shadow(0 6px 8px rgb(40 50 70 / 0.35)); transform-origin: 50% 18%; }
+.scoop svg { display: block; }
+.scoop-ring { position: absolute; z-index: 4; border-radius: 50%; border: 3px solid rgb(255 246 214 / 0.9); pointer-events: none; transform: translate(-50%, -50%); }
+/* 설명 문장(작은 안내)은 모서리가 둥근 상자 안에 */
+.pg-note, .pg-note--bottom {
+  display: inline-block; align-self: flex-start; padding: 1cqh 2.6cqh !important; border-radius: 99px;
+  background: rgb(255 252 244 / 0.86) !important; color: #6a4a2a !important; opacity: 1 !important;
+  box-shadow: 0 0.6cqh 1.6cqh -0.6cqh rgb(0 0 0 / 0.25) !important; text-shadow: none !important;
+}
