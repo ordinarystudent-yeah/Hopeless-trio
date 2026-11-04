@@ -1743,3 +1743,10 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .book.is-print .win.is-open .win-pane--l { transform: none !important; left: -15%; right: auto; width: 15%; }
 .book.is-print .win.is-open .win-pane--r { transform: none !important; right: -15%; left: auto; width: 15%; }
 .book.is-print .win-frame { border-color: #f6e6c4; outline: 0.6cqh solid #c9ad7e; outline-offset: -0.3cqh; }
+/* PDF 저장본: 창문 덧창은 단순한 하늘색 유리로, 창틀은 진한 테두리 */
+.book.is-print .win-pane { background: linear-gradient(180deg, #d9ecfa, #bfdaf1) !important; outline: none !important; border: 1.4cqh solid #fbf1dc; box-shadow: none !important; }
+.book.is-print .win.is-open .win-pane--l { border-right-color: #e6d3ad; }
+.book.is-print .win.is-open .win-pane--r { border-left-color: #e6d3ad; }
+.book.is-print .win-frame { outline: none !important; border-color: #f3e3c2; box-shadow: 0 0 0 0.5cqh #c9ad7e !important; }
+/* PDF 저장본: 반투명 글 상자는 흐림 효과가 없어 탁해 보이므로, 또렷한 남색 상자로 */
+.book.is-print .has-image .pg-text.is-panel:not(.is-ink), .book.is-print .page.has-window .pg-text.is-panel:not(.is-ink) { background: rgb(28 32 70 / 0.72) !important; }

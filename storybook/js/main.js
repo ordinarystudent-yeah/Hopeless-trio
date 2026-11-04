@@ -2312,7 +2312,7 @@
     host.append(pbook);
     document.body.append(host);
     // 표지는 가로 A4 한 장, 장면은 펼침면(가로 A4 두 쪽을 나란히, 594×210mm) 한 장으로
-    var pdf, PH = 210, first = true;
+    var pdf, PH = 210, first = true, pendingHalf = null;
     var addCanvas = function (cv, sx, sw) {
       var part = document.createElement('canvas'); part.width = sw; part.height = cv.height;
       part.getContext('2d').drawImage(cv, sx, 0, sw, cv.height, 0, 0, sw, cv.height);
@@ -2347,12 +2347,28 @@
           .then(function () { return wait(700); })   // 글자 곡선·날씨 그림이 자리 잡을 때까지
           .then(function () { return shoot(pbook); })
           .then(function (cv) {
-            addCanvas(cv, 0, cv.width);   // 펼침면 그대로 (양면)
+            if (sc.onePage) {
+              // 한 쪽짜리 장면(#7 11쪽, #8 13쪽)은 왼쪽 쪽만 떼어 두었다가 둘을 이어 한 장으로 (빈 12·14쪽은 넣지 않는다)
+              var halfW = Math.round(cv.width / 2), part = document.createElement('canvas');
+              part.width = halfW; part.height = cv.height;
+              part.getContext('2d').drawImage(cv, 0, 0, halfW, cv.height, 0, 0, halfW, cv.height);
+              if (!pendingHalf) { pendingHalf = part; }
+              else {
+                var both = document.createElement('canvas'); both.width = pendingHalf.width + halfW; both.height = cv.height;
+                var bg = both.getContext('2d'); bg.drawImage(pendingHalf, 0, 0); bg.drawImage(part, pendingHalf.width, 0);
+                pendingHalf = null;
+                addCanvas(both, 0, both.width);
+              }
+            } else {
+              if (pendingHalf) { addCanvas(pendingHalf, 0, pendingHalf.width); pendingHalf = null; }
+              addCanvas(cv, 0, cv.width);   // 펼침면 그대로 (양면)
+            }
             (leaf._teardown || []).forEach(function (fn) { fn(); });
           });
       });
     });
     chain.then(function () {
+      if (pendingHalf) { addCanvas(pendingHalf, 0, pendingHalf.width); pendingHalf = null; }
       pdfBusy('');
       host.remove();
       var n = (state.name || '').trim();
