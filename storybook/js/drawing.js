@@ -18,7 +18,6 @@
   var FILL_TOLERANCE = 72; // 페인트 통 색 허용 오차 (0~1020)
   var DEFAULTS = { tool: 'pen', size: 14, color: '#2b2118' };
   var BG_COLORS = [null, '#ffffff', '#fff4d6', '#ffe1ea', '#dff0ff', '#e2f6df', '#ece4ff'];   // null = 바탕 없음(투명)
-  var GUIDES = ['bread', 'cotton-candy', 'omurice', 'chicken', 'rice-ball', 'pudding'];          // assets/guides/*.png
   var bg = null, guide = null;
   var PALETTE = ['#2b2118', '#ffffff', '#ff5a5f', '#ff9f43', '#ffd23f', '#7bd389', '#2bb3a3', '#3fa7d6', '#5b6ee1', '#b07be0', '#ff8fc7', '#8b5a3c'];
   var TOOL_SCALE = { pen: 1, pencil: 0.45, brush: 1.8, eraser: 1.5 };
@@ -56,7 +55,6 @@
     var gi = $('ed-guide');
     gi.hidden = !g;
     if (g) gi.src = 'assets/guides/' + g + '.png';
-    toolsAll('.guide-chip').forEach(function (b) { b.setAttribute('aria-pressed', (b.getAttribute('data-guide') || null) === g ? 'true' : 'false'); });
   }
   // 바탕색이 있으면 바탕을 깐 그림으로 (내보낼 때)
   function withBg(src) {
@@ -65,7 +63,8 @@
     var o = out.getContext('2d'); o.fillStyle = bg; o.fillRect(0, 0, out.width, out.height); o.drawImage(src, 0, 0);
     return out;
   }
-  function hideHint() { var h = $('ed-hint'); if (h && !h.hidden) h.hidden = true; }
+  // 그리기 시작하면(또는 사진을 넣으면) 안내 글과 별 점선을 함께 지운다
+  function hideHint() { var h = $('ed-hint'); if (h && !h.hidden) h.hidden = true; if (guide) setGuide(null); }
 
   function markDirty() {
     hideHint();
@@ -107,22 +106,6 @@
       b.addEventListener('click', function () { setBg(c); });
       bgBox.append(b);
     });
-    // 따라 그리기 가이드 (음식 그림의 점선 윤곽)
-    var gl = $('ed-guide-list');
-    var none = document.createElement('button');
-    none.type = 'button'; none.className = 'guide-chip is-none'; none.textContent = '없음';
-    none.addEventListener('click', function () { setGuide(null); });
-    gl.append(none);
-    GUIDES.forEach(function (g) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'guide-chip'; b.setAttribute('data-guide', g);
-      var im = document.createElement('img'); im.src = 'assets/guides/' + g + '.png'; im.alt = '';
-      b.append(im);
-      b.setAttribute('aria-label', '따라 그리기 가이드');
-      b.addEventListener('click', function () { setGuide(g); });
-      gl.append(b);
-    });
-
     // 색 팔레트
     var swatches = $('ed-swatches');
     PALETTE.forEach(function (c) {
@@ -202,8 +185,8 @@
     allowNameOnly = !!opts.allowNameOnly;
     // 바탕색·따라 그리기 가이드·안내 (가이드는 opts.guides가 있을 때만 고를 수 있다)
     setBg(opts.bg || null);
-    $('ed-guide-row').hidden = !opts.guides;
-    setGuide(opts.guides ? (opts.guide === undefined ? GUIDES[0] : opts.guide) : null);
+    // 빈 그림판에는 별 모양 점선을 살짝 깔아 둔다 (그리기 시작하면 사라짐)
+    setGuide(!(opts.image || opts.base || opts.memo) ? 'star' : null);
     $('ed-bg-row').hidden = !!opts.memo;
     $('ed-hint').hidden = !!(opts.image || opts.base);
     $('editor-title').textContent = opts.title || '그림 그리기';
