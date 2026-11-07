@@ -1805,7 +1805,8 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   text-shadow: 0 0 0.6cqh rgb(196 120 30 / 0.9), 0 0 2cqh rgb(255 230 150 / 0.9); }
 /* #6 10쪽: 그림판 바탕색으로 고른 색이 보드 안쪽 판(청록)을 덮는다 (06-board.jpg의 안쪽 판 자리) */
 .board-tint { position: absolute; left: 10%; right: 10%; top: 29.4%; bottom: 13.3%; border-radius: 2.2cqh; pointer-events: none;
-  box-shadow: inset 0 1.4cqh 1.6cqh -0.8cqh rgb(80 60 40 / 0.22); }
+  background: #c4eade url("../assets/backgrounds/06-board-crayon.png") center / 100% 100% no-repeat;
+  box-shadow: inset 0 1.4cqh 1.6cqh -0.8cqh rgb(80 60 40 / 0.22); transition: background-color 0.25s; }
 .board-tint[hidden] { display: none; }
 /* 확인창 문구의 줄바꿈 */
 #modal-msg { white-space: pre-line; }

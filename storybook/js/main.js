@@ -694,7 +694,8 @@
   // 쪽 안 그림판의 바탕색을 화면에 바로 칠한다
   function paintPadBg(leaf, key) {
     var c = state.padBg[key] || '';
-    if (key === IMG_BOARD && leaf._boardTint) { leaf._boardTint.style.background = c; leaf._boardTint.hidden = !c; }
+    // 보드: 고른 색(없으면 원래 청록) 위에 크레용 결(06-board-crayon.png)을 얹어, 어떤 색이어도 같은 질감
+    if (key === IMG_BOARD && leaf._boardTint) leaf._boardTint.style.backgroundColor = c || '#c4eade';
     if (key === IMG_TASTE) leaf.querySelectorAll('.tdraw-paper').forEach(function (p) { p.style.background = c; });
   }
 

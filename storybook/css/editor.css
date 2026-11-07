@@ -337,7 +337,7 @@
 .ed-bg, .ed-guides { display: flex; align-items: center; gap: 10px; }
 .ed-bg-swatches, .ed-guide-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .bg-swatch { width: 28px; height: 28px; }
-.bg-swatch.is-none { background: repeating-linear-gradient(-45deg, #fff 0 4px, #e8e3f3 4px 8px); }
+.bg-swatch.is-none { background: repeating-conic-gradient(#d4d4d4 0 25%, #fff 0 50%) 0 0 / 10px 10px; }   /* 투명 = 바둑판 격자 */
 .bg-swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--night), 0 0 0 5px #cbb8ff; }
 .guide-chip { width: 40px; height: 40px; padding: 2px; border-radius: 10px; border: 2px solid var(--line); background: #fbf6ea; cursor: pointer; display: grid; place-items: center; }
 .guide-chip img { width: 100%; height: 100%; object-fit: contain; opacity: 0.8; }
