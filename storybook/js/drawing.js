@@ -185,8 +185,7 @@
     allowNameOnly = !!opts.allowNameOnly;
     // 바탕색·따라 그리기 가이드·안내 (가이드는 opts.guides가 있을 때만 고를 수 있다)
     setBg(opts.bg || null);
-    // 빈 그림판에는 별 모양 점선을 살짝 깔아 둔다 (그리기 시작하면 사라짐)
-    setGuide(!(opts.image || opts.base || opts.memo) ? 'star' : null);
+    setGuide(null);
     $('ed-bg-row').hidden = !!opts.memo;
     $('ed-hint').hidden = !!(opts.image || opts.base);
     $('editor-title').textContent = opts.title || '그림 그리기';
