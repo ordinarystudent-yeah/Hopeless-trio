@@ -2199,7 +2199,9 @@
   }
 
   // 묻는 화면이면 다시 그리고, 쪽 안에 넣은 화면(펼침 화면의 재료 넣기)이면 그 쪽을 다시 그린다
-  function refreshAskUI() { if (askId) paintAsk(); else rerender(); }
+  // 묻는 화면이 지금 보이고 있으면 그 화면을, 아니면 책 쪽(펼침면 안의 재료 넣기·맛 고르기)을 다시 그린다
+  // (예전에는 묻는 화면을 한 번 보고 나면 askId가 남아, 책 쪽에서 재료를 넣어도 숨은 묻는 화면만 다시 그려졌다)
+  function refreshAskUI() { if (askId && app.getAttribute('data-screen') === 'ask') paintAsk(); else rerender(); }
 
   // 펼침 화면: 묻는 화면(재료 넣기·맛 고르기)을 쪽 안에 그대로 넣는다
   function inlineAsk(id) {
@@ -2787,6 +2789,7 @@
   var rotateHinted = false;
 
   function showScreen(name) {
+    if (name !== 'ask') askId = null;   // 묻는 화면을 떠나면 '지금 묻는 중' 표시도 지운다
     if (name === 'cover') paintAuthor();
     app.setAttribute('data-screen', name);
     Object.keys(screens).forEach(function (k) { screens[k].hidden = k !== name; });
