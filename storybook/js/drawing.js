@@ -48,8 +48,11 @@
     wrap.style.setProperty('--ed-bg', c || 'transparent');
     wrap.classList.toggle('has-bg', !!c);
     toolsAll('.bg-swatch').forEach(function (b, i) { b.setAttribute('aria-pressed', BG_COLORS[i] === c ? 'true' : 'false'); });
-    if (inline) markDirty();
+    // 쪽 안 그림판이 바탕을 따로 칠하면(onBg) 그림에 굽지 않고 바로 알려 준다 (보드 안쪽, 16쪽 종이)
+    if (inline && inline.onBg) { if (!quietBg) inline.onBg(c); }
+    else if (inline && !quietBg) markDirty();
   }
+  var quietBg = false;
   function setGuide(g) {
     guide = g;
     var gi = $('ed-guide');
@@ -58,7 +61,7 @@
   }
   // 바탕색이 있으면 바탕을 깐 그림으로 (내보낼 때)
   function withBg(src) {
-    if (!bg) return src;
+    if (!bg || (inline && inline.onBg)) return src;
     var out = document.createElement('canvas'); out.width = src.width; out.height = src.height;
     var o = out.getContext('2d'); o.fillStyle = bg; o.fillRect(0, 0, out.width, out.height); o.drawImage(src, 0, 0);
     return out;
@@ -184,9 +187,9 @@
     if (inline) unmount();
     allowNameOnly = !!opts.allowNameOnly;
     // 바탕색·따라 그리기 가이드·안내 (가이드는 opts.guides가 있을 때만 고를 수 있다)
-    setBg(opts.bg || null);
+    quietBg = true; setBg(opts.bg || null); quietBg = false;
     setGuide(null);
-    $('ed-bg-row').hidden = !!opts.memo;
+    $('ed-bg-row').hidden = !!(opts.memo || opts.noBg);
     $('ed-hint').hidden = !!(opts.image || opts.base);
     $('editor-title').textContent = opts.title || '그림 그리기';
     $('ed-done').textContent = opts.doneLabel || '다 그렸어요';
@@ -213,7 +216,7 @@
     root.hidden = false;
     if (opts.inline) {
       // 쪽 안에 붙이기: 그림판 전체를 그 자리로 옮긴다 (닫을 때 원래 자리로)
-      inline = { host: opts.inline, onChange: opts.onChange, home: root.parentNode, next: root.nextSibling, timer: 0, dock: opts.dock || null };
+      inline = { host: opts.inline, onChange: opts.onChange, onBg: opts.onBg || null, home: root.parentNode, next: root.nextSibling, timer: 0, dock: opts.dock || null };
       root.classList.add('is-inline');
       root.classList.toggle('is-clear', !!opts.clear);   // 바탕이 비치는 그림판 (#6 보드)
       root.classList.toggle('is-docked', !!opts.dock);

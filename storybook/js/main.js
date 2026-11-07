@@ -27,7 +27,8 @@
       soup: [],   // 별빛스프 재료 (최대 5개) { id, name, u, v, w, r }: u·v·w는 스프 그림 기준 비율
       soupStirs: 0, // 스프를 저은 횟수 (10번이면 완성)
       name: '', food: null, customFoodName: '', deed: '', taste: null, customTasteName: '',
-      stickers: {}, deedMemo: null, returnTo: null
+      stickers: {}, deedMemo: null, returnTo: null,
+      padBg: {}   // 쪽 안 그림판의 바탕색 { 'board-draw': '#ffe1ea', ... } (그림과 따로)
     };
   }
   var state = freshState();
@@ -226,6 +227,9 @@
     s.page = raw.page === 1 ? 1 : 0;
     // 예전 버전은 PC에서 음식 스티커를 #5에 붙였다 → 이제는 #4 오른쪽 쪽에만 붙으므로 정리
     delete s.stickers.fairies;
+    if (raw.padBg && typeof raw.padBg === 'object') {
+      [IMG_BOARD, IMG_TASTE].forEach(function (k) { var v = raw.padBg[k]; if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) s.padBg[k] = v; });
+    }
     if (raw.deedMemo && typeof raw.deedMemo === 'object') {
       s.deedMemo = { x: num(raw.deedMemo.x, 0, 1, 0.5), y: num(raw.deedMemo.y, 0, 1, 0.2) };
     }
@@ -395,6 +399,8 @@
         page.append(pimg);
         // #6 10쪽: 다른 사람들의 메모가 보드 뒤로 떠다닌다 (보드 앞판을 그 위에 다시 얹는다)
         if (p.board && !printing) page.append(boardFloat(leaf), el('img', { class: 'page-img board-front is-loaded is-instant', src: 'assets/backgrounds/06-board-front.png', alt: '', draggable: 'false' }));
+        // 보드 안쪽 판 색 (그림판의 바탕색으로 고른 색)
+        if (p.board) { var tint = el('div', { class: 'board-tint', 'aria-hidden': 'true' }); page.append(tint); leaf._boardTint = tint; paintPadBg(leaf, IMG_BOARD); }
       }
       // 임시 그림(motif)은 삽화가 없는 쪽에만 그린다. 삽화가 있으면 그 아래에 아무것도 깔지 않는다
       if (p.art && !scene.image && !pageImage && !p.window) {
@@ -685,6 +691,13 @@
     return layer;
   }
 
+  // 쪽 안 그림판의 바탕색을 화면에 바로 칠한다
+  function paintPadBg(leaf, key) {
+    var c = state.padBg[key] || '';
+    if (key === IMG_BOARD && leaf._boardTint) { leaf._boardTint.style.background = c; leaf._boardTint.hidden = !c; }
+    if (key === IMG_TASTE) leaf.querySelectorAll('.tdraw-paper').forEach(function (p) { p.style.background = c; });
+  }
+
   /* ---------- 쪽 위의 입력 도구 ---------- */
   function widget(name, c, leaf, index) {
     switch (name) {
@@ -836,7 +849,7 @@
 
   function drawFood() {
     window.StarSoupEditor.open({
-      title: '음식 그리기', image: images[IMG_FOOD], askName: true, name: state.customFoodName
+      title: '음식 그리기', image: images[IMG_FOOD], askName: true, name: state.customFoodName, noBg: true
     }).then(function (res) {
       if (!res) return;
       state.customFoodName = res.name.slice(0, S.limits.foodName);
@@ -983,13 +996,13 @@
     // PDF로 저장할 때는 그림판 대신 저장된 그림만
     if (printing) {
       var ph = el('div', { class: 'tdraw-host' });
-      if (o.paper) ph.append(el('img', { class: 'pdf-fill', src: fadedSheet('#fdfaf4'), alt: '' }));
+      if (o.paper) ph.append(el('img', { class: 'pdf-fill', src: fadedSheet(state.padBg[o.key] || '#fdfaf4'), alt: '' }));
       if (images[o.key]) ph.append(el('img', { class: 'pdf-fill', src: images[o.key], alt: '' }));
       return ph;
     }
     var host = el('div', { class: 'tdraw-host' });
     // 바탕 종이를 그림판과 따로 깔면, 종이만 서서히 나타나게 하고 그린 선은 어디서나 또렷하게 보인다 (#9 16쪽)
-    if (o.paper) host.append(el('div', { class: 'tdraw-paper', 'aria-hidden': 'true' }));
+    if (o.paper) host.append(el('div', { class: 'tdraw-paper', 'aria-hidden': 'true', style: state.padBg[o.key] ? 'background:' + state.padBg[o.key] : null }));
     var mounted = false;
     var dock = null;
     var mount = function () {
@@ -1014,7 +1027,14 @@
       requestAnimationFrame(fitDock);
       window.StarSoupEditor.open({
         inline: host, dock: dock, aspect: 297 / 210, title: o.title, base: images[o.key], clear: o.clear,
-        onChange: function (data) { saveImage(o.key, data); }
+        onChange: function (data) { saveImage(o.key, data); },
+        // 바탕색: 보드는 안쪽 판 색이, 16쪽은 종이 색이 바로 바뀐다 (그림에 굽지 않고 따로 저장)
+        bg: state.padBg[o.key] || null,
+        onBg: function (c) {
+          if (c) state.padBg[o.key] = c; else delete state.padBg[o.key];
+          saveNow();
+          paintPadBg(leaf, o.key);
+        }
       });
       if (o.tip) setTimeout(function () { if (host.isConnected) toast(o.tip, 3600); }, 400);
     };
@@ -1128,7 +1148,7 @@
     if (state.soup.length >= S.limits.ingredients) { toast('재료는 다섯 개까지 넣을 수 있어요.'); return; }
     window.StarSoupEditor.open({
       title: '별빛스프 재료 그리기', askName: true, name: '',
-      nameLabel: '어떤 재료인가요?', namePlaceholder: '예: 별사탕', allowNameOnly: true
+      nameLabel: '어떤 재료인가요?', namePlaceholder: '예: 별사탕', allowNameOnly: true, noBg: true
     }).then(function (res) {
       if (!res) return;
       var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
