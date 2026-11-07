@@ -2466,9 +2466,10 @@
     if (printing) { box.append(potSpoon()); return box; }
     var spoon = potSpoon(), inner = spoon.firstChild;
     var sink = spoon.querySelector('.pot-spoon-sink'), soup = spoon.querySelector('.pot-spoon-soup');
-    var ring = el('button', { type: 'button', class: 'scoop-target', 'aria-label': '별빛스프 한 숟갈 떠먹기' });
+    var ring = el('button', { type: 'button', class: 'scoop-target', 'aria-label': '별빛스프 한 숟갈 떠먹기' },
+      el('span', { class: 'scoop-label', 'aria-hidden': 'true', text: '터치' }));   // 원과 함께 천천히 깜빡인다
     box.append(spoon, ring);
-    var blink = ring.animate ? ring.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 1600, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' }) : null;
+    var blink = ring.animate ? ring.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 2400, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' }) : null;
     var busy = false;
     ring.addEventListener('click', function (e) {
       e.stopPropagation();
