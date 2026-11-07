@@ -1794,14 +1794,14 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
    크기: 패드·컴퓨터는 쪽 높이 기준(cqh), 휴대폰처럼 작은 쪽은 최소 크기(px)가 정한다 */
 .board-float { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .board-front { pointer-events: none; }
-.float-memo { position: absolute; width: max(30.6cqh, 76px); will-change: transform; animation: var(--dur, 70s) linear var(--delay, 0s) infinite; opacity: 0.9; }
+.float-memo { position: absolute; width: calc(max(30.6cqh, 76px) * var(--size, 1)); will-change: transform; animation: var(--dur, 70s) linear var(--delay, 0s) infinite; opacity: 0.9; }
 .float-memo--across { left: 0; top: var(--top, 16cqh); animation-name: memo-across; }
 .float-memo--rise { top: 0; animation-name: memo-rise; }
 @container (max-height: 420px) {
   .float-memo--across { top: var(--top-sm, 4cqh); }
   .float-memo--across .float-paper { opacity: 0.85; }
 }
-.float-memo.is-back { width: max(23.4cqh, 60px); opacity: 0.6; }
+.float-memo.is-back { width: calc(max(23.4cqh, 60px) * var(--size, 1)); opacity: 0.6; }
 .float-memo.is-back .float-paper { filter: blur(0.15cqh); }
 /* 자기 크기(100%)만큼 쪽 밖에서 들어와 쪽 밖으로 나간다 */
 @keyframes memo-across { from { transform: translateX(-100%); } to { transform: translateX(100cqw); } }

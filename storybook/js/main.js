@@ -660,41 +660,74 @@
     var layer = el('div', { class: 'board-float', 'aria-hidden': 'true' });
     var Sh = window.StarSoupShared;
     if (!Sh) return layer;
+    // 메모마다 종이 색·테이프 색·크기·기울기를 다르게 (같은 메모라도 지나갈 때마다 조금씩 다르게)
+    var PAPERS = [['#fff6d6', '#9a7323'], ['#ffe1ea', '#b0506e'], ['#dff5e8', '#3f8a5e'], ['#dfefff', '#3d6fa8'], ['#ece4ff', '#6e56b0'], ['#ffe6d2', '#b8643a']];
+    var TAPES = ['rgb(255 198 90 / 0.8)', 'rgb(150 196 255 / 0.75)', 'rgb(255 160 190 / 0.75)', 'rgb(150 220 170 / 0.75)', 'rgb(200 170 255 / 0.75)'];
+    var HEADS = ['친구의 착한 일', '누군가의 착한 일', '오늘의 착한 일', '반짝이는 착한 일'];
+    var pool = [], next = 0, turn = 0;
+    function fill(card, m) {
+      turn++;
+      var look = PAPERS[(hash(m.id) + turn) % PAPERS.length];
+      var paper = el('div', { class: 'float-paper' + (m.pic ? ' has-pic' : '') },
+        el('span', { class: 'memo-tape', style: 'background:' + TAPES[(hash(m.id) * 3 + turn) % TAPES.length] }));
+      paper.style.background = look[0];
+      if (m.deed || m.pic) paper.append(el('span', { class: 'float-head', text: HEADS[(hash(m.id) + turn) % HEADS.length], style: 'color:' + look[1] }));
+      // 꾸민 착한 일 종이(그림 속에 글도 들어 있다)가 있으면 그 그림을, 없으면 글을
+      if (m.pic) paper.append(el('img', { class: 'float-pic', src: m.pic, alt: '', draggable: 'false' }));
+      else if (m.deed) paper.append(el('span', { class: 'float-text', text: m.deed.length > 34 ? m.deed.slice(0, 33) + '…' : m.deed }));
+      if (m.food) {
+        var fimg = memoFoodImage(m);
+        var fl = el('span', { class: 'float-food' });
+        if (fimg) fl.append(el('img', { class: 'float-food-img', src: fimg, alt: '', draggable: 'false' }));
+        else if (m.emoji) fl.append(el('span', { text: m.emoji }));
+        fl.append(el('span', { text: m.food }));
+        paper.append(fl);
+      }
+      card.replaceChildren(paper);
+      card.style.setProperty('--tilt', ((turn % 2 ? 1 : -1) * (2 + (turn * 7) % 6)) + 'deg');
+      card.style.setProperty('--size', (0.85 + ((hash(m.id) + turn * 5) % 5) * 0.07).toFixed(2));
+    }
+    function hash(id) { var h = 0; for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 9973; return h; }
+    // 다음에 띄울 메모: 지금 다른 길에 떠 있는 메모는 되도록 피해서, 모든 메모가 골고루 돌아가며 나온다
+    function take(layerCards) {
+      var showing = {};
+      layerCards.forEach(function (c) { if (c._memo) showing[c._memo.id] = (showing[c._memo.id] || 0) + 1; });
+      for (var k = 0; k < pool.length; k++) {
+        var m = pool[(next + k) % pool.length];
+        if (!showing[m.id]) { next = (next + k + 1) % pool.length; return m; }
+      }
+      var m2 = pool[next % pool.length]; next = (next + 1) % pool.length; return m2;
+    }
     function paint(list) {
       if (!layer.isConnected && layer._painted) return;
       layer._painted = true;
-      // 한 번에 길 수(7장)까지. 메모가 적으면 같은 메모를 여러 길에 나눠 띄워, 언제 보아도 몇 장은 떠 있게
-      var cards = list.slice(0, FLOAT_LANES.length);
-      while (cards.length && cards.length < FLOAT_LANES.length) cards = cards.concat(cards).slice(0, FLOAT_LANES.length);
+      // 매번 순서를 섞어, 열 때마다 다른 메모부터 보이게
+      pool = list.slice().sort(function () { return Math.random() - 0.5; });
+      next = 0;
       layer.replaceChildren();
-      cards.forEach(function (m, i) {
-        var lane = FLOAT_LANES[i % FLOAT_LANES.length];
-        var round = Math.floor(i / FLOAT_LANES.length);
-        var card = el('div', { class: 'float-memo float-memo--' + lane.kind + (lane.back ? ' is-back' : '') + (m.food && !m.deed ? ' is-food' : '') });
-        var paper = el('div', { class: 'float-paper' + (m.pic ? ' has-pic' : '') }, el('span', { class: 'memo-tape' }));
-        if (m.deed || m.pic) paper.append(el('span', { class: 'float-head', text: '친구의 착한 일' }));
-        // 꾸민 착한 일 종이(그림 속에 글도 들어 있다)가 있으면 그 그림을, 없으면 글을
-        if (m.pic) paper.append(el('img', { class: 'float-pic', src: m.pic, alt: '', draggable: 'false' }));
-        else if (m.deed) paper.append(el('span', { class: 'float-text', text: m.deed.length > 34 ? m.deed.slice(0, 33) + '…' : m.deed }));
-        if (m.food) {
-          var fimg = memoFoodImage(m);
-          var fl = el('span', { class: 'float-food' });
-          if (fimg) fl.append(el('img', { class: 'float-food-img', src: fimg, alt: '', draggable: 'false' }));
-          else if (m.emoji) fl.append(el('span', { text: m.emoji }));
-          fl.append(el('span', { text: m.food }));
-          paper.append(fl);
-        }
-        card.append(paper);
-        var dur = lane.dur * (1 + round * 0.18);
-        card.style.setProperty('--dur', dur + 's');
-        card.style.setProperty('--delay', -(dur * ((i * 0.37 + round * 0.5) % 1)).toFixed(1) + 's');
-        card.style.setProperty('--tilt', ((i % 2 ? 1 : -1) * (3 + (i * 7) % 5)) + 'deg');
+      if (!pool.length) return;
+      // 길 수: 메모가 적으면 같은 메모가 줄줄이 반복되지 않게 길을 줄인다 (메모 1장 → 2길, 2장 → 4길 … 최대 7길)
+      var lanes = Math.min(FLOAT_LANES.length, Math.max(2, pool.length * 2));
+      var cards = [];
+      for (var i = 0; i < lanes; i++) {
+        var lane = FLOAT_LANES[i];
+        var card = el('div', { class: 'float-memo float-memo--' + lane.kind + (lane.back ? ' is-back' : '') });
+        cards.push(card);
+        var m = take(cards); card._memo = m; fill(card, m);
+        card.style.setProperty('--dur', lane.dur + 's');
+        card.style.setProperty('--delay', -(lane.dur * ((i * 0.37) % 1)).toFixed(1) + 's');
         card.style.setProperty('--bob', (5 + (i * 3) % 4) + 's');
-        if (lane.top != null) { card.style.setProperty('--top', (lane.top + round) + 'cqh'); card.style.setProperty('--top-sm', (lane.sm + round) + 'cqh'); }
+        if (lane.top != null) { card.style.setProperty('--top', lane.top + 'cqh'); card.style.setProperty('--top-sm', lane.sm + 'cqh'); }
         if (lane.left != null) card.style.left = lane.left + 'cqh';
         if (lane.right != null) card.style.right = lane.right + 'cqh';
+        // 화면 밖으로 나갔다가 다시 들어올 때마다 다른 메모로 바꿔 단다
+        card.addEventListener('animationiteration', function (e) {
+          if (e.target !== e.currentTarget) return;
+          var c = e.currentTarget; c._memo = null;
+          var nm = take(cards); c._memo = nm; fill(c, nm);
+        });
         layer.append(card);
-      });
+      }
     }
     paint(Sh.memos());
     leaf._teardown.push(Sh.onChange(paint));
