@@ -393,6 +393,8 @@
         pimg.src = pageImage;
         if (pimg.complete && pimg.naturalWidth) { page.classList.add('has-image'); pimg.classList.add('is-loaded', 'is-instant'); }
         page.append(pimg);
+        // #6 10쪽: 다른 사람들의 메모가 보드 뒤로 떠다닌다 (보드 앞판을 그 위에 다시 얹는다)
+        if (p.board && !printing) page.append(boardFloat(leaf), el('img', { class: 'page-img board-front is-loaded is-instant', src: 'assets/backgrounds/06-board-front.png', alt: '', draggable: 'false' }));
       }
       // 임시 그림(motif)은 삽화가 없는 쪽에만 그린다. 삽화가 있으면 그 아래에 아무것도 깔지 않는다
       if (p.art && !scene.image && !pageImage && !p.window) {
@@ -443,7 +445,14 @@
     spread.append(layer);
     leaf._stickers = layer;
     leaf._sceneId = scene.id;
-    if (scene.id === 'deed') ensureBoardStickers();
+    if (scene.id === 'deed') {
+      ensureBoardStickers();
+      // 내 착한 일·좋아하는 음식 메모를 다른 사람들의 보드 뒤로 띄워 보낸다 (아티팩트에서만)
+      if (window.StarSoupShared && !printing && c.deed) {
+        var sf = c.food;
+        window.StarSoupShared.share({ deed: c.deed, food: sf ? (sf.name || '') : '', emoji: sf && !sf.custom ? (sf.emoji || '') : '' });
+      }
+    }
     paintStickers(leaf);
 
     leaf.append(spread);
@@ -633,6 +642,47 @@
     };
     requestAnimationFrame(function () { requestAnimationFrame(place); });
     if (window.ResizeObserver) new ResizeObserver(function () { place(); }).observe(block);
+  }
+
+  /* ---------- 함께 보는 메모: 보드 뒤로 떠다니는 다른 사람들의 메모 ---------- */
+  // 아티팩트로 열었을 때만 (js/shared.js). 메모가 없으면 빈 층만 남는다
+  var FLOAT_LANES = [
+    // 위쪽: 보드 위 벽을 가로질러 천천히 (아래쪽 일부는 보드 뒤로 숨는다)
+    { kind: 'across', top: 16, dur: 70 }, { kind: 'across', top: 17.5, dur: 88 }, { kind: 'across', top: 18.5, dur: 96, back: true },
+    // 양옆: 보드 가장자리 뒤에서 살짝 고개를 내밀며 위로
+    { kind: 'rise', left: -9, dur: 46 }, { kind: 'rise', right: -9, dur: 54 }, { kind: 'rise', left: -11, dur: 62 }, { kind: 'rise', right: -12, dur: 74 }
+  ];
+  function boardFloat(leaf) {
+    var layer = el('div', { class: 'board-float', 'aria-hidden': 'true' });
+    var Sh = window.StarSoupShared;
+    if (!Sh) return layer;
+    function paint(list) {
+      if (!layer.isConnected && layer._painted) return;
+      layer._painted = true;
+      var cards = list.slice(0, FLOAT_LANES.length * 2);
+      layer.replaceChildren();
+      cards.forEach(function (m, i) {
+        var lane = FLOAT_LANES[i % FLOAT_LANES.length];
+        var round = Math.floor(i / FLOAT_LANES.length);
+        var card = el('div', { class: 'float-memo float-memo--' + lane.kind + (lane.back ? ' is-back' : '') + (m.food && !m.deed ? ' is-food' : '') });
+        var paper = el('div', { class: 'float-paper' }, el('span', { class: 'memo-tape' }));
+        if (m.deed) paper.append(el('span', { class: 'float-head', text: '친구의 착한 일' }), el('span', { class: 'float-text', text: m.deed.length > 34 ? m.deed.slice(0, 33) + '…' : m.deed }));
+        if (m.food) paper.append(el('span', { class: 'float-food', text: (m.emoji ? m.emoji + ' ' : '') + m.food }));
+        card.append(paper);
+        var dur = lane.dur * (1 + round * 0.18);
+        card.style.setProperty('--dur', dur + 's');
+        card.style.setProperty('--delay', -(dur * ((i * 0.37 + round * 0.5) % 1)).toFixed(1) + 's');
+        card.style.setProperty('--tilt', ((i % 2 ? 1 : -1) * (3 + (i * 7) % 5)) + 'deg');
+        card.style.setProperty('--bob', (5 + (i * 3) % 4) + 's');
+        if (lane.top != null) card.style.top = (lane.top + round) + 'cqh';
+        if (lane.left != null) card.style.left = lane.left + 'cqh';
+        if (lane.right != null) card.style.right = lane.right + 'cqh';
+        layer.append(card);
+      });
+    }
+    paint(Sh.memos());
+    leaf._teardown.push(Sh.onChange(paint));
+    return layer;
   }
 
   /* ---------- 쪽 위의 입력 도구 ---------- */

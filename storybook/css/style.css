@@ -1772,3 +1772,30 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .topbar { padding-right: 42px; }
 .sound-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); margin: 0; }
 @media (max-width: 600px) and (orientation: portrait) { .sound-btn { top: 2px; transform: none; } }
+
+/* ---------- #6 10쪽: 보드 뒤로 떠다니는 다른 사람들의 메모 (js/shared.js) ---------- */
+.board-float { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.board-front { pointer-events: none; }
+.float-memo { position: absolute; width: 17cqh; will-change: transform; animation: var(--dur, 70s) linear var(--delay, 0s) infinite; }
+.float-memo--across { left: 0; animation-name: memo-across; }
+.float-memo--rise { top: 0; animation-name: memo-rise; }
+.float-memo.is-back { width: 13cqh; opacity: 0.7; }
+.float-memo.is-back .float-paper { filter: blur(0.15cqh); }
+@keyframes memo-across { from { transform: translateX(-24cqh); } to { transform: translateX(calc(100cqw + 4cqh)); } }
+@keyframes memo-rise { from { transform: translateY(102cqh); } to { transform: translateY(-34cqh); } }
+.float-paper {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.5cqh;
+  padding: 2.2cqh 1.4cqh 1.6cqh; background: #fff6d6; border-radius: 0.6cqh; color: #5a4630; text-align: center;
+  box-shadow: 0 0.6cqh 1.4cqh rgb(90 70 40 / 0.18); opacity: 0.92;
+  animation: memo-bob var(--bob, 6s) ease-in-out infinite alternate; transform: rotate(var(--tilt, -3deg));
+}
+.float-memo.is-food .float-paper { background: #ffe1d8; }
+.float-paper .memo-tape { top: -0.9cqh; height: 2.2cqh; }
+@keyframes memo-bob {
+  from { transform: translateY(-0.8cqh) rotate(var(--tilt, -3deg)); }
+  to { transform: translateY(0.8cqh) rotate(calc(var(--tilt, -3deg) * -0.6)); }
+}
+.float-head { font-family: var(--font-display); font-size: 1.9cqh; color: #9a7323; line-height: 1.2; }
+.float-text { font-family: var(--font-display); font-size: 2cqh; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
+.float-food { font-family: var(--font-display); font-size: 1.8cqh; color: #c0624a; }
+@media (prefers-reduced-motion: reduce) { .float-memo, .float-paper { animation-play-state: paused; } }
