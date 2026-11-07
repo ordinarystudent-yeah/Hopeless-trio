@@ -1807,3 +1807,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .board-tint { position: absolute; left: 10%; right: 10%; top: 29.4%; bottom: 13.3%; border-radius: 2.2cqh; pointer-events: none;
   box-shadow: inset 0 1.4cqh 1.6cqh -0.8cqh rgb(80 60 40 / 0.22); }
 .board-tint[hidden] { display: none; }
+/* 확인창 문구의 줄바꿈 */
+#modal-msg { white-space: pre-line; }
+/* PDF '인쇄용': 책 가운데 접힌 그림자를 빼고 평평하게 */
+.book.is-print.is-flat .page--left::after, .book.is-print.is-flat .page--right::before { display: none !important; }

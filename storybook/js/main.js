@@ -2380,11 +2380,25 @@
     if (!box) { box = el('div', { class: 'pdf-busy', id: 'pdf-busy', role: 'status' }, el('div', { class: 'pdf-busy-card' }, el('span', { class: 'pdf-spin', 'aria-hidden': 'true' }), el('p'))); document.body.append(box); }
     box.querySelector('p').textContent = text;
   }
-  function makePdf() {
+  // PDF 저장: '기본'(화면처럼 가운데 접힌 그림자) 또는 '인쇄용'(접힌 그림자 없이 평평하게) 중에서 고른다
+  function choosePdf() {
+    if (printing || document.getElementById('pdf-busy')) return;
+    ask({
+      title: 'PDF로 저장할까요?',
+      message: '기본: 화면에서 보는 것처럼 책 가운데가 접힌 모습으로 저장해요.\n인쇄용: 가운데 접힌 그림자 없이 평평하게 저장해요. 종이에 뽑아 제본할 때 좋아요.',
+      ok: '인쇄용', cancel: '기본'
+    }).then(function (r) {
+      if (r === null) return;     // 바깥을 누르거나 Esc → 저장하지 않음
+      makePdf({ flat: r === true });
+    });
+  }
+
+  function makePdf(opt) {
+    opt = opt || {};
     if (printing || document.getElementById('pdf-busy')) return;
     pdfBusy('PDF를 만들 준비를 하고 있어요…');
     var host = el('div', { class: 'pdf-host', 'aria-hidden': 'true' });
-    var pbook = el('div', { class: 'book is-print', 'data-mode': 'spread' });
+    var pbook = el('div', { class: 'book is-print' + (opt.flat ? ' is-flat' : ''), 'data-mode': 'spread' });
     host.append(pbook);
     document.body.append(host);
     // 표지는 가로 A4 한 장, 장면은 펼침면(가로 A4 두 쪽을 나란히, 594×210mm) 한 장으로
@@ -2628,7 +2642,7 @@
   document.getElementById('btn-reread').addEventListener('click', function () { state.returnTo = null; go(0, 0); });
   var recapModal = document.getElementById('recap-modal');
   function closeRecap() { recapModal.hidden = true; }
-  document.getElementById('btn-pdf').addEventListener('click', makePdf);
+  document.getElementById('btn-pdf').addEventListener('click', choosePdf);
   document.getElementById('btn-recap').addEventListener('click', function () {
     var body = document.getElementById('recap-body');
     body.replaceChildren(recap(ctx()));
