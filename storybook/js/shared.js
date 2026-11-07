@@ -21,14 +21,18 @@
   var ready = null, lastSent = '';
 
   function clean(s, n) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().slice(0, n); }
+  // 그림은 작은 data URL(png·jpeg·webp)만 받는다 (다른 사람이 올린 값이므로 꼭 확인)
+  var PIC_MAX = 150000;
+  function pic(v) { return typeof v === 'string' && v.length <= PIC_MAX && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(v) ? v : ''; }
   function log() { try { console.info.apply(console, ['[별빛스프 공유 메모]'].concat([].slice.call(arguments))); } catch (e) { /* 없음 */ } }
 
   function deliver(docs, myId) {
     memos = docs.filter(function (d) { return d.id !== myId; }).map(function (d) {
       var v = d.v || {};
       var at = v.at && typeof v.at.toMillis === 'function' ? v.at.toMillis() : +v.at || 0;
-      return { id: d.id, at: at, deed: clean(v.deed, 80), food: clean(v.food, 12), emoji: clean(v.emoji, 8) };
-    }).filter(function (m) { return m.deed || m.food; })
+      return { id: d.id, at: at, deed: clean(v.deed, 80), food: clean(v.food, 12), emoji: clean(v.emoji, 8),
+        foodId: /^[a-z0-9-]{1,24}$/.test(v.foodId || '') ? v.foodId : '', pic: pic(v.pic), foodPic: pic(v.foodPic) };
+    }).filter(function (m) { return m.deed || m.food || m.pic; })
       .sort(function (a, b) { return b.at - a.at; }).slice(0, LIMIT);
     listeners.forEach(function (fn) { try { fn(memos); } catch (e) { /* 그리기 실패는 무시 */ } });
   }
@@ -121,14 +125,24 @@
   // 내 메모를 올린다 (바뀌었을 때만, 한 번에 하나씩)
   var sending = false, queued = null;
   async function share(m) {
-    var body = { deed: clean(m.deed, 80), food: clean(m.food, 12), emoji: clean(m.emoji, 8) };
+    var body = { deed: clean(m.deed, 80), food: clean(m.food, 12), emoji: clean(m.emoji, 8),
+      foodId: /^[a-z0-9-]{1,24}$/.test(m.foodId || '') ? m.foodId : '', pic: pic(m.pic), foodPic: pic(m.foodPic) };
     if (!body.deed) return;
     var key = JSON.stringify(body);
     if (key === lastSent) return;
     if (sending) { queued = m; return; }
     sending = true;
     try {
-      if ((await start()) && backend.myId) { await backend.write(body); }
+      if ((await start()) && backend.myId) {
+        try { await backend.write(Object.assign({}, body)); }
+        catch (e) {
+          // 저장소 규칙이 아직 그림 칸을 모르면(옛 규칙) 글만이라도 올린다
+          if (e && e.code === 'permission-denied' && (body.pic || body.foodPic || body.foodId)) {
+            log('그림 없이 다시 올려요');
+            await backend.write({ deed: body.deed, food: body.food, emoji: body.emoji });
+          } else throw e;
+        }
+      }
     } catch (e) { log('메모 올리기 실패', e && (e.code || e.message)); }
     lastSent = key;
     sending = false;

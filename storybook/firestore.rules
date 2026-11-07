@@ -1,14 +1,21 @@
 rules_version = '2';
 // 별빛스프 함께 보는 메모: 누구나 읽고, 각자(익명 로그인 uid) 자기 메모 한 장만 쓰고 고친다
+// pic: 꾸민 착한 일 종이 그림, foodPic: 직접 그린 음식 그림 (작게 줄인 data URL, 각각 15만 자까지)
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isPic(v) {
+      return v is string && v.size() <= 150000 && (v == '' || v.matches('data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+'));
+    }
     match /memos/{uid} {
       allow read: if true;
       allow create, update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['deed', 'food', 'emoji', 'at'])
+        && request.resource.data.keys().hasOnly(['deed', 'food', 'emoji', 'foodId', 'pic', 'foodPic', 'at'])
         && request.resource.data.deed is string && request.resource.data.deed.size() > 0 && request.resource.data.deed.size() <= 80
         && request.resource.data.food is string && request.resource.data.food.size() <= 12
         && request.resource.data.emoji is string && request.resource.data.emoji.size() <= 8
+        && request.resource.data.get('foodId', '') is string && request.resource.data.get('foodId', '').size() <= 24
+        && isPic(request.resource.data.get('pic', ''))
+        && isPic(request.resource.data.get('foodPic', ''))
         && request.resource.data.at == request.time;
       allow delete: if request.auth != null && request.auth.uid == uid;
     }

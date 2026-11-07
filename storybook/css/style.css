@@ -1812,3 +1812,8 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 #modal-msg { white-space: pre-line; }
 /* PDF '인쇄용': 책 가운데 접힌 그림자를 빼고 평평하게 */
 .book.is-print.is-flat .page--left::after, .book.is-print.is-flat .page--right::before { display: none !important; }
+/* 떠다니는 메모: 그 사람이 꾸민 착한 일 종이 그림과 고른 음식 그림 */
+.float-paper.has-pic { padding-top: 1.8cqh; }
+.float-pic { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 0.5cqh; box-shadow: 0 0.2cqh 0.6cqh rgb(90 70 40 / 0.18); }
+.float-food { display: inline-flex; align-items: center; justify-content: center; gap: 0.6cqh; max-width: 100%; }
+.float-food-img { width: 3.6cqh; height: 3.6cqh; object-fit: contain; flex: none; }

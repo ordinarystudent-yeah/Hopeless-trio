@@ -454,10 +454,7 @@
     if (scene.id === 'deed') {
       ensureBoardStickers();
       // 내 착한 일·좋아하는 음식 메모를 다른 사람들의 보드 뒤로 띄워 보낸다 (아티팩트에서만)
-      if (window.StarSoupShared && !printing && c.deed) {
-        var sf = c.food;
-        window.StarSoupShared.share({ deed: c.deed, food: sf ? (sf.name || '') : '', emoji: sf && !sf.custom ? (sf.emoji || '') : '' });
-      }
+      if (window.StarSoupShared && !printing && c.deed) shareMyMemo(c);
     }
     paintStickers(leaf);
 
@@ -671,9 +668,19 @@
         var lane = FLOAT_LANES[i % FLOAT_LANES.length];
         var round = Math.floor(i / FLOAT_LANES.length);
         var card = el('div', { class: 'float-memo float-memo--' + lane.kind + (lane.back ? ' is-back' : '') + (m.food && !m.deed ? ' is-food' : '') });
-        var paper = el('div', { class: 'float-paper' }, el('span', { class: 'memo-tape' }));
-        if (m.deed) paper.append(el('span', { class: 'float-head', text: '친구의 착한 일' }), el('span', { class: 'float-text', text: m.deed.length > 34 ? m.deed.slice(0, 33) + '…' : m.deed }));
-        if (m.food) paper.append(el('span', { class: 'float-food', text: (m.emoji ? m.emoji + ' ' : '') + m.food }));
+        var paper = el('div', { class: 'float-paper' + (m.pic ? ' has-pic' : '') }, el('span', { class: 'memo-tape' }));
+        if (m.deed || m.pic) paper.append(el('span', { class: 'float-head', text: '친구의 착한 일' }));
+        // 꾸민 착한 일 종이(그림 속에 글도 들어 있다)가 있으면 그 그림을, 없으면 글을
+        if (m.pic) paper.append(el('img', { class: 'float-pic', src: m.pic, alt: '', draggable: 'false' }));
+        else if (m.deed) paper.append(el('span', { class: 'float-text', text: m.deed.length > 34 ? m.deed.slice(0, 33) + '…' : m.deed }));
+        if (m.food) {
+          var fimg = memoFoodImage(m);
+          var fl = el('span', { class: 'float-food' });
+          if (fimg) fl.append(el('img', { class: 'float-food-img', src: fimg, alt: '', draggable: 'false' }));
+          else if (m.emoji) fl.append(el('span', { text: m.emoji }));
+          fl.append(el('span', { text: m.food }));
+          paper.append(fl);
+        }
         card.append(paper);
         var dur = lane.dur * (1 + round * 0.18);
         card.style.setProperty('--dur', dur + 's');
@@ -697,6 +704,43 @@
     // 보드: 고른 색(없으면 원래 청록) 위에 크레용 결(06-board-crayon.png)을 얹어, 어떤 색이어도 같은 질감
     if (key === IMG_BOARD && leaf._boardTint) leaf._boardTint.style.backgroundColor = c || '#c4eade';
     if (key === IMG_TASTE) leaf.querySelectorAll('.tdraw-paper').forEach(function (p) { p.style.background = c; });
+  }
+
+  // 내 메모 올리기: 착한 일 글 + (꾸민 착한 일 종이가 있으면) 그 그림 + 고른 음식 (직접 그렸으면 그 그림)
+  // 그림은 작게 줄여서(가로세로 최대 240px) 함께 보낸다
+  function thumb(src, max, opaque) {
+    return new Promise(function (resolve) {
+      if (!src) return resolve('');
+      var im = new Image();
+      im.onload = function () {
+        var k = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+        var cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(im.naturalWidth * k)); cv.height = Math.max(1, Math.round(im.naturalHeight * k));
+        var g = cv.getContext('2d');
+        if (opaque) { g.fillStyle = '#fbf6ea'; g.fillRect(0, 0, cv.width, cv.height); }
+        g.drawImage(im, 0, 0, cv.width, cv.height);
+        var out = cv.toDataURL(opaque ? 'image/jpeg' : 'image/webp', 0.8);
+        if (!opaque && out.indexOf('data:image/webp') !== 0) out = cv.toDataURL('image/png');   // webp를 못 만드는 브라우저
+        resolve(out.length < 150000 ? out : '');
+      };
+      im.onerror = function () { resolve(''); };
+      im.src = src;
+    });
+  }
+  function shareMyMemo(c) {
+    var f = c.food;
+    Promise.all([thumb(images[IMG_DEED], 240, true), f && f.custom ? thumb(images[IMG_FOOD], 160, false) : '']).then(function (pics) {
+      window.StarSoupShared.share({
+        deed: c.deed, food: f ? (f.name || '') : '', emoji: f && !f.custom ? (f.emoji || '') : '',
+        foodId: f && !f.custom ? f.id : '', pic: pics[0], foodPic: pics[1]
+      });
+    });
+  }
+  // 떠다니는 메모에 쓸 음식 그림: 고른 음식이면 그 음식 그림, 직접 그렸으면 그 사람이 그린 그림
+  function memoFoodImage(m) {
+    if (m.foodPic) return m.foodPic;
+    var f = m.foodId && S.foods.find(function (x) { return x.id === m.foodId; });
+    return f ? f.image : '';
   }
 
   /* ---------- 쪽 위의 입력 도구 ---------- */
