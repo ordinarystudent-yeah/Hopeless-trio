@@ -2583,17 +2583,24 @@
     if (printing) { box.append(potSpoon()); return box; }
     var spoon = potSpoon(), inner = spoon.firstChild;
     var sink = spoon.querySelector('.pot-spoon-sink'), soup = spoon.querySelector('.pot-spoon-soup');
-    var ring = el('button', { type: 'button', class: 'scoop-target', 'aria-label': '별빛스프 한 숟갈 떠먹기' },
-      el('span', { class: 'scoop-label', 'aria-hidden': 'true', text: '터치' }));   // 원과 함께 천천히 깜빡인다
-    box.append(spoon, ring);
-    var blink = ring.animate ? ring.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 2400, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' }) : null;
+    var ring = el('button', { type: 'button', class: 'scoop-target', 'aria-label': '별빛스프 한 숟갈 떠먹기' });
+    // '터치'는 원 위에 따로 얹어, 원과 같은 박자로 깜빡이되 더 밝게 (원은 0.25~1, 글자는 0.7~1). 누르면 아래 원이 받는다
+    var label = el('span', { class: 'scoop-label', 'aria-hidden': 'true', text: '터치' });
+    box.append(spoon, ring, label);
+    var beat = { duration: 2400, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' };
+    var blink = ring.animate ? ring.animate([{ opacity: 0.25 }, { opacity: 1 }], beat) : null;
+    var blinkLabel = label.animate ? label.animate([{ opacity: 0.7 }, { opacity: 1 }], beat) : null;
     var busy = false;
     ring.addEventListener('click', function (e) {
       e.stopPropagation();
       if (busy || !spoon.animate) return;
       busy = true;
       if (blink) blink.pause();
-      var fadeRing = ring.animate([{ opacity: getComputedStyle(ring).opacity }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
+      if (blinkLabel) blinkLabel.pause();
+      // 한 번 떠먹으면 원과 '터치'는 사라진다 (다른 쪽에 갔다가 이 쪽으로 다시 오면 쪽을 새로 그리므로 다시 나타난다)
+      ring.animate([{ opacity: getComputedStyle(ring).opacity }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
+      label.animate([{ opacity: getComputedStyle(label).opacity }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
+      ring.disabled = true;
       var W = box.clientWidth, H = box.clientHeight;
       var hx = (SPOON.x + SPOON.w * SPOON.hx) * W, hy = (SPOON.y + SPOON.h * SPOON.hy) * H;
       var tx = 0.5 * W - hx, ty = 0.51 * H - hy;
@@ -2636,7 +2643,7 @@
         rip.animate([{ transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0.9 }, { transform: 'translate(-50%, -50%) scale(1.7)', opacity: 0 }], { duration: 1000, easing: 'ease-out', fill: 'forwards' });
         setTimeout(function () { rip.remove(); }, 1020);
       }, 2150);
-      var done = function () { busy = false; fadeRing.cancel(); if (blink) blink.play(); };
+      var done = function () { ring.remove(); label.remove(); };
       a.finished.then(done, done);
     });
     return box;

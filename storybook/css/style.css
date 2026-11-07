@@ -1775,7 +1775,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 
 /* #8 떠먹기 원 가운데 '터치' (원과 같은 불투명도로 함께 깜빡임) */
 .scoop-target { display: grid; place-items: center; }
-.scoop-label { font-family: var(--font-display); font-size: 6.4cqh; color: #fff; letter-spacing: 0.06em; pointer-events: none;
+.scoop-label { position: absolute; left: 50%; top: 51%; transform: translate(-50%, -50%); z-index: 6; font-family: var(--font-display); font-size: 6.4cqh; color: #fff; letter-spacing: 0.06em; pointer-events: none;
   text-shadow: 0 0 0.6cqh rgb(196 120 30 / 0.9), 0 0 2cqh rgb(255 230 150 / 0.9); }
 /* #6 10쪽: 그림판 바탕색으로 고른 색이 보드 안쪽 판(청록)을 덮는다 (06-board.jpg의 안쪽 판 자리) */
 .board-tint { position: absolute; left: 10%; right: 10%; top: 29.4%; bottom: 13.3%; border-radius: 2.2cqh; pointer-events: none;
