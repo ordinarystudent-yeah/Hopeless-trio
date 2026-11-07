@@ -399,8 +399,9 @@
         page.append(pimg);
         // #6 10쪽: 다른 사람들의 메모가 보드 뒤로 떠다닌다 (보드 앞판을 그 위에 다시 얹는다)
         // 보드 안쪽 판 색 (그림판의 바탕색으로 고른 색) → 그 판 안에서만 다른 사람들의 메모가 떠다닌다
+        // 다른 사람들의 메모는 보드 뒤(벽)로 떠다닌다: 메모 층 위에 보드 앞판을 다시 얹고, 그 위에 안쪽 판 색
+        if (p.board && !printing) page.append(boardFloat(leaf), el('img', { class: 'page-img board-front is-loaded is-instant', src: 'assets/backgrounds/06-board-front.png', alt: '', draggable: 'false' }));
         if (p.board) { var tint = el('div', { class: 'board-tint', 'aria-hidden': 'true' }); page.append(tint); leaf._boardTint = tint; paintPadBg(leaf, IMG_BOARD); }
-        if (p.board && !printing) page.append(boardFloat(leaf));
       }
       // 임시 그림(motif)은 삽화가 없는 쪽에만 그린다. 삽화가 있으면 그 아래에 아무것도 깔지 않는다
       if (p.art && !scene.image && !pageImage && !p.window) {
@@ -650,9 +651,10 @@
   /* ---------- 함께 보는 메모: 보드 뒤로 떠다니는 다른 사람들의 메모 ---------- */
   // 아티팩트로 열었을 때만 (js/shared.js). 메모가 없으면 빈 층만 남는다
   var FLOAT_LANES = [
-    // 보드 안쪽 판 안에서만 (판 밖으로 나가는 부분은 잘린다). top·left는 판 기준 %
-    { kind: 'across', top: 4, dur: 70 }, { kind: 'rise', left: 6, dur: 52 }, { kind: 'across', top: 52, dur: 88 },
-    { kind: 'rise', left: 62, dur: 60 }, { kind: 'across', top: 30, dur: 96, back: true }, { kind: 'rise', left: 34, dur: 74, back: true }
+    // 위쪽: 보드 위 벽을 가로질러 천천히 (아래쪽 일부는 보드 뒤로 숨는다). sm: 휴대폰처럼 작은 쪽에서는 더 위로
+    { kind: 'across', top: 16, sm: 3, dur: 70 }, { kind: 'across', top: 17.5, sm: 8, dur: 88 }, { kind: 'across', top: 18.5, sm: 12, dur: 96, back: true },
+    // 양옆: 보드 가장자리 뒤에서 살짝 고개를 내밀며 위로 (cqh)
+    { kind: 'rise', left: -9, dur: 46 }, { kind: 'rise', right: -9, dur: 54 }, { kind: 'rise', left: -11, dur: 62 }, { kind: 'rise', right: -12, dur: 74 }
   ];
   function boardFloat(leaf) {
     var layer = el('div', { class: 'board-float', 'aria-hidden': 'true' });
@@ -661,9 +663,9 @@
     function paint(list) {
       if (!layer.isConnected && layer._painted) return;
       layer._painted = true;
-      // 보드 안이 너무 붐비지 않게 한 번에 길 수(6장)까지만. 메모가 한두 장뿐이면 3장이 되도록 나눠 띄운다
+      // 한 번에 길 수(7장)까지. 메모가 적으면 같은 메모를 여러 길에 나눠 띄워, 언제 보아도 몇 장은 떠 있게
       var cards = list.slice(0, FLOAT_LANES.length);
-      while (cards.length && cards.length < 3) cards = cards.concat(cards).slice(0, 3);
+      while (cards.length && cards.length < FLOAT_LANES.length) cards = cards.concat(cards).slice(0, FLOAT_LANES.length);
       layer.replaceChildren();
       cards.forEach(function (m, i) {
         var lane = FLOAT_LANES[i % FLOAT_LANES.length];
@@ -688,8 +690,9 @@
         card.style.setProperty('--delay', -(dur * ((i * 0.37 + round * 0.5) % 1)).toFixed(1) + 's');
         card.style.setProperty('--tilt', ((i % 2 ? 1 : -1) * (3 + (i * 7) % 5)) + 'deg');
         card.style.setProperty('--bob', (5 + (i * 3) % 4) + 's');
-        if (lane.top != null) card.style.setProperty('--top', (lane.top + round * 6) + '%');
-        if (lane.left != null) card.style.setProperty('--left', (lane.left + round * 8) + '%');
+        if (lane.top != null) { card.style.setProperty('--top', (lane.top + round) + 'cqh'); card.style.setProperty('--top-sm', (lane.sm + round) + 'cqh'); }
+        if (lane.left != null) card.style.left = lane.left + 'cqh';
+        if (lane.right != null) card.style.right = lane.right + 'cqh';
         layer.append(card);
       });
     }
@@ -1367,6 +1370,36 @@
     node.style.setProperty('--r', st.r + 'deg');
   }
 
+  // 내 메모지·스티커가 놓인 쪽(페이지) 밖으로 나가지 않게: 화면에 보이는 크기(돌린 모양 포함)로 재서 안으로 밀어 넣는다
+  // 스티커 가운데가 놓인 쪽 (끌기 시작할 때 정해 두고, 끄는 동안 그 쪽 안에만 머문다)
+  function pageOf(leaf, node) {
+    var body = node.querySelector('.st-body') || node, B = body.getBoundingClientRect();
+    var cx = (B.left + B.right) / 2, cy = (B.top + B.bottom) / 2, found = null, best = Infinity;
+    leaf.querySelectorAll('.page').forEach(function (pg) {
+      var r = pg.getBoundingClientRect();
+      if (!r.width || getComputedStyle(pg).visibility === 'hidden') return;
+      var d = Math.max(r.left - cx, 0, cx - r.right) + Math.max(r.top - cy, 0, cy - r.bottom);
+      if (d < best) { best = d; found = pg; }
+    });
+    return found;
+  }
+  function keepInPage(leaf, node, pageEl) {
+    var spread = leaf.querySelector('.spread'), body = node.querySelector('.st-body') || node;
+    if (!spread) return;
+    pageEl = pageEl || pageOf(leaf, node);
+    if (!pageEl) return;
+    var R = spread.getBoundingClientRect(), B = body.getBoundingClientRect(), page = pageEl.getBoundingClientRect();
+    if (!R.width || !B.width || !page.width) return;
+    var st = node._st;
+    // 쪽보다 크면 먼저 줄인다
+    var k = Math.min(1, page.width * 0.98 / B.width, page.height * 0.98 / B.height);
+    if (k < 1) { st.w = Math.max(0.04, st.w * k); positionSticker(node); B = body.getBoundingClientRect(); }
+    var mx = 0, my = 0;
+    if (B.left < page.left) mx = page.left - B.left; else if (B.right > page.right) mx = page.right - B.right;
+    if (B.top < page.top) my = page.top - B.top; else if (B.bottom > page.bottom) my = page.bottom - B.bottom;
+    if (mx || my) { st.x += mx / R.width; st.y += my / R.height; positionSticker(node); }
+  }
+
   function selectSticker(leaf, node) {
     leaf.querySelectorAll('.sticker.is-selected').forEach(function (n) { if (n !== node) n.classList.remove('is-selected'); });
     if (node) node.classList.add('is-selected');
@@ -1409,6 +1442,7 @@
       node.classList.add('is-dragging');
       if (count() === 2) { if (!node.hasAttribute('data-fixed')) startPinch(); return; }
       if (count() > 2) return;
+      node._page = pageOf(leaf, node);
       var rect = spreadEl().getBoundingClientRect();
       var st = node._st;
       var cx = rect.left + st.x * rect.width, cy = rect.top + st.y * rect.height;
@@ -1447,6 +1481,7 @@
       if (st.r > 180) st.r -= 360;
       if (st.r < -180) st.r += 360;
       positionSticker(node);
+      keepInPage(leaf, node, node._page);
     });
     function end(e) {
       if (!touches[e.pointerId]) return;
@@ -1473,6 +1508,7 @@
       st.x = clamp(st.x + moves[e.key][0], 0.02, 0.98);
       st.y = clamp(st.y + moves[e.key][1], 0.04, 0.96);
       positionSticker(node);
+      keepInPage(leaf, node);
       saveSoon();
     });
     node.addEventListener('focus', function () { selectSticker(leaf, node); });
@@ -2278,7 +2314,7 @@
     // 같은 장면 앞에 묻는 화면이 더 있으면 차례로 (#1: 때 → 날씨)
     var list = askList(askId), pos = list.indexOf(askId);
     if (pos >= 0 && pos < list.length - 1 && state.returnTo == null) { showAsk(list[pos + 1], 1, card); return; }
-    // 착한 일을 적은 다음에는 #6으로 가기 전에 '착한 일을 그림으로 남겨 볼까요?' (#5 두 번째 쪽 다음 자리)
+    // 착한 일을 적은 다음에는 #6으로 가기 전에 '그림으로 남겨볼까요?' (#5 두 번째 쪽 다음 자리)
     if (askId === 'deed' && state.returnTo == null) { leaveThen(card, 1, function () { openDeedPromptScreen(1); }); return; }
     var target = state.returnTo != null ? state.returnTo : askScene(askId);
     var after = cfg.after;

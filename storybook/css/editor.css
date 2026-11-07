@@ -367,3 +367,5 @@
   .guide-chip.is-none { height: 30px; font-size: 0.7rem; padding: 0 6px; }
   .ed-panel { gap: 6px; }
 }
+/* 쪽 안 그림판(보드·16쪽)의 안내 글은 쪽 크기에 맞춰 (휴대폰에서 작게) */
+.editor.is-inline .ed-hint { font-size: clamp(10px, 3.6cqh, 18px); gap: 0.3em; }
