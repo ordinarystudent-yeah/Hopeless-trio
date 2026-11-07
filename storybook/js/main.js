@@ -651,7 +651,8 @@
   // 아티팩트로 열었을 때만 (js/shared.js). 메모가 없으면 빈 층만 남는다
   var FLOAT_LANES = [
     // 위쪽: 보드 위 벽을 가로질러 천천히 (아래쪽 일부는 보드 뒤로 숨는다)
-    { kind: 'across', top: 16, dur: 70 }, { kind: 'across', top: 17.5, dur: 88 }, { kind: 'across', top: 18.5, dur: 96, back: true },
+    // (sm: 휴대폰처럼 작은 쪽에서는 벽이 좁아 더 위로 올려, 메모가 더 많이 보이게)
+    { kind: 'across', top: 16, sm: 3, dur: 70 }, { kind: 'across', top: 17.5, sm: 8, dur: 88 }, { kind: 'across', top: 18.5, sm: 12, dur: 96, back: true },
     // 양옆: 보드 가장자리 뒤에서 살짝 고개를 내밀며 위로
     { kind: 'rise', left: -9, dur: 46 }, { kind: 'rise', right: -9, dur: 54 }, { kind: 'rise', left: -11, dur: 62 }, { kind: 'rise', right: -12, dur: 74 }
   ];
@@ -663,6 +664,8 @@
       if (!layer.isConnected && layer._painted) return;
       layer._painted = true;
       var cards = list.slice(0, FLOAT_LANES.length * 2);
+      // 메모가 적으면 같은 메모를 여러 길에 나눠 띄워, 언제 보아도 몇 장은 떠 있게
+      while (cards.length && cards.length < FLOAT_LANES.length) cards = cards.concat(cards).slice(0, FLOAT_LANES.length);
       layer.replaceChildren();
       cards.forEach(function (m, i) {
         var lane = FLOAT_LANES[i % FLOAT_LANES.length];
@@ -687,7 +690,7 @@
         card.style.setProperty('--delay', -(dur * ((i * 0.37 + round * 0.5) % 1)).toFixed(1) + 's');
         card.style.setProperty('--tilt', ((i % 2 ? 1 : -1) * (3 + (i * 7) % 5)) + 'deg');
         card.style.setProperty('--bob', (5 + (i * 3) % 4) + 's');
-        if (lane.top != null) card.style.top = (lane.top + round) + 'cqh';
+        if (lane.top != null) { card.style.setProperty('--top', (lane.top + round) + 'cqh'); card.style.setProperty('--top-sm', (lane.sm + round) + 'cqh'); }
         if (lane.left != null) card.style.left = lane.left + 'cqh';
         if (lane.right != null) card.style.right = lane.right + 'cqh';
         layer.append(card);

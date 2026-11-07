@@ -1817,3 +1817,19 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .float-pic { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 0.5cqh; box-shadow: 0 0.2cqh 0.6cqh rgb(90 70 40 / 0.18); }
 .float-food { display: inline-flex; align-items: center; justify-content: center; gap: 0.6cqh; max-width: 100%; }
 .float-food-img { width: 3.6cqh; height: 3.6cqh; object-fit: contain; flex: none; }
+/* 떠다니는 메모: 휴대폰처럼 작은 쪽에서도 읽을 수 있는 크기 (최소 크기) + 가로 길은 위로 */
+.float-memo--across { top: var(--top, 16cqh); }
+.float-memo { width: max(17cqh, 76px); }
+.float-memo.is-back { width: max(13cqh, 60px); }
+.float-paper { padding: max(2.2cqh, 9px) max(1.4cqh, 6px) max(1.6cqh, 6px); gap: max(0.5cqh, 2px); }
+.float-head { font-size: max(1.9cqh, 8px); }
+.float-text { font-size: max(2cqh, 9px); }
+.float-food { font-size: max(1.8cqh, 8px); }
+.float-food-img { width: max(3.6cqh, 15px); height: max(3.6cqh, 15px); }
+.float-paper .memo-tape { top: min(-0.9cqh, -4px); height: max(2.2cqh, 9px); }
+@container (max-height: 420px) {
+  .float-memo--across { top: var(--top-sm, 4cqh); }
+  .float-memo--across .float-paper { opacity: 0.85; }
+}
+/* 보드 쪽 나레이션: 뒤로 메모가 지나가도 글자가 또렷하게 (종이색 테두리 빛) */
+.pg-text.is-over-pad, .pg-text.is-over-pad .eyebrow { text-shadow: 0 0 3px #fbf8f0, 0 0 6px #fbf8f0, 0 0 10px #fbf8f0; }
