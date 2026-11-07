@@ -11,26 +11,40 @@
 
   function clean(s, n) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().slice(0, n); }
 
+  // claude.ai가 window.claude를 조금 늦게 붙이기도 해서, 잠깐(최대 15초) 기다렸다가 연결한다
+  function waitClaude() {
+    return new Promise(function (resolve) {
+      var t0 = Date.now();
+      (function check() {
+        var c = window.claude;
+        if (c && typeof c.use === 'function') return resolve(c);
+        if (Date.now() - t0 > 15000) return resolve(null);
+        setTimeout(check, 250);
+      })();
+    });
+  }
+
   function start() {
     if (ready) return ready;
     ready = (async function () {
-      var c = window.claude;
-      if (!c || typeof c.use !== 'function') return false;
+      var c = await waitClaude();
+      if (!c) return false;
       try {
         var res = await Promise.all([c.use('db'), c.use('user')]);
         db = res[0];
         var user = res[1];
-        if (!db) return false;
-        myId = user ? await user.id() : null;
-        db.collection('memos').orderBy('at', 'desc').limit(LIMIT + 1).onSnapshot(function (snap) {
+        if (!db) { console.info('[별빛스프] 공유 메모: db를 쓸 수 없어요'); return false; }
+        try { myId = user ? await user.id() : null; } catch (e) { myId = null; }
+        db.collection('memos').limit(200).onSnapshot(function (snap) {
           memos = snap.docs.filter(function (d) { return d.exists && d.id !== myId; }).map(function (d) {
             var v = d.data() || {};
-            return { id: d.id, deed: clean(v.deed, 80), food: clean(v.food, 12), emoji: clean(v.emoji, 8) };
-          }).filter(function (m) { return m.deed || m.food; }).slice(0, LIMIT);
+            return { id: d.id, at: +v.at || 0, deed: clean(v.deed, 80), food: clean(v.food, 12), emoji: clean(v.emoji, 8) };
+          }).filter(function (m) { return m.deed || m.food; })
+            .sort(function (a, b) { return b.at - a.at; }).slice(0, LIMIT);
           listeners.forEach(function (fn) { try { fn(memos); } catch (e) { /* 그리기 실패는 무시 */ } });
-        }, function () { /* 연결이 끊기면 떠다니는 메모 없이 그대로 */ });
+        }, function (e) { console.info('[별빛스프] 공유 메모 연결 끊김', e && e.code); });
         return true;
-      } catch (e) { return false; }
+      } catch (e) { console.info('[별빛스프] 공유 메모 연결 실패', e && e.code); return false; }
     })();
     return ready;
   }
