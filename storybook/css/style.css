@@ -1773,32 +1773,6 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .sound-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); margin: 0; }
 @media (max-width: 600px) and (orientation: portrait) { .sound-btn { top: 2px; transform: none; } }
 
-/* ---------- #6 10쪽: 보드 뒤로 떠다니는 다른 사람들의 메모 (js/shared.js) ---------- */
-.board-float { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.board-front { pointer-events: none; }
-.float-memo { position: absolute; width: 17cqh; will-change: transform; animation: var(--dur, 70s) linear var(--delay, 0s) infinite; }
-.float-memo--across { left: 0; animation-name: memo-across; }
-.float-memo--rise { top: 0; animation-name: memo-rise; }
-.float-memo.is-back { width: 13cqh; opacity: 0.7; }
-.float-memo.is-back .float-paper { filter: blur(0.15cqh); }
-@keyframes memo-across { from { transform: translateX(-24cqh); } to { transform: translateX(calc(100cqw + 4cqh)); } }
-@keyframes memo-rise { from { transform: translateY(102cqh); } to { transform: translateY(-34cqh); } }
-.float-paper {
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.5cqh;
-  padding: 2.2cqh 1.4cqh 1.6cqh; background: #fff6d6; border-radius: 0.6cqh; color: #5a4630; text-align: center;
-  box-shadow: 0 0.6cqh 1.4cqh rgb(90 70 40 / 0.18); opacity: 0.92;
-  animation: memo-bob var(--bob, 6s) ease-in-out infinite alternate; transform: rotate(var(--tilt, -3deg));
-}
-.float-memo.is-food .float-paper { background: #ffe1d8; }
-.float-paper .memo-tape { top: -0.9cqh; height: 2.2cqh; }
-@keyframes memo-bob {
-  from { transform: translateY(-0.8cqh) rotate(var(--tilt, -3deg)); }
-  to { transform: translateY(0.8cqh) rotate(calc(var(--tilt, -3deg) * -0.6)); }
-}
-.float-head { font-family: var(--font-display); font-size: 1.9cqh; color: #9a7323; line-height: 1.2; }
-.float-text { font-family: var(--font-display); font-size: 2cqh; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
-.float-food { font-family: var(--font-display); font-size: 1.8cqh; color: #c0624a; }
-@media (prefers-reduced-motion: reduce) { .float-memo, .float-paper { animation-play-state: paused; } }
 /* #8 떠먹기 원 가운데 '터치' (원과 같은 불투명도로 함께 깜빡임) */
 .scoop-target { display: grid; place-items: center; }
 .scoop-label { font-family: var(--font-display); font-size: 4.2cqh; color: #fff; letter-spacing: 0.06em; pointer-events: none;
@@ -1812,36 +1786,42 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 #modal-msg { white-space: pre-line; }
 /* PDF '인쇄용': 책 가운데 접힌 그림자를 빼고 평평하게 */
 .book.is-print.is-flat .page--left::after, .book.is-print.is-flat .page--right::before { display: none !important; }
-/* 떠다니는 메모: 그 사람이 꾸민 착한 일 종이 그림과 고른 음식 그림 */
-.float-paper.has-pic { padding-top: 1.8cqh; }
-.float-pic { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 0.5cqh; box-shadow: 0 0.2cqh 0.6cqh rgb(90 70 40 / 0.18); }
-.float-food { display: inline-flex; align-items: center; justify-content: center; gap: 0.6cqh; max-width: 100%; }
-.float-food-img { width: 3.6cqh; height: 3.6cqh; object-fit: contain; flex: none; }
-/* 떠다니는 메모: 휴대폰처럼 작은 쪽에서도 읽을 수 있는 크기 (최소 크기) + 가로 길은 위로 */
-.float-memo--across { top: var(--top, 16cqh); }
-.float-memo { width: max(17cqh, 76px); }
-.float-memo.is-back { width: max(13cqh, 60px); }
-.float-paper { padding: max(2.2cqh, 9px) max(1.4cqh, 6px) max(1.6cqh, 6px); gap: max(0.5cqh, 2px); }
-.float-head { font-size: max(1.9cqh, 8px); }
-.float-text { font-size: max(2cqh, 9px); }
-.float-food { font-size: max(1.8cqh, 8px); }
-.float-food-img { width: max(3.6cqh, 15px); height: max(3.6cqh, 15px); }
-.float-paper .memo-tape { top: min(-0.9cqh, -4px); height: max(2.2cqh, 9px); }
-@container (max-height: 420px) {
-  .float-memo--across { top: var(--top-sm, 4cqh); }
-  .float-memo--across .float-paper { opacity: 0.85; }
-}
 /* 보드 쪽 나레이션: 뒤로 메모가 지나가도 글자가 또렷하게 (종이색 테두리 빛) */
 .pg-text.is-over-pad, .pg-text.is-over-pad .eyebrow { text-shadow: 0 0 3px #fbf8f0, 0 0 6px #fbf8f0, 0 0 10px #fbf8f0; }
-/* 떠다니는 메모 2배 크게 (V9.6) */
-.float-memo { width: max(34cqh, 152px); }
-.float-memo.is-back { width: max(26cqh, 120px); }
-.float-paper { padding: max(4.4cqh, 18px) max(2.8cqh, 12px) max(3.2cqh, 12px); gap: max(1cqh, 4px); border-radius: max(1.2cqh, 5px); }
-.float-head { font-size: max(3.8cqh, 16px); }
-.float-text { font-size: max(4cqh, 18px); }
-.float-food { font-size: max(3.6cqh, 16px); gap: max(1.2cqh, 5px); }
-.float-food-img { width: max(7.2cqh, 30px); height: max(7.2cqh, 30px); }
-.float-paper .memo-tape { top: min(-1.8cqh, -8px); height: max(4.4cqh, 18px); }
-.float-pic { border-radius: max(1cqh, 4px); }
-@keyframes memo-across { from { transform: translateX(-40cqh); } to { transform: translateX(calc(100cqw + 6cqh)); } }
-@keyframes memo-rise { from { transform: translateY(102cqh); } to { transform: translateY(-70cqh); } }
+
+/* ---------- #6 10쪽: 다른 사람들의 메모가 보드 안쪽 판 안에서만 둥실둥실 (js/shared.js) ----------
+   판(.board-tint)과 같은 자리에 잘라 두어 보드 밖으로 나가지 않는다. 내 메모지·그림은 그 위에 놓인다.
+   크기: 패드·컴퓨터는 쪽 높이 기준(cqh), 휴대폰처럼 작은 쪽은 최소 크기(px)가 정한다 */
+.board-float { position: absolute; left: 10%; right: 10%; top: 29.4%; bottom: 13.3%; border-radius: 2.2cqh; overflow: hidden; pointer-events: none; }
+.float-memo { position: absolute; width: max(30.6cqh, 76px); will-change: transform; animation: var(--dur, 70s) linear var(--delay, 0s) infinite; opacity: 0.9; }
+.float-memo--across { left: 0; top: var(--top, 6%); animation-name: memo-across; }
+.float-memo--rise { top: 0; left: var(--left, 10%); animation-name: memo-rise; }
+.float-memo.is-back { width: max(23.4cqh, 60px); opacity: 0.6; }
+.float-memo.is-back .float-paper { filter: blur(0.15cqh); }
+/* 판의 너비 = 쪽의 80%(80cqw), 높이 = 쪽의 57.3%(57.3cqh). 자기 크기(100%)만큼 판 밖에서 들어와 판 밖으로 나간다 */
+@keyframes memo-across { from { transform: translateX(-100%); } to { transform: translateX(80cqw); } }
+@keyframes memo-rise { from { transform: translateY(57.3cqh); } to { transform: translateY(-100%); } }
+.float-paper {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  padding: max(4cqh, 9px) max(2.5cqh, 6px) max(2.9cqh, 6px); gap: max(0.9cqh, 2px); border-radius: max(1.1cqh, 3px);
+  background: #fff6d6; color: #5a4630; text-align: center; box-shadow: 0 0.6cqh 1.4cqh rgb(90 70 40 / 0.18);
+  animation: memo-bob var(--bob, 6s) ease-in-out infinite alternate; transform: rotate(var(--tilt, -3deg));
+}
+.float-memo.is-food .float-paper { background: #ffe1d8; }
+.float-paper .memo-tape { top: min(-1.6cqh, -4px); height: max(4cqh, 9px); }
+@keyframes memo-bob {
+  from { transform: translateY(-0.8cqh) rotate(var(--tilt, -3deg)); }
+  to { transform: translateY(0.8cqh) rotate(calc(var(--tilt, -3deg) * -0.6)); }
+}
+.float-head { font-family: var(--font-display); font-size: max(3.4cqh, 8px); color: #9a7323; line-height: 1.2; }
+.float-text { font-family: var(--font-display); font-size: max(3.6cqh, 9px); line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
+.float-food { display: inline-flex; align-items: center; justify-content: center; gap: max(1.1cqh, 3px); max-width: 100%;
+  font-family: var(--font-display); font-size: max(3.2cqh, 8px); color: #c0624a; }
+.float-food-img { width: max(6.5cqh, 15px); height: max(6.5cqh, 15px); object-fit: contain; flex: none; }
+.float-pic { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: max(0.9cqh, 3px); box-shadow: 0 0.2cqh 0.6cqh rgb(90 70 40 / 0.18); }
+/* 움직임 줄이기(절전 모드 등)를 켜도 메모는 천천히 흐르게 두고, 흔들림만 멈춘다 */
+@media (prefers-reduced-motion: reduce) {
+  /* 위의 전체 규칙(*: 0.01ms)이 메모를 멈추게 하므로, 메모의 흐름만 원래 속도로 되돌린다 */
+  .board-float .float-memo { animation-duration: var(--dur, 70s) !important; }
+  .board-float .float-paper { animation: none !important; }
+}

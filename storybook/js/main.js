@@ -398,9 +398,9 @@
         if (pimg.complete && pimg.naturalWidth) { page.classList.add('has-image'); pimg.classList.add('is-loaded', 'is-instant'); }
         page.append(pimg);
         // #6 10쪽: 다른 사람들의 메모가 보드 뒤로 떠다닌다 (보드 앞판을 그 위에 다시 얹는다)
-        if (p.board && !printing) page.append(boardFloat(leaf), el('img', { class: 'page-img board-front is-loaded is-instant', src: 'assets/backgrounds/06-board-front.png', alt: '', draggable: 'false' }));
-        // 보드 안쪽 판 색 (그림판의 바탕색으로 고른 색)
+        // 보드 안쪽 판 색 (그림판의 바탕색으로 고른 색) → 그 판 안에서만 다른 사람들의 메모가 떠다닌다
         if (p.board) { var tint = el('div', { class: 'board-tint', 'aria-hidden': 'true' }); page.append(tint); leaf._boardTint = tint; paintPadBg(leaf, IMG_BOARD); }
+        if (p.board && !printing) page.append(boardFloat(leaf));
       }
       // 임시 그림(motif)은 삽화가 없는 쪽에만 그린다. 삽화가 있으면 그 아래에 아무것도 깔지 않는다
       if (p.art && !scene.image && !pageImage && !p.window) {
@@ -650,11 +650,9 @@
   /* ---------- 함께 보는 메모: 보드 뒤로 떠다니는 다른 사람들의 메모 ---------- */
   // 아티팩트로 열었을 때만 (js/shared.js). 메모가 없으면 빈 층만 남는다
   var FLOAT_LANES = [
-    // 위쪽: 보드 위 벽을 가로질러 천천히 (아래쪽 일부는 보드 뒤로 숨는다)
-    // (sm: 휴대폰처럼 작은 쪽에서는 벽이 좁아 더 위로 올려, 메모가 더 많이 보이게)
-    { kind: 'across', top: 16, sm: 3, dur: 70 }, { kind: 'across', top: 17.5, sm: 8, dur: 88 }, { kind: 'across', top: 18.5, sm: 12, dur: 96, back: true },
-    // 양옆: 보드 가장자리 뒤에서 살짝 고개를 내밀며 위로
-    { kind: 'rise', left: -9, dur: 46 }, { kind: 'rise', right: -9, dur: 54 }, { kind: 'rise', left: -11, dur: 62 }, { kind: 'rise', right: -12, dur: 74 }
+    // 보드 안쪽 판 안에서만 (판 밖으로 나가는 부분은 잘린다). top·left는 판 기준 %
+    { kind: 'across', top: 4, dur: 70 }, { kind: 'rise', left: 6, dur: 52 }, { kind: 'across', top: 52, dur: 88 },
+    { kind: 'rise', left: 62, dur: 60 }, { kind: 'across', top: 30, dur: 96, back: true }, { kind: 'rise', left: 34, dur: 74, back: true }
   ];
   function boardFloat(leaf) {
     var layer = el('div', { class: 'board-float', 'aria-hidden': 'true' });
@@ -663,9 +661,9 @@
     function paint(list) {
       if (!layer.isConnected && layer._painted) return;
       layer._painted = true;
-      var cards = list.slice(0, FLOAT_LANES.length * 2);
-      // 메모가 적으면 같은 메모를 여러 길에 나눠 띄워, 언제 보아도 몇 장은 떠 있게
-      while (cards.length && cards.length < FLOAT_LANES.length) cards = cards.concat(cards).slice(0, FLOAT_LANES.length);
+      // 보드 안이 너무 붐비지 않게 한 번에 길 수(6장)까지만. 메모가 한두 장뿐이면 3장이 되도록 나눠 띄운다
+      var cards = list.slice(0, FLOAT_LANES.length);
+      while (cards.length && cards.length < 3) cards = cards.concat(cards).slice(0, 3);
       layer.replaceChildren();
       cards.forEach(function (m, i) {
         var lane = FLOAT_LANES[i % FLOAT_LANES.length];
@@ -690,9 +688,8 @@
         card.style.setProperty('--delay', -(dur * ((i * 0.37 + round * 0.5) % 1)).toFixed(1) + 's');
         card.style.setProperty('--tilt', ((i % 2 ? 1 : -1) * (3 + (i * 7) % 5)) + 'deg');
         card.style.setProperty('--bob', (5 + (i * 3) % 4) + 's');
-        if (lane.top != null) { card.style.setProperty('--top', (lane.top + round) + 'cqh'); card.style.setProperty('--top-sm', (lane.sm + round) + 'cqh'); }
-        if (lane.left != null) card.style.left = lane.left + 'cqh';
-        if (lane.right != null) card.style.right = lane.right + 'cqh';
+        if (lane.top != null) card.style.setProperty('--top', (lane.top + round * 6) + '%');
+        if (lane.left != null) card.style.setProperty('--left', (lane.left + round * 8) + '%');
         layer.append(card);
       });
     }
