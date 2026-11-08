@@ -67,6 +67,7 @@
 
   function start() {
     if (!audio()) return;
+    loadClap();   // 박수 소리 파일은 미리 받아 둔다
     if (ctx.state === 'suspended') ctx.resume();
     if (started) return;
     started = true;
@@ -273,8 +274,30 @@
     var wet = ctx.createGain(); wet.gain.value = 0.35; room.connect(wet); wet.connect(sfx);
     return room;
   }
+  // 박수: 녹음된 진짜 박수 소리(assets/sounds/clap.mp3, 2.8초로 다듬음). 불러오지 못하면 아래 만든 소리로
+  var clapFile = null, clapLoading = null;
+  function loadClap() {
+    if (clapFile || clapLoading || !ctx || !window.fetch) return clapLoading;
+    var base = (document.querySelector('script[src*="js/sound.js"]') || {}).src || '';
+    base = base ? base.replace(/js\/sound\.js.*$/, '') : '';
+    clapLoading = fetch(base + 'assets/sounds/clap.mp3').then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(function (ab) { return new Promise(function (res, rej) { ctx.decodeAudioData(ab, res, rej); }); })
+      .then(function (buf) { clapFile = buf; return buf; })
+      .catch(function () { clapLoading = null; return null; });
+    return clapLoading;
+  }
   function clap() {
     if (!ready()) return;
+    var play = function (buf) {
+      if (!buf) return synthClap();
+      var src = ctx.createBufferSource(), g = ctx.createGain();
+      src.buffer = buf; g.gain.value = CLAP_VOL;
+      src.connect(g); g.connect(sfx); src.start();
+    };
+    if (clapFile) play(clapFile); else (loadClap() || Promise.resolve(null)).then(play);
+  }
+  var CLAP_VOL = 2.0;   // 예전 박수와 비슷한 크기 (녹음 파일 최대 -10dB라 넘치지 않음)
+  function synthClap() {
     var t0 = ctx.currentTime + 0.03, dur = 2.8, bufs = clapBuffers(), verb = roomVerb();
     var bus = ctx.createGain(); bus.gain.value = 1;
     var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 450;
