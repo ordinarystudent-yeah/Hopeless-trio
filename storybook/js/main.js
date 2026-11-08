@@ -580,15 +580,15 @@
         // 창 아래쪽까지 내려오면 자르기를 풀어 창 안(방)으로 들어와 창틀에 마름모로 앉는다.
         // 크기는 그대로, 종이가 기울 때마다 세로(Y)만 납작해져 원근을 낸다.
         var u = page.clientHeight / 100;   // 1cqh (px)
-        var view = page.querySelector('.win-view');
-        var wr = wrap.getBoundingClientRect(), vr = view ? view.getBoundingClientRect() : null;
-        var half = fly.offsetWidth * 0.5;                        // 봉투의 반 너비 (흔들려도 이 안)
-        var cy = wr.top + wr.height / 2;
-        var y0 = vr ? (vr.top - cy) - half * 0.55 : -48 * u;      // 창 너머 위쪽, 막 보이기 직전에서 시작 (곧바로 나타나게)
-        var ySw = vr ? Math.min(-0.5 * u, (vr.bottom - cy) - half - 0.6 * u) : -6 * u;   // 창 아래쪽(아직 창 밖)
-        if (vr) wrap.style.clipPath = 'inset(' + [vr.top - wr.top, wr.right - vr.right, wr.bottom - vr.bottom, vr.left - wr.left].map(function (v) { return v.toFixed(1) + 'px'; }).join(' ') + ')';
-        var N = 100, D = 9500, frames = [], T_IN = 0.86, PERS = Math.round(30 * u);   // 원근 거리 (30cqh)
-        var L = 20 * u, SWINGS = 3;
+        var view = page.querySelector('.win-view'), win = page.querySelector('.win');
+        // 위치는 화면 좌표가 아니라 쪽 안의 배치 값(offset)으로 잰다 — 책장이 넘어가는 중이어도 틀리지 않게
+        var vTop = win && view ? win.offsetTop + view.offsetTop : 9 * u, vBot = win && view ? vTop + view.offsetHeight : 57 * u;
+        var cy = wrap.offsetTop - wrap.offsetHeight / 2;            // 봉투(창틀에 앉을 자리)의 가운데 (.fortune은 -50%·-100% 옮겨져 있다)
+        var half = fly.offsetWidth * 0.5;
+        var y0 = (vTop - cy) - half * 0.55;                          // 창 너머 위쪽, 막 보이기 직전
+        var ySw = Math.min(-0.5 * u, (vBot - cy) - half - 0.6 * u);  // 창 아래쪽
+        var N = 100, D = 6000, frames = [], T_IN = 0.86, PERS = Math.round(30 * u), BEHIND = 1000;   // 6초 동안, 처음 1초는 창틀 뒤
+        var L = 20 * u, SWINGS = 2.5;
         for (var i = 0; i <= N; i++) {
           var t = i / N;
           var amp = 0.62 * Math.pow(Math.max(0, 1 - t / 0.9), 0.8);   // 흔들림은 점점 잦아든다 (라디안)
@@ -597,18 +597,32 @@
           var yb = t <= T_IN ? y0 + (ySw - y0) * ease : ySw * (1 - Math.sin((t - T_IN) / (1 - T_IN) * Math.PI / 2));
           var x = -16 * u * (1 - Math.min(1, t / 0.9)) + L * Math.sin(th);
           var y = yb - L * (1 - Math.cos(th));                          // 호의 양 끝에서는 살짝 떠오른다
-          // 기울수록 세로가 납작 (원근). 마지막에는 창틀에 누운 모양(세로 0.45)으로 스르르
-          var lie = t < 0.8 ? 0 : Math.pow((t - 0.8) / 0.2, 2) * (3 - 2 * (t - 0.8) / 0.2) / 1;
+          // 기울수록 세로가 납작 (원근). 마지막에는 창틀에 누운 모양으로 스르르
+          var lie = t < 0.8 ? 0 : Math.pow((t - 0.8) / 0.2, 2) * (3 - 2 * (t - 0.8) / 0.2);
           lie = Math.min(1, Math.max(0, lie));
           var sy = Math.max(0.35, Math.cos(th * 1.9)) * (1 - lie) + 0.53 * lie;
           var rot = th * 180 / Math.PI * 0.6;
-          // 세로로 납작해지는 만큼 앞으로 눕힌다(rotateX) → 먼 쪽인 봉투 윗면이 원근으로 좁아진다
-          var ax = Math.acos(Math.min(1, sy)) * 180 / Math.PI;
+          var ax = Math.acos(Math.min(1, sy)) * 180 / Math.PI;           // 세로로 납작한 만큼 눕힌다 → 먼 쪽(윗면)이 좁아진다
           frames.push({ transform: 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) perspective(' + PERS + 'px) rotateX(' + ax.toFixed(1) + 'deg) rotate(' + rot.toFixed(1) + 'deg)', offset: t });
         }
         frames[N].transform = 'translate(0px,0px) perspective(' + PERS + 'px) rotateX(58deg) rotate(0deg)';
-        setTimeout(function () { wrap.style.clipPath = ''; }, D * T_IN);   // 창 안으로 들어온다
+        // 처음 1초: 같은 봉투를 창 안쪽(날씨 위, 창틀 아래)에 하나 더 두고 똑같이 움직인다 (창 밖에서 떨어지는 모습).
+        // 1초 뒤에는 창 안쪽 것을 지우고 앞쪽(창틀 위) 봉투로 바꿔, 창틀로 내려앉는다
         var a = fly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
+        var sky = null;
+        if (view && win) {
+          sky = el('div', { class: 'fortune-sky', 'aria-hidden': 'true' });
+          sky.style.left = -(win.offsetLeft + view.offsetLeft) + 'px';
+          sky.style.top = -(win.offsetTop + view.offsetTop) + 'px';
+          sky.style.width = page.clientWidth + 'px';
+          sky.style.height = page.clientHeight + 'px';
+          var twin = el('div', { class: 'fortune' }), twinFly = el('div', { class: 'fortune-fly' },
+            el('div', { class: 'fortune-note' }, el('img', { src: 'assets/fortune/envelope-closed.png', alt: '', draggable: 'false' })));
+          twin.append(twinFly); sky.append(twin); view.append(sky);
+          twinFly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
+          wrap.style.visibility = 'hidden';
+          setTimeout(function () { wrap.style.visibility = ''; if (sky) sky.remove(); }, BEHIND);
+        }
         fly.style.opacity = '';
         wrap._fall = a;
         a.finished.then(function () { a.commitStyles && a.commitStyles(); a.cancel(); if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } }, function () {});

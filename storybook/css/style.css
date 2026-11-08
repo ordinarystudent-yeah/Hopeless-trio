@@ -1867,3 +1867,5 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* 황금빛 메모: 누를 때 노란 초점 테두리가 남지 않게 (키보드로 옮길 때만 보이도록) */
 .fortune-note:focus:not(:focus-visible), .fortune-close:focus:not(:focus-visible) { outline: none; }
 .fortune-note:focus-visible { outline: none; filter: brightness(1.1); }
+/* 떨어지기 시작할 때 창 안쪽(창 너머 하늘)에 두는 봉투 자리: 쪽과 같은 크기·같은 cqh로 맞춘다 */
+.fortune-sky { position: absolute; container-type: size; pointer-events: none; }
