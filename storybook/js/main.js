@@ -533,18 +533,10 @@
      그 뒤로는 창틀에 놓여 있다. 스프 떠먹기처럼 '터치' 안내가 깜빡이고, 누르면 메모가 커지며 펼쳐진다 (위에 × 닫기).
      내용은 펼칠 때마다 지금 고른 조합으로 다시 만든다 → 선택지를 바꾸면 메모 내용도 바뀐다 (다시 떨어지지는 않음). */
   function fortuneBody(c) {
+    // 조합별 문구(fortune.text)가 정해지면 공통 문구 아래에 나온다. 아직은 공통 문구만
     var f = S.fortune || {}, lines = f.text ? f.text(c) : null;
     var box = el('div', { class: 'fortune-body' });
     if (lines && lines.length) box.append(paragraphs(lines));
-    else {
-      box.append(el('p', { class: 'fortune-placeholder', text: '여기에 오늘의 조언이 들어갈 거예요.' }));
-      var dl = el('dl', { class: 'fortune-combo' });
-      [['때', c.time && c.time.label], ['날씨', c.weather && c.weather.label], ['음식', c.food && c.food.name],
-       ['맛', c.taste && c.taste.label], ['아침 날씨', c.wakeWeather && c.wakeWeather.label]].forEach(function (r) {
-        dl.append(el('dt', { text: r[0] }), el('dd', { text: r[1] || '—' }));
-      });
-      box.append(dl);
-    }
     return box;
   }
   function fortuneNote(leaf, page) {
@@ -602,8 +594,9 @@
     if (page.querySelector('.fortune-open')) return;
     var c = ctx();
     var close = el('button', { type: 'button', class: 'fortune-close', 'aria-label': '메모 닫기' }, '×');
-    var card = el('div', { class: 'fortune-card', role: 'dialog', 'aria-label': (S.fortune && S.fortune.title) || '황금빛 메모' },
-      close, el('h3', { class: 'fortune-title', text: (S.fortune && S.fortune.title) || '오늘의 별빛 메모' }), fortuneBody(c));
+    var ft = S.fortune && S.fortune.title, title = typeof ft === 'function' ? ft(c) : (ft || '요정의 한마디!');
+    var card = el('div', { class: 'fortune-card', role: 'dialog', 'aria-label': title },
+      close, el('h3', { class: 'fortune-title', text: title }), fortuneBody(c));
     var veil = el('div', { class: 'fortune-open' }, card);
     page.append(veil);
     // 창틀의 메모 자리에서 커지며 펼쳐진다

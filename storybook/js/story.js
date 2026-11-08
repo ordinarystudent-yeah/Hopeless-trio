@@ -442,7 +442,7 @@
   };
 
   window.StarSoup = {
-    version: '10.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '10.3',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -463,7 +463,8 @@
     //          문단 배열([['한 줄'], ['다음 줄']]) 또는 null. null이면 '문구 준비 중' 자리표시와 고른 조합만 보여 준다.
     //          (문구는 아직 정하지 않았다 — 여기만 채우면 메모 내용이 바뀐다)
     fortune: {
-      title: '오늘의 별빛 메모',
+      // 모든 조합에 공통으로 맨 위에 나오는 문구 (이름이 없으면 '당신')
+      title: function (c) { return c.you + '에게 하는 요정의 한마디!'; },
       text: function (c) { return null; }
     },
     // 삽화 자리에 "어떤 파일을 넣으면 되는지" 경로를 표시한다. 실제 삽화를 다 넣은 뒤에는 false로 바꾼다.

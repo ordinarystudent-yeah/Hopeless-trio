@@ -1871,3 +1871,6 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .fortune-combo { display: grid; grid-template-columns: auto 1fr; gap: 0.8cqh 2.4cqh; margin: 0 auto; text-align: left; font-size: max(3.2cqh, 11px); }
 .fortune-combo dt { color: #a8701a; font-family: var(--font-display); }
 .fortune-combo dd { margin: 0; }
+/* 공통 문구만 있을 때 아래 여백 없이 */
+.fortune-body:empty { display: none; }
+.fortune-card .fortune-title:last-child { margin-bottom: 0; }
