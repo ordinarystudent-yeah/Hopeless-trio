@@ -1875,3 +1875,6 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* 공통 문구만 있을 때 아래 여백 없이 */
 .fortune-body:empty { display: none; }
 .fortune-card .fortune-title:last-child { margin-bottom: 0; }
+/* 황금빛 메모: 누를 때 노란 초점 테두리가 남지 않게 (키보드로 옮길 때만 보이도록) */
+.fortune-note:focus:not(:focus-visible), .fortune-close:focus:not(:focus-visible) { outline: none; }
+.fortune-note:focus-visible { outline: none; filter: brightness(1.1); }

@@ -544,15 +544,15 @@
     var fly = el('div', { class: 'fortune-fly' });
     var note = el('button', { type: 'button', class: 'fortune-note', 'aria-label': '황금빛 메모 펼치기' },
       el('span', { class: 'fortune-seal', 'aria-hidden': 'true', text: '★' }));
-    var ring = el('span', { class: 'fortune-ring', 'aria-hidden': 'true' });
+    var ring = el('span', { class: 'fortune-glow', 'aria-hidden': 'true' });   // 동그란 원 대신 메모 자체가 은은하게 빛난다
     var label = el('span', { class: 'scoop-label fortune-touch', 'aria-hidden': 'true', text: '터치' });
     fly.append(note);
-    wrap.append(fly, ring, label);   // 원·'터치'는 돌아가지 않게 메모(마름모) 밖에
+    wrap.append(fly, label);   // '터치'는 돌아가지 않게 메모(마름모) 밖에
     var beat = { duration: 2400, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' };
     var hints = [];
     function showHint() {
       if (!ring.animate) return;
-      hints = [ring.animate([{ opacity: 0.25 }, { opacity: 1 }], beat), label.animate([{ opacity: 0.7 }, { opacity: 1 }], beat)];
+      hints = [note.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.12) drop-shadow(0 0 1.6cqh rgb(255 220 120 / 0.9))' }], beat), label.animate([{ opacity: 0.7 }, { opacity: 1 }], beat)];
     }
     function hideHint() { hints.forEach(function (a) { a.cancel(); }); hints = []; ring.style.opacity = label.style.opacity = '0'; }
     var visible = function () { return mode === 'spread' || state.page === 1; };
@@ -574,12 +574,17 @@
           var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
           var x = -20 * (1 - t) + L * Math.sin(th);                 // 창 가운데 쪽에서 창틀 자리로 옮겨 가며 좌우로
           var y = -48 * (1 - ease) - L * (1 - Math.cos(th));        // 내려오되, 호의 양 끝에서는 살짝 떠오른다
-          var sc = t < 0.62 ? 0.32 + t * 0.29 : 0.5 + (t - 0.62) / 0.38 * 0.5;   // 창을 지나며 커진다
+          // 투시: 멀리(창 너머, 작게)에서 가까이(방 안, 크게)로 다가오며 커지고, 진자의 가운데를 지날 때는 앞으로 다가와 조금 더 크게,
+          //       양 끝에서는 뒤로 물러나 조금 작게. 흔들리는 쪽으로 종이가 비스듬히 누워(rotateY·rotateX) 원근이 생긴다
+          var far = t < 0.62 ? 0.3 + t * 0.32 : 0.5 + Math.pow((t - 0.62) / 0.38, 1.4) * 0.5;
+          var depth = 1 + 0.16 * (1 - t) * Math.cos(2 * t * SWINGS * 2 * Math.PI);
+          var sc = far * depth;
           var rot = 45 + th * 180 / Math.PI * 0.9;                  // 마름모가 흔들림 쪽으로 기운다
-          frames.push({ transform: 'translate(' + (x * u).toFixed(1) + 'px,' + (y * u).toFixed(1) + 'px) rotate(' + rot.toFixed(1) + 'deg) scale(' + sc.toFixed(3) + ')',
+          var ry = th * 180 / Math.PI * 0.9, rx = 18 * (1 - t) * Math.abs(Math.sin(t * SWINGS * 2 * Math.PI));
+          frames.push({ transform: 'translate(' + (x * u).toFixed(1) + 'px,' + (y * u).toFixed(1) + 'px) perspective(' + (40 * u).toFixed(0) + 'px) rotateX(' + rx.toFixed(1) + 'deg) rotateY(' + ry.toFixed(1) + 'deg) rotate(' + rot.toFixed(1) + 'deg) scale(' + sc.toFixed(3) + ')',
             opacity: Math.min(1, t / 0.05), offset: t });
         }
-        frames[N].transform = 'translate(0px,0px) rotate(45deg) scale(1)';
+        frames[N].transform = 'translate(0px,0px) perspective(' + (40 * u).toFixed(0) + 'px) rotateX(0deg) rotateY(0deg) rotate(45deg) scale(1)';
         var a = fly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
         fly.style.opacity = '';
         a.finished.then(function () { a.commitStyles && a.commitStyles(); a.cancel(); if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } }, function () {});
