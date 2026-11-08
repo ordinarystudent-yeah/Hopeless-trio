@@ -153,8 +153,8 @@
   function stir() {
     if (!ready()) return;
     var t = ctx.currentTime;
-    slosh(t, 0.6, 0.9, 700);
-    for (var i = 0; i < 7; i++) bubble(t + 0.05 + Math.random() * 0.45, 280 + Math.random() * 520, 0.035 + Math.random() * 0.04, 0.08 + Math.random() * 0.08);
+    // 보글보글 거품만 (바람 같은 '훅' 소리는 뺐다)
+    for (var i = 0; i < 9; i++) bubble(t + Math.random() * 0.6, 260 + Math.random() * 560, 0.035 + Math.random() * 0.05, 0.09 + Math.random() * 0.09);
   }
   // 다 저었을 때: 반짝이는 화음이 빠르게 올라간다
   function stirDone() {
@@ -167,9 +167,12 @@
   function plop() {
     if (!ready()) return;
     var t = ctx.currentTime;
+    // '퐁' 한 번 뒤로 거품이 보글보글 길게 올라오며 잦아든다 (휙 소리는 뺐다)
     bubble(t, 380, 0.12, 0.45);
-    slosh(t + 0.02, 0.45, 0.7, 900);
-    for (var i = 0; i < 4; i++) bubble(t + 0.12 + i * 0.07 + Math.random() * 0.04, 500 + Math.random() * 500, 0.04, 0.07);
+    for (var i = 0; i < 12; i++) {
+      var at = 0.12 + i * 0.09 + Math.random() * 0.06, fade = 1 - i / 13;
+      bubble(t + at, 420 + Math.random() * 600, 0.04 + Math.random() * 0.03, 0.09 * fade + 0.02);
+    }
   }
   // 숟가락이 스프에 살짝 잠김
   function dip() {
@@ -198,22 +201,77 @@
       tone(f * 2.76, t + 0.05 + i * 0.1, 0.4, 0.025, 'sine', 0, ui);
     }
   }
-  // 음식 고르기: 마림바처럼 '또롱' 두 음 (고르기 소리 줄, 10dB 작게)
-  function pick() {
+  // 마림바 음 하나 (나무를 톡 치는 느낌)
+  function mallet(f, t, vol) { tone(f, t, 0.45, vol, 'sine', 0, ui); tone(f * 4, t, 0.07, vol * 0.2, 'sine', 0, ui); }
+  // 음식 고르기: 음식마다 다른 소리 (고르기 소리 줄, 10dB 작게)
+  function pick(id) {
+    if (!ready()) return;
+    var t = ctx.currentTime, i;
+    if (id === 'cotton-candy') {          // 폭신폭신: 높고 부드럽게 사르르 올라가는 세 음
+      [1046.5, 1318.5, 1568].forEach(function (f, k) { tone(f, t + k * 0.07, 0.7, 0.18, 'sine', 0, ui); });
+    } else if (id === 'pudding') {        // 말랑말랑: 음이 뽀잉 하고 출렁
+      var o = ctx.createOscillator(), g = ctx.createGain(), l = ctx.createOscillator(), lg = ctx.createGain();
+      o.frequency.value = 520; l.frequency.value = 9; lg.gain.value = 40; l.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(g); g.connect(ui); o.start(t); l.start(t); o.stop(t + 0.55); l.stop(t + 0.55);
+    } else if (id === 'chicken') {        // 바삭바삭: 짧게 바스락 터지는 소리
+      for (i = 0; i < 6; i++) noise(t + i * 0.045 + Math.random() * 0.02, 0.04, 0.5, 3000 + Math.random() * 2000, 2200, 2, ui);
+    } else if (id === 'bread') {          // 따끈따끈: 낮고 포근한 두 음
+      mallet(392, t, 0.32); mallet(523.3, t + 0.12, 0.28);
+    } else if (id === 'omurice') {        // 포슬포슬: 통통 튀는 세 음
+      mallet(659.3, t, 0.3); mallet(784, t + 0.08, 0.28); mallet(987.8, t + 0.16, 0.26);
+    } else if (id === 'rice-ball') {      // 동글동글: 동그랗게 굴러가는 음 (오르락내리락)
+      [587.3, 784, 659.3, 880].forEach(function (f, k) { mallet(f, t + k * 0.065, 0.22); });
+    } else {                              // 직접 그리기: 연필 사각사각
+      for (i = 0; i < 4; i++) noise(t + i * 0.09, 0.07, 0.4, 3500 + Math.random() * 1500, 2500, 3, ui);
+    }
+  }
+  // 때 고르기: 때마다 다른 소리
+  function timePick(id) {
     if (!ready()) return;
     var t = ctx.currentTime;
-    [[784, 0], [1175, 0.09]].forEach(function (n) {
-      tone(n[0], t + n[1], 0.45, 0.32, 'sine', 0, ui);
-      tone(n[0] * 4, t + n[1], 0.08, 0.06, 'sine', 0, ui);   // 나무를 톡 치는 느낌
-    });
+    if (id === 'dawn') {                  // 어스름한 새벽: 멀리서 은은하게 번지는 낮은 두 음
+      tone(392, t, 1.4, 0.2, 'sine', 0, ui); tone(587.3, t + 0.25, 1.4, 0.14, 'sine', 0, ui);
+    } else if (id === 'morning') {        // 밝은 아침: 맑게 올라가는 아르페지오
+      [523.3, 659.3, 784, 1046.5].forEach(function (f, k) { mallet(f, t + k * 0.07, 0.26); });
+    } else if (id === 'day') {            // 한낮: 밝고 또렷한 화음 한 번
+      [659.3, 784, 1046.5].forEach(function (f) { tone(f, t, 0.8, 0.16, 'triangle', 0, ui); });
+    } else if (id === 'evening') {        // 노을 진 저녁: 천천히 내려오는 따뜻한 음
+      [784, 659.3, 523.3].forEach(function (f, k) { tone(f, t + k * 0.14, 1.0, 0.2, 'sine', 0, ui); });
+    } else {                              // 깜깜한 밤: 작고 높은 별 반짝임 두 번
+      tone(1568, t, 1.2, 0.14, 'sine', 0, ui); tone(2093, t + 0.18, 1.4, 0.12, 'sine', 0, ui);
+    }
   }
-  // 박수: 여러 사람이 짝짝짝 (짧게 걸러 낸 잡음을 흩뿌리고, 커졌다가 잦아든다)
+  // 박수: 사람들이 손뼉을 짝짝짝 — 손뼉 한 번은 '아주 짧고 날카롭게 튀는 넓은 잡음'(10ms 남짓에 사라짐) + 손바닥이 맞닿는 낮은 울림.
+  // 여러 사람이 저마다 조금씩 다른 빠르기(초당 4~6번)·음색으로 치고, 다 같이 커졌다가 잦아든다
+  var clapBuf = null;
+  function clapBuffer() {
+    if (clapBuf) return clapBuf;
+    var len = Math.floor(ctx.sampleRate * 0.09);
+    clapBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var d = clapBuf.getChannelData(0);
+    for (var i = 0; i < len; i++) {
+      var tt = i / ctx.sampleRate;
+      // 손뼉은 아주 빠르게 몇 번 겹쳐 튀었다가(1~3ms 간격) 짧게 사라진다
+      var env = Math.exp(-tt / 0.011) + 0.5 * Math.exp(-Math.max(0, tt - 0.0025) / 0.009) * (tt > 0.0025 ? 1 : 0);
+      d[i] = (Math.random() * 2 - 1) * env;
+    }
+    return clapBuf;
+  }
   function clap() {
     if (!ready()) return;
-    var t = ctx.currentTime, len = 2.2;
-    for (var i = 0; i < 46; i++) {
-      var at = Math.random() * len, env = Math.sin(Math.PI * Math.min(1, at / len)) * 0.9 + 0.1;
-      noise(t + at, 0.05 + Math.random() * 0.03, 0.22 * env, 1100 + Math.random() * 900, 900 + Math.random() * 600, 1.6);
+    var t0 = ctx.currentTime + 0.02, dur = 2.6, buf = clapBuffer();
+    for (var p = 0; p < 9; p++) {
+      var rate = 4 + Math.random() * 2.2, f = 900 + Math.random() * 1500, q = 0.7 + Math.random() * 0.8, pv = 0.5 + Math.random() * 0.5;
+      var start = Math.random() * 0.35, stop = dur - Math.random() * 0.6;
+      for (var at = start; at < stop; at += (1 / rate) * (0.88 + Math.random() * 0.24)) {
+        var x = at / dur, env = Math.pow(Math.sin(Math.PI * Math.min(1, x * 1.15)), 0.6);
+        var src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = 0.85 + Math.random() * 0.3;
+        var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * (0.92 + Math.random() * 0.16); bp.Q.value = q;
+        var g = ctx.createGain(); g.gain.value = 0.55 * pv * env;
+        src.connect(bp); bp.connect(g); g.connect(sfx);
+        src.start(t0 + at);
+      }
     }
   }
   // 맛 카드: 맛마다 다른 소리
@@ -276,33 +334,45 @@
     var filt = function (type, f, q) { var b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q) b.Q.value = q; return b; };
     var lfo = function (param, rate, depth) { var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = rate; g.gain.value = depth; o.connect(g); g.connect(param); o.start(); nodes.push(o); };
     var every = function (min, max, fn) { var go = function () { fn(); timers.push(setTimeout(go, min + Math.random() * (max - min))); }; timers.push(setTimeout(go, min * Math.random())); };
-    var blip = function (f, len, vol, dest) {   // 짧은 음 (빗방울·새·풍경)
+    var blip = function (f, len, vol, glide) {   // 짧은 음 (빗방울·새·방울). glide: 음이 올라가는 정도 (1이면 그대로)
       var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-      o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 1.5, t + len * 0.6);
+      o.frequency.setValueAtTime(f, t); if ((glide || 1.5) !== 1) o.frequency.exponentialRampToValueAtTime(f * (glide || 1.5), t + len * 0.6);
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-      o.connect(g); g.connect(dest || out); o.start(t); o.stop(t + len + 0.02);
+      o.connect(g); g.connect(out); o.start(t); o.stop(t + len + 0.02);
+    };
+    var pad = function (freqs, vol) {   // 아주 천천히 들고 나는 부드러운 화음 (눈)
+      freqs.forEach(function (f) {
+        var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 2.2); g.gain.exponentialRampToValueAtTime(0.0001, t + 6);
+        o.connect(g); g.connect(out); o.start(t); o.stop(t + 6.1);
+      });
     };
     if (id === 'rain') {
-      // 쏴— 하는 빗소리 + 톡톡 떨어지는 빗방울
-      chain(loopNoise(2.5), [filt('highpass', 500), filt('lowpass', 3200)], 0.22);
-      chain(loopNoise(3, true), [filt('lowpass', 400)], 0.25);
-      every(60, 220, function () { blip(1400 + Math.random() * 2200, 0.025, 0.05 + Math.random() * 0.05); });
+      // 청량한 빗소리: 낮은 웅웅거림은 빼고 높고 맑은 '솨아—' + 또르륵 맑게 튀는 빗방울
+      chain(loopNoise(2.5), [filt('highpass', 1600), filt('lowpass', 8000)], 0.16);
+      chain(loopNoise(3), [filt('bandpass', 4200, 0.6)], 0.08);
+      every(45, 160, function () { blip(2200 + Math.random() * 2800, 0.02 + Math.random() * 0.02, 0.03 + Math.random() * 0.05); });
     } else if (id === 'snow') {
-      // 소복소복: 아주 부드러운 바람 + 가끔 맑은 방울
-      var g1 = chain(loopNoise(4, true), [filt('lowpass', 520)], 0.35);
-      lfo(g1.gain, 0.09, 0.15);
-      every(1800, 4200, function () { var n = [1568, 1760, 2093, 2349, 2637]; blip(n[Math.floor(Math.random() * n.length)], 1.4, 0.03); });
+      // 소복소복: 아주 낮고 포근한 '쉬—' 바람 + 천천히 들고 나는 부드러운 화음
+      var g1 = chain(loopNoise(4, true), [filt('lowpass', 320)], 0.3);
+      lfo(g1.gain, 0.06, 0.12);
+      var chords = [[261.6, 329.6, 392], [220, 277.2, 329.6], [196, 246.9, 293.7], [174.6, 220, 261.6]], ci = 0;
+      every(4200, 5200, function () { pad(chords[ci++ % chords.length], 0.035); });
     } else if (id === 'cloudy') {
-      // 몽글몽글 구름: 낮게 오가는 바람
-      var bp = filt('bandpass', 450, 0.8);
-      var g2 = chain(loopNoise(4, true), [bp], 0.55);
-      lfo(bp.frequency, 0.07, 220); lfo(g2.gain, 0.05, 0.2);
-    } else if (id === 'sunny') {
-      // 화창: 살랑이는 바람 + 멀리서 지저귀는 새
+      // 흐린 날: 살랑이는 바람 + 멀리서 지저귀는 새
       chain(loopNoise(4, true), [filt('lowpass', 700)], 0.18);
       every(2200, 5200, function () {
         var base = 2600 + Math.random() * 900, n = 2 + Math.floor(Math.random() * 3);
         for (var i = 0; i < n; i++) (function (k) { setTimeout(function () { if (amb && amb.out === out) blip(base * (1 + k * 0.06), 0.09, 0.035); }, k * 120); })(i);
+      });
+    } else if (id === 'sunny') {
+      // 화창한 날: 맑은 소리 — 햇살이 반짝이듯 유리 방울이 높고 맑게 딸랑 (5음계) + 아주 가벼운 바람
+      chain(loopNoise(4, true), [filt('lowpass', 900)], 0.08);
+      var bright = [1318.5, 1568, 1760, 2093, 2349, 2637, 3136];
+      every(500, 1400, function () {
+        var f = bright[Math.floor(Math.random() * bright.length)];
+        blip(f, 1.6, 0.03, 1); blip(f * 2, 0.6, 0.008, 1);
       });
     } else {
       // 직접 그린 날씨: 은은한 바람
@@ -337,7 +407,7 @@
   }
 
   window.StarSoupSound = {
-    start: start, flip: flip, ambient: ambient, pick: pick, clap: clap, taste: taste, windowOpen: windowOpen, paper: paper, stir: stir, stirDone: stirDone, plop: plop, dip: dip, gulp: gulp, chime: chime,
+    start: start, flip: flip, ambient: ambient, pick: pick, timePick: timePick, clap: clap, taste: taste, windowOpen: windowOpen, paper: paper, stir: stir, stirDone: stirDone, plop: plop, dip: dip, gulp: gulp, chime: chime,
     isOn: function () { return on; },
     toggle: function () { setOn(!on); return on; }
   };

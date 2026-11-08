@@ -585,7 +585,7 @@
           var t = i / N;
           var amp = 0.62 * Math.pow(Math.max(0, 1 - t / 0.9), 0.8);   // 흔들림은 점점 잦아든다 (라디안)
           var th = amp * Math.sin(t * SWINGS * 2 * Math.PI / 0.9);      // 진자의 각도
-          var k = Math.min(1, t / T_IN), ease = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+          var k = Math.min(1, t / T_IN), ease = 1 - Math.pow(1 - k, 1.8);   // 처음부터 빠르게 떨어지기 시작해 점점 느려진다
           var yb = t <= T_IN ? y0 + (ySw - y0) * ease : ySw * (1 - Math.sin((t - T_IN) / (1 - T_IN) * Math.PI / 2));
           var x = -16 * u * (1 - Math.min(1, t / 0.9)) + L * Math.sin(th);
           var y = yb - L * (1 - Math.cos(th));                          // 호의 양 끝에서는 살짝 떠오른다
@@ -1039,7 +1039,7 @@
 
   function pickFood(id) {
     var changed = state.food !== id;
-    sfx('pick');
+    var snd = window.StarSoupSound; if (snd && snd.pick) snd.pick(id);   // 음식마다 다른 소리
     state.food = id;
     var grid = document.getElementById('food-choice-grid');
     if (grid) markPressed(grid, id);
@@ -1994,7 +1994,7 @@
         var g = el('div', { class: 'grid grid--food choice-grid choice-grid--5', role: 'group', 'aria-label': '때 고르기' });
         S.times.forEach(function (t) {
           g.append(tile({ id: t.id, label: t.label, bg: t.sky, emoji: '', pressed: state.time === t.id,
-            onclick: function () { state.time = t.id; markPressed(g, t.id); paintAskNote(); saveSoon(); } }));
+            onclick: function () { state.time = t.id; markPressed(g, t.id); paintAskNote(); saveSoon(); var snd = window.StarSoupSound; if (snd && snd.timePick) snd.timePick(t.id); } }));
         });
         return g;
       },
