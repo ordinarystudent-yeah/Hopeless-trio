@@ -342,25 +342,29 @@
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + len + 0.02);
     };
-    var pad = function (freqs, vol) {   // 아주 천천히 들고 나는 부드러운 화음 (눈)
-      freqs.forEach(function (f) {
-        var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.value = f;
-        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 2.2); g.gain.exponentialRampToValueAtTime(0.0001, t + 6);
-        o.connect(g); g.connect(out); o.start(t); o.stop(t + 6.1);
-      });
-    };
     if (id === 'rain') {
       // 청량한 빗소리: 낮은 웅웅거림은 빼고 높고 맑은 '솨아—' + 또르륵 맑게 튀는 빗방울
       chain(loopNoise(2.5), [filt('highpass', 1600), filt('lowpass', 8000)], 0.16);
       chain(loopNoise(3), [filt('bandpass', 4200, 0.6)], 0.08);
       every(45, 160, function () { blip(2200 + Math.random() * 2800, 0.02 + Math.random() * 0.02, 0.03 + Math.random() * 0.05); });
     } else if (id === 'snow') {
-      // 소복소복: 아주 낮고 포근한 '쉬—' 바람 + 천천히 들고 나는 부드러운 화음
-      var g1 = chain(loopNoise(4, true), [filt('lowpass', 320)], 0.3);
-      lfo(g1.gain, 0.06, 0.12);
-      var chords = [[261.6, 329.6, 392], [220, 277.2, 329.6], [196, 246.9, 293.7], [174.6, 220, 261.6]], ci = 0;
-      every(4200, 5200, function () { pad(chords[ci++ % chords.length], 0.035); });
+      // 눈 오는 날: 맑은 종소리 — 종처럼 맞지 않는 배음(0.5·1·1.19·1.5·2·2.5·3배)이 길게 울리되, 음은 조금 낮게(피치 다운)
+      var bellTone = function (f, vol) {
+        var t = ctx.currentTime;
+        [[0.5, 0.5, 4.5], [1, 1, 3.6], [1.19, 0.45, 2.6], [1.5, 0.35, 2.2], [2, 0.3, 1.6], [2.5, 0.16, 1.1], [3, 0.1, 0.8]].forEach(function (pp) {
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.frequency.value = f * pp[0];
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * pp[1], t + 0.006);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + pp[2]);
+          o.connect(g); g.connect(out); o.start(t); o.stop(t + pp[2] + 0.05);
+        });
+      };
+      chain(loopNoise(4, true), [filt('lowpass', 300)], 0.08);   // 아주 작은 눈바람
+      var bells = [392, 440, 523.3, 587.3, 659.3];                 // 5음계를 한 옥타브 낮춰
+      every(1600, 3400, function () {
+        bellTone(bells[Math.floor(Math.random() * bells.length)], 0.05);
+        if (Math.random() < 0.35) setTimeout(function () { if (amb && amb.out === out) bellTone(bells[Math.floor(Math.random() * bells.length)], 0.03); }, 380 + Math.random() * 300);
+      });
     } else if (id === 'cloudy') {
       // 흐린 날: 살랑이는 바람 + 멀리서 지저귀는 새
       chain(loopNoise(4, true), [filt('lowpass', 700)], 0.18);
@@ -405,7 +409,9 @@
       // 직접 그린 날씨: 은은한 바람
       chain(loopNoise(4, true), [filt('lowpass', 600)], 0.25);
     }
-    out.gain.setTargetAtTime(0.5, ctx.currentTime, 0.8);   // 천천히 커진다
+    // 크기: 날씨 배경 소리는 배경 음악보다 10dB 정도만 크게 (실제로 잰 크기에 맞춘 값). 식탁 소리는 그대로
+    var LEVEL = { rain: 0.375, snow: 0.406, cloudy: 0.175, sunny: 0.397, custom: 0.127, dishes: 0.5 };
+    out.gain.setTargetAtTime(LEVEL[id] || 0.2, ctx.currentTime, 0.8);   // 천천히 커진다
     return { id: id, refs: 0, out: out, stopAll: function () {
       timers.forEach(clearTimeout);
       out.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.4);
@@ -433,7 +439,10 @@
     if (on) start();
   }
 
+  // (확인용) 소리 크기를 잴 때만 쓴다
+  function _probe() { return { ctx: ctx, music: music, amb: amb }; }
   window.StarSoupSound = {
+    _probe: _probe,
     start: start, flip: flip, ambient: ambient, pick: pick, timePick: timePick, clap: clap, taste: taste, windowOpen: windowOpen, paper: paper, stir: stir, stirDone: stirDone, plop: plop, dip: dip, gulp: gulp, chime: chime,
     isOn: function () { return on; },
     toggle: function () { setOn(!on); return on; }
