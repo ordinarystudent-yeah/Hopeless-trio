@@ -580,7 +580,7 @@
         var wr = wrap.getBoundingClientRect(), vr = view ? view.getBoundingClientRect() : null;
         var half = fly.offsetWidth * 0.5;                        // 봉투의 반 너비 (흔들려도 이 안)
         var cy = wr.top + wr.height / 2;
-        var y0 = vr ? (vr.top - cy) - half * 1.2 : -48 * u;       // 창 너머 위쪽, 보이지 않는 곳에서 시작
+        var y0 = vr ? (vr.top - cy) - half * 0.55 : -48 * u;      // 창 너머 위쪽, 막 보이기 직전에서 시작 (곧바로 나타나게)
         var ySw = vr ? Math.min(-0.5 * u, (vr.bottom - cy) - half - 0.6 * u) : -6 * u;   // 창 아래쪽(아직 창 밖)
         if (vr) wrap.style.clipPath = 'inset(' + [vr.top - wr.top, wr.right - vr.right, wr.bottom - vr.bottom, vr.left - wr.left].map(function (v) { return v.toFixed(1) + 'px'; }).join(' ') + ')';
         var N = 100, D = 9500, frames = [], T_IN = 0.86, PERS = Math.round(30 * u);   // 원근 거리 (30cqh)
@@ -608,7 +608,7 @@
         fly.style.opacity = '';
         wrap._fall = a;
         a.finished.then(function () { a.commitStyles && a.commitStyles(); a.cancel(); if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } }, function () {});
-      }, mode === 'spread' ? 900 : 700);
+      }, 250);   // 쪽이 보이자마자 곧 떨어지기 시작
     } else showHint();
     note.addEventListener('click', function (e) {
       e.stopPropagation();
