@@ -274,6 +274,18 @@
     var wet = ctx.createGain(); wet.gain.value = 0.35; room.connect(wet); wet.connect(sfx);
     return room;
   }
+  // 녹음 파일 불러오기 (assets/sounds/이름.mp3) — 한 번 받으면 기억해 둔다
+  var files = {};
+  function loadFile(name) {
+    if (files[name]) return files[name];
+    if (!ctx || !window.fetch) return Promise.resolve(null);
+    var base = (document.querySelector('script[src*="js/sound.js"]') || {}).src || '';
+    base = base ? base.replace(/js\/sound\.js.*$/, '') : '';
+    files[name] = fetch(base + 'assets/sounds/' + name + '.mp3').then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(function (ab) { return new Promise(function (res, rej) { ctx.decodeAudioData(ab, res, rej); }); })
+      .catch(function () { delete files[name]; return null; });
+    return files[name];
+  }
   // 박수: 녹음된 진짜 박수 소리(assets/sounds/clap.mp3, 2.8초로 다듬음). 불러오지 못하면 아래 만든 소리로
   var clapFile = null, clapLoading = null;
   function loadClap() {
@@ -420,39 +432,27 @@
         blip(f, 1.6, 0.03, 1); blip(f * 2, 0.6, 0.008, 1);
       });
     } else if (id === 'dishes') {
-      // #4 5쪽 식탁: 숟가락·포크가 그릇에 닿는 '쨍'·'달그락' (금속은 맞지 않는 배음이 높게 짧게 울리고, 사기그릇은 낮고 둔하게 톡)
-      var clink = function (vol) {   // 쨍: 높은 금속 배음이 오래(~1초) 반짝이며 남고, 짝을 이룬 배음이 살짝 어긋나 '찰랑' 떨린다
-        var t = ctx.currentTime, base = 1500 + Math.random() * 1300;   // 조금 낮게
-        [[1, 1, 1.1], [2.76, 0.7, 0.8], [5.4, 0.45, 0.55], [8.93, 0.3, 0.35], [13.3, 0.18, 0.25]].forEach(function (pp) {
-          [0, 1].forEach(function (k) {
-            var o = ctx.createOscillator(), g = ctx.createGain();
-            o.frequency.value = base * pp[0] * (k ? 1.004 : 1);
-            g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * pp[1] * 0.6, t + 0.002);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + pp[2] * (0.8 + Math.random() * 0.4));
-            o.connect(g); g.connect(out); o.start(t); o.stop(t + pp[2] * 1.3 + 0.05);
-          });
+      // #4 5·6쪽 식탁: 녹음된 식기 소리 — 접시 달그락(plates.mp3, 16초)을 은은하게 반복하고, 가끔 접시 포개는 소리(plates-stack.mp3)
+      loadFile('plates').then(function (buf) {
+        if (!buf || !amb || amb.out !== out) return;
+        var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+        var g = ctx.createGain(); g.gain.value = 1;
+        src.connect(g); g.connect(out); src.start(); nodes.push(src);
+      });
+      every(6000, 13000, function () {
+        loadFile('plates-stack').then(function (buf) {
+          if (!buf || !amb || amb.out !== out) return;
+          var src = ctx.createBufferSource(), g = ctx.createGain();
+          src.buffer = buf; g.gain.value = 0.12 + Math.random() * 0.06; src.playbackRate.value = 0.94 + Math.random() * 0.1;
+          src.connect(g); g.connect(out); src.start();
         });
-        // 부딪히는 순간의 '찰'
-        var nb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.02), ctx.sampleRate), nd = nb.getChannelData(0);
-        for (var i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.003));
-        var ns = ctx.createBufferSource(), nh = ctx.createBiquadFilter(), ng = ctx.createGain();
-        ns.buffer = nb; nh.type = 'highpass'; nh.frequency.value = 4000; ng.gain.value = vol * 1.5;
-        ns.connect(nh); nh.connect(ng); ng.connect(out); ns.start(t);
-      };
-      var clatter = function (vol) { clink(vol * 0.7); };   // 달그락도 금속성으로
-      chain(loopNoise(4, true), [filt('lowpass', 500)], 0.05);   // 식탁 둘레의 아주 작은 웅성임
-      every(900, 2600, function () {   // 느릿하게
-        var r = Math.random();
-        if (r < 0.55) clink(0.05 + Math.random() * 0.04);
-        else if (r < 0.75) { clatter(0.08); setTimeout(function () { if (amb && amb.out === out) clatter(0.05); }, 70 + Math.random() * 60); }
-        else { clink(0.06); setTimeout(function () { if (amb && amb.out === out) clink(0.035); }, 110 + Math.random() * 90); }
       });
     } else {
       // 직접 그린 날씨: 은은한 바람
       chain(loopNoise(4, true), [filt('lowpass', 600)], 0.25);
     }
     // 크기: 날씨 배경 소리는 배경 음악보다 10dB 정도만 크게 (실제로 잰 크기에 맞춘 값). 식탁 소리는 그대로
-    var LEVEL = { rain: 0.375, snow: 0.093, cloudy: 0.175, sunny: 0.397, custom: 0.127, dishes: 0.5 };
+    var LEVEL = { rain: 0.375, snow: 0.093, cloudy: 0.175, sunny: 0.397, custom: 0.127, dishes: 1.1 };   // 식탁: 녹음 파일 최고 -3dB라 넘치지 않을 만큼
     out.gain.setTargetAtTime(LEVEL[id] || 0.2, ctx.currentTime, 0.8);   // 천천히 커진다
     return { id: id, refs: 0, out: out, stopAll: function () {
       timers.forEach(clearTimeout);
