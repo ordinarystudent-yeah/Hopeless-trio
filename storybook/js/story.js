@@ -442,7 +442,7 @@
   };
 
   window.StarSoup = {
-    version: '10.1',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
+    version: '10.2',   // 게시할 때마다 0.1씩 올린다 (index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -458,6 +458,14 @@
     motifs: motifs,
     josa: josa,
     limits: { name: 12, deed: 80, foodName: 12, weatherName: 12, ingredient: 10, ingredients: 5, tasteName: 12 },
+    // #10 18쪽: 창 밖 날씨를 고르면 창문으로 날아 들어오는 황금빛 메모 (운세·조언)
+    // text(c): 지금까지 고른 조합(c.time, c.weather, c.food, c.taste, c.wakeWeather, c.deed, 재료)에 맞는 문구를 돌려준다.
+    //          문단 배열([['한 줄'], ['다음 줄']]) 또는 null. null이면 '문구 준비 중' 자리표시와 고른 조합만 보여 준다.
+    //          (문구는 아직 정하지 않았다 — 여기만 채우면 메모 내용이 바뀐다)
+    fortune: {
+      title: '오늘의 별빛 메모',
+      text: function (c) { return null; }
+    },
     // 삽화 자리에 "어떤 파일을 넣으면 되는지" 경로를 표시한다. 실제 삽화를 다 넣은 뒤에는 false로 바꾼다.
     showAssetNotes: false
   };

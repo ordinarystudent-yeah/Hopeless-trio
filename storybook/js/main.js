@@ -28,6 +28,7 @@
       soupStirs: 0, // 스프를 저은 횟수 (10번이면 완성)
       name: '', food: null, customFoodName: '', deed: '', taste: null, customTasteName: '',
       stickers: {}, deedMemo: null, returnTo: null,
+      fortuneFell: false,   // #10 황금빛 메모가 한 번 날아 들어왔는지 (그 뒤로는 창틀에 놓인 채로)
       padBg: {}   // 쪽 안 그림판의 바탕색 { 'board-draw': '#ffe1ea', ... } (그림과 따로)
     };
   }
@@ -227,6 +228,7 @@
     s.page = raw.page === 1 ? 1 : 0;
     // 예전 버전은 PC에서 음식 스티커를 #5에 붙였다 → 이제는 #4 오른쪽 쪽에만 붙으므로 정리
     delete s.stickers.fairies;
+    s.fortuneFell = raw.fortuneFell === true;
     if (raw.padBg && typeof raw.padBg === 'object') {
       [IMG_BOARD, IMG_TASTE].forEach(function (k) { var v = raw.padBg[k]; if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) s.padBg[k] = v; });
     }
@@ -356,7 +358,10 @@
       var pg = el('div', { class: 'pg' + (p.tight ? ' pg--tight' : ''), 'data-place': p.place || 'top' });
       if (p.fade) page.classList.add('is-fade');
       if (p.low) pg.classList.add('pg--low');   // 글을 쪽 맨 아래 가까이 (#5 8쪽 보랏빛 연기 위)
-      if (p.window) { page.classList.add('has-image', 'has-window'); page.append(roomWindow(leaf)); }
+      if (p.window) {
+        page.classList.add('has-image', 'has-window'); page.append(roomWindow(leaf));
+        if (state.wakeWeather && !printing) page.append(fortuneNote(leaf, page));
+      }
       // 그림 속 말풍선 안에 넣는 글 (#6: 내가 적은 착한 일)
       if (p.bubble) {
         var bt = p.bubble.text(c), bb = el('div', { class: 'bubble-text' + (bt.empty ? ' is-empty' : '') }, el('p', { text: bt.text }));
@@ -521,6 +526,105 @@
         });
     });
     return btn;
+  }
+
+  /* ---------- #10 18쪽: 황금빛 메모 (운세·조언) ----------
+     창 밖 날씨를 처음 고르고 이 쪽에 오면, 금빛 메모가 창 너머에서 팔랑팔랑 떨어져 창 안으로 들어와 창틀에 내려앉는다 (한 번만).
+     그 뒤로는 창틀에 놓여 있다. 스프 떠먹기처럼 '터치' 안내가 깜빡이고, 누르면 메모가 커지며 펼쳐진다 (위에 × 닫기).
+     내용은 펼칠 때마다 지금 고른 조합으로 다시 만든다 → 선택지를 바꾸면 메모 내용도 바뀐다 (다시 떨어지지는 않음). */
+  function fortuneBody(c) {
+    var f = S.fortune || {}, lines = f.text ? f.text(c) : null;
+    var box = el('div', { class: 'fortune-body' });
+    if (lines && lines.length) box.append(paragraphs(lines));
+    else {
+      box.append(el('p', { class: 'fortune-placeholder', text: '여기에 오늘의 조언이 들어갈 거예요.' }));
+      var dl = el('dl', { class: 'fortune-combo' });
+      [['때', c.time && c.time.label], ['날씨', c.weather && c.weather.label], ['음식', c.food && c.food.name],
+       ['맛', c.taste && c.taste.label], ['아침 날씨', c.wakeWeather && c.wakeWeather.label]].forEach(function (r) {
+        dl.append(el('dt', { text: r[0] }), el('dd', { text: r[1] || '—' }));
+      });
+      box.append(dl);
+    }
+    return box;
+  }
+  function fortuneNote(leaf, page) {
+    var wrap = el('div', { class: 'fortune' });
+    var fly = el('div', { class: 'fortune-fly' });
+    var note = el('button', { type: 'button', class: 'fortune-note', 'aria-label': '황금빛 메모 펼치기' },
+      el('span', { class: 'fortune-seal', 'aria-hidden': 'true', text: '★' }));
+    var ring = el('span', { class: 'fortune-ring', 'aria-hidden': 'true' });
+    var label = el('span', { class: 'scoop-label fortune-touch', 'aria-hidden': 'true', text: '터치' });
+    fly.append(note, ring, label);
+    wrap.append(fly);
+    var beat = { duration: 2400, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' };
+    var hints = [];
+    function showHint() {
+      if (!ring.animate) return;
+      hints = [ring.animate([{ opacity: 0.25 }, { opacity: 1 }], beat), label.animate([{ opacity: 0.7 }, { opacity: 1 }], beat)];
+    }
+    function hideHint() { hints.forEach(function (a) { a.cancel(); }); hints = []; ring.style.opacity = label.style.opacity = '0'; }
+    var visible = function () { return mode === 'spread' || state.page === 1; };
+    if (!state.fortuneFell && visible() && fly.animate) {
+      state.fortuneFell = true; saveSoon();
+      ring.style.opacity = label.style.opacity = '0';
+      fly.style.opacity = '0';
+      setTimeout(function () {
+        if (!fly.isConnected) return;
+        // 창 너머 위쪽(작게, 멀리)에서 좌우로 팔랑이며 내려오다, 창을 지나며 커져(창 안으로 들어와) 창틀에 살포시
+        var u = page.clientHeight / 100;   // 1cqh
+        var X = function (v) { return (v * u).toFixed(1) + 'px'; };
+        var K = function (x, y, r, s, o, off) { return { transform: 'translate(' + X(x) + ',' + X(y) + ') rotate(' + r + 'deg) scale(' + s + ')', opacity: o, offset: off }; };
+        var a = fly.animate([
+          K(-20, -44, -20, 0.32, 0, 0),
+          K(-26, -40, 18, 0.34, 1, 0.08),
+          K(-12, -34, -24, 0.37, 1, 0.2),
+          K(-24, -27, 22, 0.42, 1, 0.33),
+          K(-8, -20, -20, 0.5, 1, 0.46),
+          K(-18, -13, 16, 0.62, 1, 0.58),
+          K(-2, -7, -14, 0.8, 1, 0.7),          // 창을 지나 방 안으로
+          K(-8, -2, 10, 0.95, 1, 0.82),
+          K(0, 0.6, -4, 1.02, 1, 0.92),
+          K(0, 0, -6, 1, 1, 1)
+        ], { duration: 4600, easing: 'ease-in-out', fill: 'forwards' });
+        fly.style.opacity = '';
+        a.finished.then(function () { a.commitStyles && a.commitStyles(); a.cancel(); if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } }, function () {});
+      }, mode === 'spread' ? 900 : 700);
+    } else showHint();
+    note.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (switching) return;
+      hideHint();
+      openFortune(leaf, page, note, function () { if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } });
+    });
+    return wrap;
+  }
+  function openFortune(leaf, page, from, onClose) {
+    if (page.querySelector('.fortune-open')) return;
+    var c = ctx();
+    var close = el('button', { type: 'button', class: 'fortune-close', 'aria-label': '메모 닫기' }, '×');
+    var card = el('div', { class: 'fortune-card', role: 'dialog', 'aria-label': (S.fortune && S.fortune.title) || '황금빛 메모' },
+      close, el('h3', { class: 'fortune-title', text: (S.fortune && S.fortune.title) || '오늘의 별빛 메모' }), fortuneBody(c));
+    var veil = el('div', { class: 'fortune-open' }, card);
+    page.append(veil);
+    // 창틀의 메모 자리에서 커지며 펼쳐진다
+    var fr = from.getBoundingClientRect(), cr = card.getBoundingClientRect();
+    var dx = (fr.left + fr.width / 2) - (cr.left + cr.width / 2), dy = (fr.top + fr.height / 2) - (cr.top + cr.height / 2), sc = fr.width / cr.width;
+    var start = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + sc.toFixed(3) + ') rotate(-6deg)';
+    if (card.animate) {
+      veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: 'both' });
+      card.animate([{ transform: start, opacity: 0.6 }, { transform: 'none', opacity: 1 }], { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    }
+    var shut = function () {
+      if (!veil.isConnected) return;
+      var done = function () { veil.remove(); if (onClose) onClose(); };
+      if (!card.animate) return done();
+      veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
+      card.animate([{ transform: 'none', opacity: 1 }, { transform: start, opacity: 0 }], { duration: 320, easing: 'cubic-bezier(.5,0,.8,.4)', fill: 'forwards' })
+        .finished.then(done, done);
+    };
+    close.addEventListener('click', function (e) { e.stopPropagation(); shut(); });
+    veil.addEventListener('click', function (e) { if (e.target === veil) shut(); });
+    setTimeout(function () { close.focus({ preventScroll: true }); }, 60);
   }
 
   /* ---------- 곡선 글씨: 삽화 위에 그려 준 선을 따라 글자를 한 자씩 놓는다 ----------
