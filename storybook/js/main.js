@@ -518,6 +518,7 @@
       if (chosen || !paneL.animate) { showAsk('wake', 1); return; }
       // 두 창이 바깥으로 활짝 열리는 걸 보여 준 다음 묻는다
       btn.classList.remove('is-closed');
+      sfx('windowOpen');
       [glow, paneL, paneR, hint].forEach(function (n) { n.getAnimations().forEach(function (a) { a.cancel(); }); });
       hint.style.opacity = '0';
       // 덧창이 바깥으로 활짝 펼쳐지며 창 양옆에 접힌다 (닫힌 자리 → 양옆)
@@ -604,6 +605,7 @@
       e.stopPropagation();
       if (switching) return;
       hideHint();
+      sfx('paper');
       openFortune(leaf, page, note, function () { if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } });
     });
     return wrap;
@@ -1037,6 +1039,7 @@
 
   function pickFood(id) {
     var changed = state.food !== id;
+    sfx('pick');
     state.food = id;
     var grid = document.getElementById('food-choice-grid');
     if (grid) markPressed(grid, id);
@@ -1151,6 +1154,8 @@
       moving = [];
       focus = i;
       apply();
+      // 가운데로 온 맛 카드마다 다른 소리 (은하수: 사르르 화음, 별빛: 톡톡 불꽃, 구름: 후— 바람, 직접 그리기: 사각사각)
+      var snd = window.StarSoupSound; if (snd && snd.taste) snd.taste(list[focus].id);
       cards.forEach(function (c, k) {
         if (!c.animate) return;
         var cs = getComputedStyle(c), to = { t: cs.transform, o: cs.opacity, f: cs.filter }, from = before[k];
@@ -1876,6 +1881,15 @@
     });
   }
 
+  // #7 11쪽(요정들이 박수를 보내는 쪽)에 들어설 때 박수 소리 (같은 쪽에서 다시 그릴 때는 나지 않게)
+  var heardAt = '';
+  function sceneSounds() {
+    var sc = S.scenes[state.scene], key = state.scene + ':' + (mode === 'single' ? state.page : 0);
+    if (key === heardAt) return;
+    heardAt = key;
+    if (sc.id === 'serve' && (mode === 'spread' || state.page === 0)) setTimeout(function () { sfx('clap'); }, 450);
+  }
+
   function render(animate) {
     book.querySelectorAll('.leaf.is-leaving').forEach(retire);
     var oldLeaf = currentLeaf();
@@ -1888,6 +1902,7 @@
     }
     renderProgress();
     updateControls();
+    sceneSounds();
     return leaf;
   }
 
@@ -2986,6 +3001,7 @@
 
   function showScreen(name) {
     if (name !== 'ask') askId = null;   // 묻는 화면을 떠나면 '지금 묻는 중' 표시도 지운다
+    if (name !== 'book') heardAt = '';   // 책을 떠났다 돌아오면 그 쪽의 소리를 다시
     if (name === 'cover') paintAuthor();
     app.setAttribute('data-screen', name);
     Object.keys(screens).forEach(function (k) { screens[k].hidden = k !== name; });
