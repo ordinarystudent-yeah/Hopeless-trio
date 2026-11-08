@@ -546,8 +546,8 @@
       el('span', { class: 'fortune-seal', 'aria-hidden': 'true', text: '★' }));
     var ring = el('span', { class: 'fortune-ring', 'aria-hidden': 'true' });
     var label = el('span', { class: 'scoop-label fortune-touch', 'aria-hidden': 'true', text: '터치' });
-    fly.append(note, ring, label);
-    wrap.append(fly);
+    fly.append(note);
+    wrap.append(fly, ring, label);   // 원·'터치'는 돌아가지 않게 메모(마름모) 밖에
     var beat = { duration: 2400, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' };
     var hints = [];
     function showHint() {
@@ -562,22 +562,25 @@
       fly.style.opacity = '0';
       setTimeout(function () {
         if (!fly.isConnected) return;
-        // 창 너머 위쪽(작게, 멀리)에서 좌우로 팔랑이며 내려오다, 창을 지나며 커져(창 안으로 들어와) 창틀에 살포시
+        // 진자처럼: 마름모 메모가 줄에 매달린 듯 좌우로 길게 호를 그리며(양 끝에서 살짝 떠오르고 기울며) 천천히 내려온다.
+        // 창 너머 위쪽(작게, 멀리)에서 시작해, 창을 지나며 커져(방 안으로 들어와) 창틀에 마름모로 살포시 앉는다
         var u = page.clientHeight / 100;   // 1cqh
-        var X = function (v) { return (v * u).toFixed(1) + 'px'; };
-        var K = function (x, y, r, s, o, off) { return { transform: 'translate(' + X(x) + ',' + X(y) + ') rotate(' + r + 'deg) scale(' + s + ')', opacity: o, offset: off }; };
-        var a = fly.animate([
-          K(-20, -44, -20, 0.32, 0, 0),
-          K(-26, -40, 18, 0.34, 1, 0.08),
-          K(-12, -34, -24, 0.37, 1, 0.2),
-          K(-24, -27, 22, 0.42, 1, 0.33),
-          K(-8, -20, -20, 0.5, 1, 0.46),
-          K(-18, -13, 16, 0.62, 1, 0.58),
-          K(-2, -7, -14, 0.8, 1, 0.7),          // 창을 지나 방 안으로
-          K(-8, -2, 10, 0.95, 1, 0.82),
-          K(0, 0.6, -4, 1.02, 1, 0.92),
-          K(0, 0, -6, 1, 1, 1)
-        ], { duration: 4600, easing: 'ease-in-out', fill: 'forwards' });
+        var N = 90, D = 9000, frames = [];
+        var L = 20, SWINGS = 3;            // 줄 길이(호의 크기)와 왕복 횟수 (끝에서 가운데로 멈추도록 반 바퀴 단위)
+        for (var i = 0; i <= N; i++) {
+          var t = i / N;
+          var amp = 0.62 * (1 - t * 0.85);                         // 흔들림은 점점 잦아든다 (라디안)
+          var th = amp * Math.sin(t * SWINGS * 2 * Math.PI);        // 진자의 각도
+          var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+          var x = -20 * (1 - t) + L * Math.sin(th);                 // 창 가운데 쪽에서 창틀 자리로 옮겨 가며 좌우로
+          var y = -48 * (1 - ease) - L * (1 - Math.cos(th));        // 내려오되, 호의 양 끝에서는 살짝 떠오른다
+          var sc = t < 0.62 ? 0.32 + t * 0.29 : 0.5 + (t - 0.62) / 0.38 * 0.5;   // 창을 지나며 커진다
+          var rot = 45 + th * 180 / Math.PI * 0.9;                  // 마름모가 흔들림 쪽으로 기운다
+          frames.push({ transform: 'translate(' + (x * u).toFixed(1) + 'px,' + (y * u).toFixed(1) + 'px) rotate(' + rot.toFixed(1) + 'deg) scale(' + sc.toFixed(3) + ')',
+            opacity: Math.min(1, t / 0.05), offset: t });
+        }
+        frames[N].transform = 'translate(0px,0px) rotate(45deg) scale(1)';
+        var a = fly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
         fly.style.opacity = '';
         a.finished.then(function () { a.commitStyles && a.commitStyles(); a.cancel(); if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } }, function () {});
       }, mode === 'spread' ? 900 : 700);
@@ -609,7 +612,7 @@
     }
     var shut = function () {
       if (!veil.isConnected) return;
-      var done = function () { veil.remove(); if (onClose) onClose(); };
+      var done = function () { if (veil._off) veil._off(); veil.remove(); if (onClose) onClose(); };
       if (!card.animate) return done();
       veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
       card.animate([{ transform: 'none', opacity: 1 }, { transform: start, opacity: 0 }], { duration: 320, easing: 'cubic-bezier(.5,0,.8,.4)', fill: 'forwards' })
@@ -617,7 +620,9 @@
     };
     close.addEventListener('click', function (e) { e.stopPropagation(); shut(); });
     veil.addEventListener('click', function (e) { if (e.target === veil) shut(); });
-    setTimeout(function () { close.focus({ preventScroll: true }); }, 60);
+    var onKey = function (e) { if (e.key === 'Escape' && veil.isConnected) { e.preventDefault(); shut(); } };
+    document.addEventListener('keydown', onKey);
+    veil._off = function () { document.removeEventListener('keydown', onKey); };
   }
 
   /* ---------- 곡선 글씨: 삽화 위에 그려 준 선을 따라 글자를 한 자씩 놓는다 ----------

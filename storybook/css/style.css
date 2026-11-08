@@ -1832,13 +1832,13 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 }
 
 /* ---------- #10 18쪽: 황금빛 메모 (창틀에 내려앉아 '터치'로 펼치는 운세·조언) ---------- */
-.fortune { position: absolute; left: calc(50% + 24cqh); top: 58.6cqh; width: 12.5cqh; transform: translate(-50%, -100%); z-index: 4; }
+.fortune { position: absolute; left: calc(50% + 24cqh); top: 56cqh; width: 11cqh; transform: translate(-50%, -100%); z-index: 4; }
 @media (max-width: 600px) and (orientation: portrait), (max-height: 500px) and (orientation: landscape) {
-  .fortune { top: 52.6cqh; }
+  .fortune { top: 50cqh; }
 }
-.fortune-fly { position: relative; transform: rotate(-6deg); transform-origin: 50% 60%; }
+.fortune-fly { position: relative; transform: rotate(45deg); transform-origin: 50% 50%; }   /* 마름모 */
 .fortune-note {
-  position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 1 / 1.12; padding: 0; cursor: pointer;
+  position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 1; padding: 0; cursor: pointer;
   border: 0; border-radius: 0.9cqh; -webkit-tap-highlight-color: transparent;
   background: linear-gradient(150deg, #fff3c4 0%, #ffd873 45%, #f0b93c 100%);
   box-shadow: 0 0 2.4cqh rgb(255 210 110 / 0.85), 0 0.8cqh 1.4cqh rgb(120 70 10 / 0.3), inset 0 0 0 0.35cqh rgb(255 250 225 / 0.7);
@@ -1846,26 +1846,27 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* 접힌 모서리 */
 .fortune-note::after { content: ""; position: absolute; right: 0; bottom: 0; width: 26%; height: 23%; border-radius: 0 0 0.9cqh 0;
   background: linear-gradient(135deg, #e3a52c 0 50%, transparent 50%); }
-.fortune-seal { font-size: 4.6cqh; color: #fffbe8; text-shadow: 0 0 1cqh rgb(255 240 190 / 0.95), 0 0.2cqh 0.4cqh rgb(150 90 10 / 0.5); pointer-events: none; }
-.fortune-ring { position: absolute; left: 50%; top: 50%; width: 150%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+.fortune-seal { transform: rotate(-45deg); font-size: 4.6cqh; color: #fffbe8; text-shadow: 0 0 1cqh rgb(255 240 190 / 0.95), 0 0.2cqh 0.4cqh rgb(150 90 10 / 0.5); pointer-events: none; }
+.fortune-ring { position: absolute; left: 50%; top: 50%; width: 175%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
   border: max(2px, 0.6cqh) dashed #fff; box-shadow: 0 0 0 max(1px, 0.4cqh) rgb(196 120 30 / 0.5), 0 0 2.4cqh rgb(255 230 150 / 0.8); }
 .fortune .fortune-touch { top: 50%; font-size: 4.4cqh; white-space: nowrap; }
 
 /* 펼친 메모: 쪽 위에 살짝 어둡게 깔고 가운데에 크게 */
 .fortune-open { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; background: rgb(24 18 46 / 0.45); }
 .fortune-card {
-  position: relative; width: min(82%, 74cqh); max-height: 84%; overflow: auto; padding: 6cqh 5cqh 4.6cqh; border-radius: 2cqh; color: #4a3210; text-align: center;
+  position: relative; width: min(90cqh, 92cqw); aspect-ratio: 1; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
+  padding: 7cqh 6cqh; border-radius: 2cqh; color: #4a3210; text-align: center;
   background: radial-gradient(120% 80% at 50% 0%, #fffaf0 0%, #fff0c2 55%, #ffd977 100%);
   box-shadow: 0 0 5cqh rgb(255 210 110 / 0.7), 0 2cqh 4cqh rgb(40 20 0 / 0.35), inset 0 0 0 0.6cqh rgb(240 190 80 / 0.55);
 }
 .fortune-card { overflow: visible; }
 .fortune-close {
-  position: absolute; top: 0; left: 50%; transform: translate(-50%, -55%);
-  width: max(6.4cqh, 32px); height: max(6.4cqh, 32px); border-radius: 50%; padding: 0; cursor: pointer;
-  display: grid; place-items: center; font-size: max(4cqh, 20px); line-height: 1; color: #8a5a10;
-  background: #fffaf0; border: max(2px, 0.5cqh) solid #e6b24a; box-shadow: 0 0.6cqh 1.4cqh rgb(80 50 10 / 0.3);
+  position: absolute; top: 0; right: 0; transform: translate(35%, -35%);
+  width: max(7cqh, 34px); height: max(7cqh, 34px); border-radius: 50%; padding: 0; cursor: pointer;
+  display: grid; place-items: center; font-size: max(4.4cqh, 21px); line-height: 1; color: #fff;
+  background: #b9787a; border: max(2px, 0.5cqh) solid #f3dcd6; box-shadow: 0 0.6cqh 1.4cqh rgb(80 30 30 / 0.3);   /* 채도 낮은 붉은색 */
 }
-.fortune-title { margin: 0 0 2.4cqh; font-family: var(--font-display); font-size: max(5cqh, 16px); color: #a8701a; }
+.fortune-title { margin: 0 0 2.4cqh; font-family: var(--font-display); font-size: max(6cqh, 17px); line-height: 1.35; color: #a8701a; word-break: keep-all; }
 .fortune-body { display: grid; gap: 2cqh; font-size: max(3.6cqh, 12px); line-height: 1.55; }
 .fortune-placeholder { margin: 0; color: #8a6a3a; }
 .fortune-combo { display: grid; grid-template-columns: auto 1fr; gap: 0.8cqh 2.4cqh; margin: 0 auto; text-align: left; font-size: max(3.2cqh, 11px); }
