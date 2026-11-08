@@ -530,6 +530,8 @@
       var aL = paneL.animate(openL, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
       var aR = paneR.animate(openR, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
       Promise.all([aL.finished, aR.finished]).then(function () {
+        // 열린 모습을 그대로 붙박아 둔다: 넘어갈 때 쪽을 복사해 쓰는데, 움직임으로만 열려 있으면 복사본에서 창이 닫힌 모습으로 튕긴다
+        [[paneL, aL], [paneR, aR]].forEach(function (pa) { try { pa[1].commitStyles(); } catch (e) { /* 옛 브라우저 */ } pa[1].cancel(); });
         setTimeout(function () { if (btn.isConnected) showAsk('wake', 1); }, 200);
       }, function () {});
     });
