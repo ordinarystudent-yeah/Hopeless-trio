@@ -189,6 +189,8 @@
     // 바탕색·따라 그리기 가이드·안내 (가이드는 opts.guides가 있을 때만 고를 수 있다)
     quietBg = true; setBg(opts.bg || null); quietBg = false;
     setGuide(null);
+    // 음식·재료 그림판: 이만큼 크게 그리면 스티커·카드로 크게 보여도 픽셀이 깨지지 않는다는 점선 원 (그림에는 들어가지 않음)
+    $('ed-circle').hidden = !opts.circle;
     $('ed-bg-row').hidden = !!(opts.memo || opts.noBg);
     $('ed-hint').hidden = !!(opts.image || opts.base);
     $('editor-title').textContent = opts.title || '그림 그리기';

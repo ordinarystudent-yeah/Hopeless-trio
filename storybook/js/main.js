@@ -1063,7 +1063,7 @@
 
   function drawFood() {
     window.StarSoupEditor.open({
-      title: '음식 그리기', image: images[IMG_FOOD], askName: true, name: state.customFoodName, noBg: true
+      title: '음식 그리기', image: images[IMG_FOOD], askName: true, name: state.customFoodName, noBg: true, circle: true
     }).then(function (res) {
       if (!res) return;
       state.customFoodName = res.name.slice(0, S.limits.foodName);
@@ -1364,7 +1364,7 @@
     if (state.soup.length >= S.limits.ingredients) { toast('재료는 다섯 개까지 넣을 수 있어요.'); return; }
     window.StarSoupEditor.open({
       title: '별빛스프 재료 그리기', askName: true, name: '',
-      nameLabel: '어떤 재료인가요?', namePlaceholder: '예: 별사탕', allowNameOnly: true, noBg: true
+      nameLabel: '어떤 재료인가요?', namePlaceholder: '예: 별사탕', allowNameOnly: true, noBg: true, circle: true
     }).then(function (res) {
       if (!res) return;
       var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);

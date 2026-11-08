@@ -369,3 +369,7 @@
 }
 /* 쪽 안 그림판(보드·16쪽)의 안내 글은 쪽 크기에 맞춰 (휴대폰에서 작게) */
 .editor.is-inline .ed-hint { font-size: clamp(10px, 3.6cqh, 18px); gap: 0.3em; }
+/* 음식·재료 그림판의 점선 원: 캔버스(800px)의 64% ≈ 512px — 내보내는 최대 크기(640px)에 가까워, 크게 보여도 깨지지 않는 크기 */
+.ed-circle { position: absolute; left: 50%; top: 50%; width: 64%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  border: 2px dashed rgb(70 52 40 / 0.32); pointer-events: none; }
+.ed-circle[hidden] { display: none; }
