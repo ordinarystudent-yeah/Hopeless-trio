@@ -231,19 +231,22 @@
     }
   }
   // 때 고르기: 때마다 다른 소리
+  var tBus = null;
+  function timeBus() { if (!tBus) { tBus = ctx.createGain(); tBus.gain.value = 1.6; tBus.connect(ui); } return tBus; }
   function timePick(id) {
     if (!ready()) return;
     var t = ctx.currentTime;
+    var dest = timeBus();   // 때 소리는 조금 더 크게 (+4dB)
     if (id === 'dawn') {                  // 어스름한 새벽: 멀리서 은은하게 번지는 낮은 두 음
-      tone(392, t, 1.4, 0.2, 'sine', 0, ui); tone(587.3, t + 0.25, 1.4, 0.14, 'sine', 0, ui);
+      tone(392, t, 1.4, 0.2, 'sine', 0, dest); tone(587.3, t + 0.25, 1.4, 0.14, 'sine', 0, dest);
     } else if (id === 'morning') {        // 밝은 아침: 맑게 올라가는 아르페지오
-      [523.3, 659.3, 784, 1046.5].forEach(function (f, k) { mallet(f, t + k * 0.07, 0.26); });
+      [523.3, 659.3, 784, 1046.5].forEach(function (f, k) { tone(f, t + k * 0.07, 0.45, 0.26, 'sine', 0, dest); tone(f * 4, t + k * 0.07, 0.07, 0.05, 'sine', 0, dest); });
     } else if (id === 'day') {            // 한낮: 밝고 또렷한 화음 한 번
-      [659.3, 784, 1046.5].forEach(function (f) { tone(f, t, 0.8, 0.16, 'triangle', 0, ui); });
+      [659.3, 784, 1046.5].forEach(function (f) { tone(f, t, 0.8, 0.16, 'triangle', 0, dest); });
     } else if (id === 'evening') {        // 노을 진 저녁: 천천히 내려오는 따뜻한 음
-      [784, 659.3, 523.3].forEach(function (f, k) { tone(f, t + k * 0.14, 1.0, 0.2, 'sine', 0, ui); });
+      [784, 659.3, 523.3].forEach(function (f, k) { tone(f, t + k * 0.14, 1.0, 0.2, 'sine', 0, dest); });
     } else {                              // 깜깜한 밤: 작고 높은 별 반짝임 두 번
-      tone(1568, t, 1.2, 0.22, 'sine', 0, ui); tone(2093, t + 0.18, 1.4, 0.2, 'sine', 0, ui);
+      tone(1568, t, 1.2, 0.22, 'sine', 0, dest); tone(2093, t + 0.18, 1.4, 0.2, 'sine', 0, dest);
     }
   }
   // 박수: 사람들이 손뼉을 짝짝짝.
