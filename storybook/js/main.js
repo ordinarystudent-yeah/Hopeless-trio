@@ -38,6 +38,8 @@
   var mode = 'spread';  // spread: 두 쪽을 함께 / single: 한 쪽씩
 
   /* ---------- 작은 도우미 ---------- */
+  // 효과음 (js/sound.js). 소리를 끄면 나지 않는다
+  function sfx(name) { var snd = window.StarSoupSound; if (snd && snd[name]) { try { snd[name](); } catch (e) { /* 소리 없이 계속 */ } } }
   function el(tag, attrs) {
     var node = document.createElement(tag);
     if (attrs) {
@@ -562,31 +564,37 @@
       fly.style.opacity = '0';
       setTimeout(function () {
         if (!fly.isConnected) return;
-        // 진자처럼: 마름모 메모가 줄에 매달린 듯 좌우로 길게 호를 그리며(양 끝에서 살짝 떠오르고 기울며) 천천히 내려온다.
-        // 창 너머 위쪽(작게, 멀리)에서 시작해, 창을 지나며 커져(방 안으로 들어와) 창틀에 마름모로 살포시 앉는다
-        var u = page.clientHeight / 100;   // 1cqh
-        var N = 90, D = 9000, frames = [];
-        var L = 20, SWINGS = 3;            // 줄 길이(호의 크기)와 왕복 횟수 (끝에서 가운데로 멈추도록 반 바퀴 단위)
+        // 진자처럼: 마름모 메모가 줄에 매달린 듯 좌우로 길게 호를 그리며(양 끝에서 살짝 떠오르며 기울어) 천천히 내려온다.
+        // 창 밖(창 너머 하늘)에서만 보이도록 창 안쪽 자리로 잘라 두고 위에서부터 떨어지다가,
+        // 창 아래쪽까지 내려오면 자르기를 풀어 창 안(방)으로 들어와 창틀에 마름모로 앉는다.
+        // 크기는 그대로, 종이가 기울 때마다 세로(Y)만 납작해져 원근을 낸다.
+        var u = page.clientHeight / 100;   // 1cqh (px)
+        var view = page.querySelector('.win-view');
+        var wr = wrap.getBoundingClientRect(), vr = view ? view.getBoundingClientRect() : null;
+        var half = fly.offsetWidth * 0.7071;                     // 마름모의 반 대각선
+        var cy = wr.top + wr.height / 2;
+        var y0 = vr ? (vr.top - cy) - half * 1.2 : -48 * u;       // 창 너머 위쪽, 보이지 않는 곳에서 시작
+        var ySw = vr ? Math.min(-0.5 * u, (vr.bottom - cy) - half - 0.6 * u) : -6 * u;   // 창 아래쪽(아직 창 밖)
+        if (vr) wrap.style.clipPath = 'inset(' + [vr.top - wr.top, wr.right - vr.right, wr.bottom - vr.bottom, vr.left - wr.left].map(function (v) { return v.toFixed(1) + 'px'; }).join(' ') + ')';
+        var N = 100, D = 9500, frames = [], T_IN = 0.86;
+        var L = 20 * u, SWINGS = 3;
         for (var i = 0; i <= N; i++) {
           var t = i / N;
-          var amp = 0.62 * (1 - t * 0.85);                         // 흔들림은 점점 잦아든다 (라디안)
-          var th = amp * Math.sin(t * SWINGS * 2 * Math.PI);        // 진자의 각도
-          var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-          var x = -20 * (1 - t) + L * Math.sin(th);                 // 창 가운데 쪽에서 창틀 자리로 옮겨 가며 좌우로
-          var y = -48 * (1 - ease) - L * (1 - Math.cos(th));        // 내려오되, 호의 양 끝에서는 살짝 떠오른다
-          // 투시: 멀리(창 너머, 작게)에서 가까이(방 안, 크게)로 다가오며 커지고, 진자의 가운데를 지날 때는 앞으로 다가와 조금 더 크게,
-          //       양 끝에서는 뒤로 물러나 조금 작게. 흔들리는 쪽으로 종이가 비스듬히 누워(rotateY·rotateX) 원근이 생긴다
-          var far = t < 0.62 ? 0.3 + t * 0.32 : 0.5 + Math.pow((t - 0.62) / 0.38, 1.4) * 0.5;
-          var depth = 1 + 0.16 * (1 - t) * Math.cos(2 * t * SWINGS * 2 * Math.PI);
-          var sc = far * depth;
-          var rot = 45 + th * 180 / Math.PI * 0.9;                  // 마름모가 흔들림 쪽으로 기운다
-          var ry = th * 180 / Math.PI * 0.9, rx = 18 * (1 - t) * Math.abs(Math.sin(t * SWINGS * 2 * Math.PI));
-          frames.push({ transform: 'translate(' + (x * u).toFixed(1) + 'px,' + (y * u).toFixed(1) + 'px) perspective(' + (40 * u).toFixed(0) + 'px) rotateX(' + rx.toFixed(1) + 'deg) rotateY(' + ry.toFixed(1) + 'deg) rotate(' + rot.toFixed(1) + 'deg) scale(' + sc.toFixed(3) + ')',
-            opacity: Math.min(1, t / 0.05), offset: t });
+          var amp = 0.62 * Math.pow(Math.max(0, 1 - t / 0.9), 0.8);   // 흔들림은 점점 잦아든다 (라디안)
+          var th = amp * Math.sin(t * SWINGS * 2 * Math.PI / 0.9);      // 진자의 각도
+          var k = Math.min(1, t / T_IN), ease = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+          var yb = t <= T_IN ? y0 + (ySw - y0) * ease : ySw * (1 - Math.sin((t - T_IN) / (1 - T_IN) * Math.PI / 2));
+          var x = -16 * u * (1 - Math.min(1, t / 0.9)) + L * Math.sin(th);
+          var y = yb - L * (1 - Math.cos(th));                          // 호의 양 끝에서는 살짝 떠오른다
+          var sy = Math.max(0.42, Math.cos(th * 1.9));                  // 기울수록 세로가 납작 (원근)
+          var rot = 45 + th * 180 / Math.PI * 0.9;
+          frames.push({ transform: 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) scale(1,' + sy.toFixed(3) + ') rotate(' + rot.toFixed(1) + 'deg)', offset: t });
         }
-        frames[N].transform = 'translate(0px,0px) perspective(' + (40 * u).toFixed(0) + 'px) rotateX(0deg) rotateY(0deg) rotate(45deg) scale(1)';
+        frames[N].transform = 'translate(0px,0px) scale(1,1) rotate(45deg)';
+        setTimeout(function () { wrap.style.clipPath = ''; }, D * T_IN);   // 창 안으로 들어온다
         var a = fly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
         fly.style.opacity = '';
+        wrap._fall = a;
         a.finished.then(function () { a.commitStyles && a.commitStyles(); a.cancel(); if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } }, function () {});
       }, mode === 'spread' ? 900 : 700);
     } else showHint();
@@ -1347,6 +1355,7 @@
       state.soupStirs = 0;   // 새 재료를 넣었으니 다시 저어야 한다
       saveNow();
       refreshAskUI();
+      setTimeout(function () { sfx('plop'); }, 120);   // 퐁당
     });
   }
 
@@ -2200,6 +2209,7 @@
         pot.addEventListener('pointerdown', function (e) {
           if (state.soupStirs >= 10) return;
           state.soupStirs++;
+          sfx('stir');
           paint();
           phy.tap = performance.now();
           kick();
@@ -2236,6 +2246,7 @@
           if (state.soupStirs >= 10) {
             pot.classList.add('is-done');
             starBurst(pot);
+            setTimeout(function () { sfx('stirDone'); }, 250);
             toast('별빛스프 완성! 세상에 하나뿐인 맛이 됐어요.');
           }
           paintAskNote();
@@ -2299,7 +2310,7 @@
       text: function () { return [[o.question]]; },
       body: function () {
         var g = el('div', { class: 'grid grid--food choice-grid choice-grid--5', role: 'group', 'aria-label': '날씨 고르기' });
-        var pick = function (id) { state[o.field] = id; markPressed(g, id); paintAskNote(); saveSoon(); };
+        var pick = function (id) { state[o.field] = id; markPressed(g, id); paintAskNote(); saveSoon(); sfx('chime'); };
         S.weathers.forEach(function (w) {
           g.append(tile({ id: w.id, label: w.label, emoji: w.emoji, glow: w.glow, pressed: state[o.field] === w.id,
             onclick: function () { pick(w.id); } }));
@@ -2349,6 +2360,7 @@
       state[o.nameField] = res.name.slice(0, S.limits.weatherName);
       saveImage(o.img, res.image);
       state[o.field] = 'custom';
+      sfx('chime');
       if (askId === o.key) paintAsk();
       saveNow();
     });
@@ -2777,6 +2789,8 @@
         { opacity: 0, transform: 'translate(-50%, -50%) scale(0.1)', offset: at(4500) },
         { opacity: 0, transform: 'translate(-50%, -50%) scale(0.1)' }
       ], { duration: D });
+      setTimeout(function () { sfx('dip'); }, 2150);     // 숟가락이 잠기는 소리
+      setTimeout(function () { sfx('gulp'); }, 4300);    // 떠 올려 한입 꿀꺽
       setTimeout(function () {   // 잠기는 순간 파문
         var rip = el('span', { class: 'scoop-ring', 'aria-hidden': 'true' });
         box.append(rip);
