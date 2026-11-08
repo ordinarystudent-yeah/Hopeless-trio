@@ -121,28 +121,53 @@
     src.connect(bp); bp.connect(g); g.connect(sfx);
     src.start(t); src.stop(t + len);
   }
-  // 스프 젓기: 휘— 찰랑 (물결 스치는 소리 + 작은 보글)
+  // 물방울(거품) 하나: 액체 소리의 핵심은 '음이 짧게 쑥 올라가는' 작은 공명 (실제 물방울 소리처럼)
+  function bubble(t, f, len, vol) {
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(f, t);
+    o.frequency.exponentialRampToValueAtTime(f * (1.6 + Math.random() * 0.8), t + len);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    o.connect(g); g.connect(sfx);
+    o.start(t); o.stop(t + len + 0.02);
+  }
+  // 낮게 걸러 낸 물결 소리 (찰랑)
+  function slosh(t, len, vol, f) {
+    var buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * len), ctx.sampleRate), d = buf.getChannelData(0), last = 0;
+    for (var i = 0; i < d.length; i++) { last = last * 0.96 + (Math.random() * 2 - 1) * 0.2; d[i] = last; }   // 부드러운(갈색) 잡음
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 3;
+    lp.frequency.setValueAtTime(f * 0.6, t); lp.frequency.exponentialRampToValueAtTime(f, t + len * 0.4); lp.frequency.exponentialRampToValueAtTime(f * 0.5, t + len);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + len * 0.35);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    src.connect(lp); lp.connect(g); g.connect(sfx);
+    src.start(t); src.stop(t + len);
+  }
+  // 스프 젓기: 찰랑— 하고 물결이 돌며 보글보글 작은 거품들
   function stir() {
     if (!ready()) return;
     var t = ctx.currentTime;
-    noise(t, 0.5, 0.35, 380, 900, 1.4);
-    noise(t + 0.12, 0.4, 0.18, 1200, 600, 2);
-    tone(260 + Math.random() * 80, t + 0.18, 0.16, 0.12, 'sine', 520);
+    slosh(t, 0.6, 0.9, 700);
+    for (var i = 0; i < 7; i++) bubble(t + 0.05 + Math.random() * 0.45, 280 + Math.random() * 520, 0.035 + Math.random() * 0.04, 0.08 + Math.random() * 0.08);
   }
-  // 다 저었을 때: 반짝이는 화음이 올라간다
+  // 다 저었을 때: 반짝이는 화음이 빠르게 올라간다
   function stirDone() {
     if (!ready()) return;
-    var t = ctx.currentTime + 0.05;
-    [1046.5, 1318.5, 1568, 2093].forEach(function (f, i) { tone(f, t + i * 0.09, 1.1, 0.16); tone(f * 2.01, t + i * 0.09, 0.6, 0.04); });
-    tone(2637, t + 0.42, 1.4, 0.08);
+    var t = ctx.currentTime;
+    [1046.5, 1318.5, 1568, 2093].forEach(function (f, i) { tone(f, t + i * 0.045, 0.9, 0.16); tone(f * 2.01, t + i * 0.045, 0.5, 0.04); });
+    tone(2637, t + 0.2, 1.2, 0.08);
   }
-  // 재료 퐁당: 물방울이 톡 떨어지며 음이 쑥 내려가고, 작게 튀는 물소리
+  // 재료 퐁당: 물에 톡 떨어지는 '퐁'(음이 쑥 올라가는 물방울) + 찰랑 튀는 물 + 뒤따르는 작은 거품
   function plop() {
     if (!ready()) return;
     var t = ctx.currentTime;
-    tone(900, t, 0.16, 0.4, 'sine', 170);
-    noise(t + 0.02, 0.25, 0.22, 1800, 700, 1.5);
-    tone(620, t + 0.14, 0.12, 0.12, 'sine', 300);
+    bubble(t, 380, 0.12, 0.45);
+    slosh(t + 0.02, 0.45, 0.7, 900);
+    for (var i = 0; i < 4; i++) bubble(t + 0.12 + i * 0.07 + Math.random() * 0.04, 500 + Math.random() * 500, 0.04, 0.07);
   }
   // 숟가락이 스프에 살짝 잠김
   function dip() {
@@ -172,6 +197,79 @@
     }
   }
 
+  /* ---------- #1 날씨 배경 소리 (반복) ----------
+     ambient(id): 그 날씨의 소리를 은은하게 켜고, 끄는 함수를 돌려준다. 같은 날씨를 다시 켜면 이어서 쓴다 */
+  var amb = null;   // { id, refs, gain, stopAll, timer }
+  function loopNoise(len, brown) {
+    var buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * len), ctx.sampleRate), d = buf.getChannelData(0), last = 0;
+    for (var i = 0; i < d.length; i++) { var w = Math.random() * 2 - 1; if (brown) { last = last * 0.97 + w * 0.15; d[i] = last * 2.5; } else d[i] = w; }
+    var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    return src;
+  }
+  function buildAmbient(id) {
+    var out = ctx.createGain(); out.gain.value = 0.0001; out.connect(master);
+    var nodes = [], timers = [];
+    var chain = function (src, filters, vol) {
+      var g = ctx.createGain(); g.gain.value = vol;
+      var prev = src; filters.forEach(function (f) { prev.connect(f); prev = f; }); prev.connect(g); g.connect(out);
+      src.start(); nodes.push(src); return g;
+    };
+    var filt = function (type, f, q) { var b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q) b.Q.value = q; return b; };
+    var lfo = function (param, rate, depth) { var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = rate; g.gain.value = depth; o.connect(g); g.connect(param); o.start(); nodes.push(o); };
+    var every = function (min, max, fn) { var go = function () { fn(); timers.push(setTimeout(go, min + Math.random() * (max - min))); }; timers.push(setTimeout(go, min * Math.random())); };
+    var blip = function (f, len, vol, dest) {   // 짧은 음 (빗방울·새·풍경)
+      var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 1.5, t + len * 0.6);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(g); g.connect(dest || out); o.start(t); o.stop(t + len + 0.02);
+    };
+    if (id === 'rain') {
+      // 쏴— 하는 빗소리 + 톡톡 떨어지는 빗방울
+      chain(loopNoise(2.5), [filt('highpass', 500), filt('lowpass', 3200)], 0.22);
+      chain(loopNoise(3, true), [filt('lowpass', 400)], 0.25);
+      every(60, 220, function () { blip(1400 + Math.random() * 2200, 0.025, 0.05 + Math.random() * 0.05); });
+    } else if (id === 'snow') {
+      // 소복소복: 아주 부드러운 바람 + 가끔 맑은 방울
+      var g1 = chain(loopNoise(4, true), [filt('lowpass', 520)], 0.35);
+      lfo(g1.gain, 0.09, 0.15);
+      every(1800, 4200, function () { var n = [1568, 1760, 2093, 2349, 2637]; blip(n[Math.floor(Math.random() * n.length)], 1.4, 0.03); });
+    } else if (id === 'cloudy') {
+      // 몽글몽글 구름: 낮게 오가는 바람
+      var bp = filt('bandpass', 450, 0.8);
+      var g2 = chain(loopNoise(4, true), [bp], 0.55);
+      lfo(bp.frequency, 0.07, 220); lfo(g2.gain, 0.05, 0.2);
+    } else if (id === 'sunny') {
+      // 화창: 살랑이는 바람 + 멀리서 지저귀는 새
+      chain(loopNoise(4, true), [filt('lowpass', 700)], 0.18);
+      every(2200, 5200, function () {
+        var base = 2600 + Math.random() * 900, n = 2 + Math.floor(Math.random() * 3);
+        for (var i = 0; i < n; i++) (function (k) { setTimeout(function () { if (amb && amb.out === out) blip(base * (1 + k * 0.06), 0.09, 0.035); }, k * 120); })(i);
+      });
+    } else {
+      // 직접 그린 날씨: 은은한 바람
+      chain(loopNoise(4, true), [filt('lowpass', 600)], 0.25);
+    }
+    out.gain.setTargetAtTime(0.5, ctx.currentTime, 0.8);   // 천천히 커진다
+    return { id: id, refs: 0, out: out, stopAll: function () {
+      timers.forEach(clearTimeout);
+      out.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.4);
+      setTimeout(function () { nodes.forEach(function (n) { try { n.stop(); } catch (e) { /* 이미 멈춤 */ } }); out.disconnect(); }, 1600);
+    } };
+  }
+  function ambient(id) {
+    if (!id || !audio()) return function () {};
+    if (amb && amb.id !== id) { amb.stopAll(); amb = null; }
+    if (!amb) amb = buildAmbient(id);
+    clearTimeout(amb.timer);
+    amb.refs++;
+    var mine = amb, done = false;
+    return function () {
+      if (done) return; done = true;
+      mine.refs--;
+      if (mine.refs <= 0) mine.timer = setTimeout(function () { if (mine.refs <= 0) { mine.stopAll(); if (amb === mine) amb = null; } }, 300);
+    };
+  }
+
   function setOn(v) {
     on = v;
     try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch (e) { /* 무시 */ }
@@ -180,7 +278,7 @@
   }
 
   window.StarSoupSound = {
-    start: start, flip: flip, stir: stir, stirDone: stirDone, plop: plop, dip: dip, gulp: gulp, chime: chime,
+    start: start, flip: flip, ambient: ambient, stir: stir, stirDone: stirDone, plop: plop, dip: dip, gulp: gulp, chime: chime,
     isOn: function () { return on; },
     toggle: function () { setOn(!on); return on; }
   };

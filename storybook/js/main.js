@@ -343,6 +343,8 @@
         leaf._teardown.push(window.StarSoupWeather.start(cvs, wId));
       }
       spread.append(fx);
+      // #1: 고른 날씨의 배경 소리 (빗소리·바람·새소리…). 이 장면을 떠나면 천천히 꺼진다
+      if (scene.id === 'intro' && !printing && window.StarSoupSound && window.StarSoupSound.ambient) leaf._teardown.push(window.StarSoupSound.ambient(wId));
     }
 
     scene.pages.forEach(function (p, pi) {
@@ -2246,7 +2248,7 @@
           if (state.soupStirs >= 10) {
             pot.classList.add('is-done');
             starBurst(pot);
-            setTimeout(function () { sfx('stirDone'); }, 250);
+            sfx('stirDone');
             toast('별빛스프 완성! 세상에 하나뿐인 맛이 됐어요.');
           }
           paintAskNote();
