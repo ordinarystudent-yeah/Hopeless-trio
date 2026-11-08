@@ -458,6 +458,8 @@
     }
 
     // #4 5·6쪽(식탁)에 있는 동안 식기가 달그락거리는 배경 소리 (다음 장면으로 넘기면 천천히 꺼진다)
+    // #10 18쪽(창문): 창 밖 날씨를 고른 뒤에는 그 날씨의 배경 소리 (#1과 같은 소리·크기). 장면을 떠나면 천천히 꺼진다
+    if (scene.id === 'ending' && state.wakeWeather && !printing && (mode === 'spread' || state.page === 1) && window.StarSoupSound && window.StarSoupSound.ambient) leaf._teardown.push(window.StarSoupSound.ambient(state.wakeWeather));
     if (scene.id === 'food' && !printing && window.StarSoupSound && window.StarSoupSound.ambient) leaf._teardown.push(window.StarSoupSound.ambient('dishes'));
     var layer = el('div', { class: 'stickers' });
     spread.append(layer);
