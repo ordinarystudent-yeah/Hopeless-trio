@@ -526,11 +526,12 @@
       // 덧창이 바깥으로 활짝 펼쳐지며 창 양옆에 접힌다 (닫힌 자리 → 양옆)
       var openL = [{ left: '3cqh', width: 'calc(50% - 3cqh)' }, { left: '-15%', width: '15%' }];
       var openR = [{ right: '3cqh', width: 'calc(50% - 3cqh)' }, { right: '-15%', width: '15%' }];
-      paneL.animate(openL, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
-      paneR.animate(openR, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' })
-        .finished.then(function () {
-          setTimeout(function () { if (btn.isConnected) showAsk('wake', 1); }, 250);
-        });
+      // 두 창이 다 열리고 나서 0.2초 뒤에 묻는 화면이 나온다 (열리는 도중에 넘어가며 튕기지 않게)
+      var aL = paneL.animate(openL, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+      var aR = paneR.animate(openR, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+      Promise.all([aL.finished, aR.finished]).then(function () {
+        setTimeout(function () { if (btn.isConnected) showAsk('wake', 1); }, 200);
+      }, function () {});
     });
     return btn;
   }

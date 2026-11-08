@@ -30,7 +30,8 @@
     var sw = ctx.createGain(); sw.gain.value = 0.18;
     sfx.connect(master); sfx.connect(sw); sw.connect(delay);
     // 고르기(선택지 누르기) 소리 줄: 효과음보다 10dB 작게 (≈ 0.316배)
-    ui = ctx.createGain(); ui.gain.value = 0.316; ui.connect(sfx);
+    // 고르기 소리 줄: 짧은 음이라 귀에 작게 들려서, 책장 넘기는 소리와 비슷하게 들리도록 맞춘 크기
+    ui = ctx.createGain(); ui.gain.value = 0.5; ui.connect(sfx);
     return ctx;
   }
 
@@ -156,7 +157,7 @@
     if (!ready()) return;
     var t = ctx.currentTime;
     // 보글보글 거품만 (바람 같은 '훅' 소리는 뺐다)
-    for (var i = 0; i < 9; i++) bubble(t + Math.random() * 0.6, 260 + Math.random() * 560, 0.035 + Math.random() * 0.05, 0.09 + Math.random() * 0.09);
+    for (var i = 0; i < 9; i++) bubble(t + Math.random() * 0.6, 260 + Math.random() * 560, 0.035 + Math.random() * 0.05, 0.15 + Math.random() * 0.14);
   }
   // 다 저었을 때: 반짝이는 화음이 빠르게 올라간다
   function stirDone() {
@@ -170,10 +171,10 @@
     if (!ready()) return;
     var t = ctx.currentTime;
     // '퐁' 한 번 뒤로 거품이 보글보글 길게 올라오며 잦아든다 (휙 소리는 뺐다)
-    bubble(t, 380, 0.12, 0.45);
+    bubble(t, 380, 0.12, 0.6);
     for (var i = 0; i < 12; i++) {
       var at = 0.12 + i * 0.09 + Math.random() * 0.06, fade = 1 - i / 13;
-      bubble(t + at, 420 + Math.random() * 600, 0.04 + Math.random() * 0.03, 0.09 * fade + 0.02);
+      bubble(t + at, 420 + Math.random() * 600, 0.04 + Math.random() * 0.03, 0.16 * fade + 0.03);
     }
   }
   // 숟가락이 스프에 살짝 잠김
@@ -199,8 +200,8 @@
     noise(t, 0.9, 0.06, 500, 1400, 0.7, ui);
     for (var i = 0; i < 4; i++) {
       var f = notes[Math.floor(Math.random() * notes.length)];
-      tone(f, t + 0.05 + i * (0.08 + Math.random() * 0.06), 1.2, 0.11, 'sine', 0, ui);
-      tone(f * 2.76, t + 0.05 + i * 0.1, 0.4, 0.025, 'sine', 0, ui);
+      tone(f, t + 0.05 + i * (0.08 + Math.random() * 0.06), 1.2, 0.17, 'sine', 0, ui);
+      tone(f * 2.76, t + 0.05 + i * 0.1, 0.4, 0.04, 'sine', 0, ui);
     }
   }
   // 마림바 음 하나 (나무를 톡 치는 느낌)
@@ -214,10 +215,10 @@
     } else if (id === 'pudding') {        // 말랑말랑: 음이 뽀잉 하고 출렁
       var o = ctx.createOscillator(), g = ctx.createGain(), l = ctx.createOscillator(), lg = ctx.createGain();
       o.frequency.value = 520; l.frequency.value = 9; lg.gain.value = 40; l.connect(lg); lg.connect(o.frequency);
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.6, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
       o.connect(g); g.connect(ui); o.start(t); l.start(t); o.stop(t + 0.55); l.stop(t + 0.55);
     } else if (id === 'chicken') {        // 바삭바삭: 짧게 바스락 터지는 소리
-      for (i = 0; i < 6; i++) noise(t + i * 0.045 + Math.random() * 0.02, 0.04, 0.5, 3000 + Math.random() * 2000, 2200, 2, ui);
+      for (i = 0; i < 6; i++) noise(t + i * 0.045 + Math.random() * 0.02, 0.05, 1.0, 2600 + Math.random() * 2000, 1800, 1.2, ui);
     } else if (id === 'bread') {          // 따끈따끈: 낮고 포근한 두 음
       mallet(392, t, 0.32); mallet(523.3, t + 0.12, 0.28);
     } else if (id === 'omurice') {        // 포슬포슬: 통통 튀는 세 음
@@ -241,37 +242,53 @@
     } else if (id === 'evening') {        // 노을 진 저녁: 천천히 내려오는 따뜻한 음
       [784, 659.3, 523.3].forEach(function (f, k) { tone(f, t + k * 0.14, 1.0, 0.2, 'sine', 0, ui); });
     } else {                              // 깜깜한 밤: 작고 높은 별 반짝임 두 번
-      tone(1568, t, 1.2, 0.14, 'sine', 0, ui); tone(2093, t + 0.18, 1.4, 0.12, 'sine', 0, ui);
+      tone(1568, t, 1.2, 0.22, 'sine', 0, ui); tone(2093, t + 0.18, 1.4, 0.2, 'sine', 0, ui);
     }
   }
-  // 박수: 사람들이 손뼉을 짝짝짝 — 손뼉 한 번은 '아주 짧고 날카롭게 튀는 넓은 잡음'(10ms 남짓에 사라짐) + 손바닥이 맞닿는 낮은 울림.
-  // 여러 사람이 저마다 조금씩 다른 빠르기(초당 4~6번)·음색으로 치고, 다 같이 커졌다가 잦아든다
-  var clapBuf = null;
-  function clapBuffer() {
-    if (clapBuf) return clapBuf;
-    var len = Math.floor(ctx.sampleRate * 0.09);
-    clapBuf = ctx.createBuffer(1, len, ctx.sampleRate);
-    var d = clapBuf.getChannelData(0);
-    for (var i = 0; i < len; i++) {
-      var tt = i / ctx.sampleRate;
-      // 손뼉은 아주 빠르게 몇 번 겹쳐 튀었다가(1~3ms 간격) 짧게 사라진다
-      var env = Math.exp(-tt / 0.011) + 0.5 * Math.exp(-Math.max(0, tt - 0.0025) / 0.009) * (tt > 0.0025 ? 1 : 0);
-      d[i] = (Math.random() * 2 - 1) * env;
+  // 박수: 사람들이 손뼉을 짝짝짝.
+  //  - 손뼉 한 번은 '음'이 없는 넓은 잡음: 좁은 필터(북처럼 울리는 원인)를 쓰지 않고, 낮은 쪽만 깎고(높은 통과) 1~3kHz를 살짝 돋운다
+  //  - 아주 짧게(2~4ms 사이로 2~3번 겹쳐 튀고 20~40ms에 사라짐), 손마다 길이·밝기가 다르다
+  //  - 열여섯 명이 저마다 다른 빠르기로 들쭉날쭉 치고, 작은 방 울림을 섞어 '여럿이 치는 박수'처럼 촘촘하게
+  var clapBufs = null, room = null;
+  function clapBuffers() {
+    if (clapBufs) return clapBufs;
+    clapBufs = [];
+    for (var v = 0; v < 6; v++) {
+      var len = Math.floor(ctx.sampleRate * 0.07), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+      var taps = [0, 0.0018 + Math.random() * 0.0015, 0.004 + Math.random() * 0.002], dec = 0.012 + Math.random() * 0.014;
+      for (var i = 0; i < len; i++) {
+        var tt = i / ctx.sampleRate, env = 0;
+        taps.forEach(function (tp, k) { if (tt >= tp) env += Math.exp(-(tt - tp) / (k === 2 ? dec : 0.0025)) * (k === 2 ? 1 : 0.6); });
+        d[i] = (Math.random() * 2 - 1) * env;
+      }
+      clapBufs.push(buf);
     }
-    return clapBuf;
+    return clapBufs;
+  }
+  function roomVerb() {   // 작은 방 울림 (0.6초 동안 잦아드는 잡음을 울림으로)
+    if (room) return room;
+    var len = Math.floor(ctx.sampleRate * 0.6), ir = ctx.createBuffer(1, len, ctx.sampleRate), d = ir.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3) * 0.5;
+    room = ctx.createConvolver(); room.buffer = ir;
+    var wet = ctx.createGain(); wet.gain.value = 0.35; room.connect(wet); wet.connect(sfx);
+    return room;
   }
   function clap() {
     if (!ready()) return;
-    var t0 = ctx.currentTime + 0.02, dur = 2.6, buf = clapBuffer();
-    for (var p = 0; p < 9; p++) {
-      var rate = 4 + Math.random() * 2.2, f = 900 + Math.random() * 1500, q = 0.7 + Math.random() * 0.8, pv = 0.5 + Math.random() * 0.5;
-      var start = Math.random() * 0.35, stop = dur - Math.random() * 0.6;
-      for (var at = start; at < stop; at += (1 / rate) * (0.88 + Math.random() * 0.24)) {
-        var x = at / dur, env = Math.pow(Math.sin(Math.PI * Math.min(1, x * 1.15)), 0.6);
-        var src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = 0.85 + Math.random() * 0.3;
-        var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * (0.92 + Math.random() * 0.16); bp.Q.value = q;
-        var g = ctx.createGain(); g.gain.value = 0.55 * pv * env;
-        src.connect(bp); bp.connect(g); g.connect(sfx);
+    var t0 = ctx.currentTime + 0.03, dur = 2.8, bufs = clapBuffers(), verb = roomVerb();
+    var bus = ctx.createGain(); bus.gain.value = 1;
+    var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 450;
+    var pk = ctx.createBiquadFilter(); pk.type = 'peaking'; pk.frequency.value = 1800; pk.Q.value = 0.6; pk.gain.value = 4;
+    bus.connect(hp); hp.connect(pk); pk.connect(sfx); pk.connect(verb);
+    for (var p = 0; p < 16; p++) {
+      var rate = 3.6 + Math.random() * 2.4, pv = 0.4 + Math.random() * 0.6, rateBuf = 0.8 + Math.random() * 0.5;
+      var start = Math.random() * 0.4, stop = dur - Math.random() * 0.7;
+      for (var at = start; at < stop; at += (1 / rate) * (0.8 + Math.random() * 0.4)) {
+        var x = at / dur, env = Math.pow(Math.sin(Math.PI * Math.min(1, x * 1.1)), 0.5);
+        var src = ctx.createBufferSource(); src.buffer = bufs[Math.floor(Math.random() * bufs.length)];
+        src.playbackRate.value = rateBuf * (0.95 + Math.random() * 0.1);
+        var g = ctx.createGain(); g.gain.value = 0.2 * pv * env;
+        src.connect(g); g.connect(bus);
         src.start(t0 + at);
       }
     }
@@ -382,26 +399,29 @@
       });
     } else if (id === 'dishes') {
       // #4 5쪽 식탁: 숟가락·포크가 그릇에 닿는 '쨍'·'달그락' (금속은 맞지 않는 배음이 높게 짧게 울리고, 사기그릇은 낮고 둔하게 톡)
-      var clink = function (vol) {
-        var t = ctx.currentTime, base = 1800 + Math.random() * 1600;
-        [1, 2.76, 5.4, 8.93].forEach(function (r, k) {
-          var o = ctx.createOscillator(), g = ctx.createGain();
-          o.frequency.value = base * r * (0.98 + Math.random() * 0.04);
-          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol / (k + 1), t + 0.003);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35 / (k * 0.6 + 1));
-          o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.4);
+      var clink = function (vol) {   // 쨍: 높은 금속 배음이 오래(~1초) 반짝이며 남고, 짝을 이룬 배음이 살짝 어긋나 '찰랑' 떨린다
+        var t = ctx.currentTime, base = 2600 + Math.random() * 2200;
+        [[1, 1, 1.1], [2.76, 0.7, 0.8], [5.4, 0.45, 0.55], [8.93, 0.3, 0.35], [13.3, 0.18, 0.25]].forEach(function (pp) {
+          [0, 1].forEach(function (k) {
+            var o = ctx.createOscillator(), g = ctx.createGain();
+            o.frequency.value = base * pp[0] * (k ? 1.004 : 1);
+            g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * pp[1] * 0.6, t + 0.002);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + pp[2] * (0.8 + Math.random() * 0.4));
+            o.connect(g); g.connect(out); o.start(t); o.stop(t + pp[2] * 1.3 + 0.05);
+          });
         });
+        // 부딪히는 순간의 '찰'
+        var nb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.02), ctx.sampleRate), nd = nb.getChannelData(0);
+        for (var i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.003));
+        var ns = ctx.createBufferSource(), nh = ctx.createBiquadFilter(), ng = ctx.createGain();
+        ns.buffer = nb; nh.type = 'highpass'; nh.frequency.value = 4000; ng.gain.value = vol * 1.5;
+        ns.connect(nh); nh.connect(ng); ng.connect(out); ns.start(t);
       };
-      var clatter = function (vol) {   // 사기그릇 달그락
-        var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(), f = 700 + Math.random() * 500;
-        o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.92, t + 0.08);
-        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
-        o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.1);
-      };
+      var clatter = function (vol) { clink(vol * 0.7); };   // 달그락도 금속성으로
       chain(loopNoise(4, true), [filt('lowpass', 500)], 0.05);   // 식탁 둘레의 아주 작은 웅성임
       every(350, 1300, function () {
         var r = Math.random();
-        if (r < 0.45) clink(0.05 + Math.random() * 0.04);
+        if (r < 0.55) clink(0.05 + Math.random() * 0.04);
         else if (r < 0.75) { clatter(0.08); setTimeout(function () { if (amb && amb.out === out) clatter(0.05); }, 70 + Math.random() * 60); }
         else { clink(0.06); setTimeout(function () { if (amb && amb.out === out) clink(0.035); }, 110 + Math.random() * 90); }
       });
@@ -432,6 +452,14 @@
     };
   }
 
+  // 웹을 나가거나(다른 탭·앱으로 가거나 화면을 끄면) 소리를 멈추고, 돌아오면 다시
+  function onHide() { if (ctx && ctx.state === 'running') ctx.suspend(); }
+  function onShow() { if (ctx && on && started && ctx.state !== 'running') ctx.resume(); }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) onHide(); else onShow(); });
+  window.addEventListener('pagehide', onHide);
+  window.addEventListener('pageshow', onShow);
+  window.addEventListener('blur', function () { if (document.hidden) onHide(); });
+
   function setOn(v) {
     on = v;
     try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch (e) { /* 무시 */ }
@@ -440,7 +468,7 @@
   }
 
   // (확인용) 소리 크기를 잴 때만 쓴다
-  function _probe() { return { ctx: ctx, music: music, amb: amb }; }
+  function _probe() { return { ctx: ctx, music: music, amb: amb, master: master, sfx: sfx, ui: ui }; }
   window.StarSoupSound = {
     _probe: _probe,
     start: start, flip: flip, ambient: ambient, pick: pick, timePick: timePick, clap: clap, taste: taste, windowOpen: windowOpen, paper: paper, stir: stir, stirDone: stirDone, plop: plop, dip: dip, gulp: gulp, chime: chime,
