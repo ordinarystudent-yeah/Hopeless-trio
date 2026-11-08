@@ -2,6 +2,7 @@
    StarSoupSound.flip()   책장 넘기는 소리 (사각— 하는 종이 소리)
    StarSoupSound.start()  배경 음악: 오르골처럼 맑은 음이 느릿하게 반복 (아주 작게)
    StarSoupSound.toggle() 켜기/끄기 (기억해 둔다)
+   ambient('dishes'): #4 5쪽 식탁의 달그락 소리 (그 쪽을 떠날 때까지)
    효과음: stir() 스프 젓기(휘— 찰랑), stirDone() 다 저었을 때(반짝 화음), plop() 재료 퐁당,
            dip() 숟가락이 스프에 잠김, gulp() 한입 꿀꺽, chime() 날씨 고르기(바람 풍경)
    소리는 사람이 처음 화면을 누른 뒤에만 날 수 있어서(브라우저 규칙), 시작하기를 누를 때 켠다. */
@@ -84,8 +85,9 @@
     var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 400;
     var g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.32, t + 0.06);
-    g.gain.exponentialRampToValueAtTime(0.12, t + 0.25);
+    // 10dB 작게 (0.32 → 0.1)
+    g.gain.exponentialRampToValueAtTime(0.1, t + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.038, t + 0.25);
     g.gain.exponentialRampToValueAtTime(0.0001, t + len);
     src.connect(bp); bp.connect(hp); hp.connect(g); g.connect(master);
     src.start(t); src.stop(t + len);
@@ -373,6 +375,31 @@
       every(500, 1400, function () {
         var f = bright[Math.floor(Math.random() * bright.length)];
         blip(f, 1.6, 0.03, 1); blip(f * 2, 0.6, 0.008, 1);
+      });
+    } else if (id === 'dishes') {
+      // #4 5쪽 식탁: 숟가락·포크가 그릇에 닿는 '쨍'·'달그락' (금속은 맞지 않는 배음이 높게 짧게 울리고, 사기그릇은 낮고 둔하게 톡)
+      var clink = function (vol) {
+        var t = ctx.currentTime, base = 1800 + Math.random() * 1600;
+        [1, 2.76, 5.4, 8.93].forEach(function (r, k) {
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.frequency.value = base * r * (0.98 + Math.random() * 0.04);
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol / (k + 1), t + 0.003);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35 / (k * 0.6 + 1));
+          o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.4);
+        });
+      };
+      var clatter = function (vol) {   // 사기그릇 달그락
+        var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(), f = 700 + Math.random() * 500;
+        o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.92, t + 0.08);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+        o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.1);
+      };
+      chain(loopNoise(4, true), [filt('lowpass', 500)], 0.05);   // 식탁 둘레의 아주 작은 웅성임
+      every(350, 1300, function () {
+        var r = Math.random();
+        if (r < 0.45) clink(0.05 + Math.random() * 0.04);
+        else if (r < 0.75) { clatter(0.08); setTimeout(function () { if (amb && amb.out === out) clatter(0.05); }, 70 + Math.random() * 60); }
+        else { clink(0.06); setTimeout(function () { if (amb && amb.out === out) clink(0.035); }, 110 + Math.random() * 90); }
       });
     } else {
       // 직접 그린 날씨: 은은한 바람

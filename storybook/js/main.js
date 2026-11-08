@@ -457,6 +457,8 @@
       leaf._teardown.push(sparkles(cv, scene.sparkles));
     }
 
+    // #4 5쪽(식탁)에 있는 동안 식기가 달그락거리는 배경 소리 (쪽을 넘기면 천천히 꺼진다)
+    if (scene.id === 'food' && !printing && (mode === 'spread' || state.page === 0) && window.StarSoupSound && window.StarSoupSound.ambient) leaf._teardown.push(window.StarSoupSound.ambient('dishes'));
     var layer = el('div', { class: 'stickers' });
     spread.append(layer);
     leaf._stickers = layer;
