@@ -457,8 +457,8 @@
       leaf._teardown.push(sparkles(cv, scene.sparkles));
     }
 
-    // #4 5쪽(식탁)에 있는 동안 식기가 달그락거리는 배경 소리 (쪽을 넘기면 천천히 꺼진다)
-    if (scene.id === 'food' && !printing && (mode === 'spread' || state.page === 0) && window.StarSoupSound && window.StarSoupSound.ambient) leaf._teardown.push(window.StarSoupSound.ambient('dishes'));
+    // #4 5·6쪽(식탁)에 있는 동안 식기가 달그락거리는 배경 소리 (다음 장면으로 넘기면 천천히 꺼진다)
+    if (scene.id === 'food' && !printing && window.StarSoupSound && window.StarSoupSound.ambient) leaf._teardown.push(window.StarSoupSound.ambient('dishes'));
     var layer = el('div', { class: 'stickers' });
     spread.append(layer);
     leaf._stickers = layer;
@@ -550,12 +550,13 @@
   function fortuneNote(leaf, page) {
     var wrap = el('div', { class: 'fortune' });
     var fly = el('div', { class: 'fortune-fly' });
-    var note = el('button', { type: 'button', class: 'fortune-note', 'aria-label': '황금빛 메모 펼치기' },
-      el('span', { class: 'fortune-seal', 'aria-hidden': 'true', text: '★' }));
+    // 황금빛 편지봉투 (tools/envelope_art.py). 떨어질 땐 흔들리며, 창틀에서는 납작하게 누워 있다
+    var note = el('button', { type: 'button', class: 'fortune-note', 'aria-label': '황금빛 편지 열기' },
+      el('img', { src: 'assets/fortune/envelope-closed.png', alt: '', draggable: 'false' }));
     var ring = el('span', { class: 'fortune-glow', 'aria-hidden': 'true' });   // 동그란 원 대신 메모 자체가 은은하게 빛난다
     var label = el('span', { class: 'scoop-label fortune-touch', 'aria-hidden': 'true', text: '터치' });
     fly.append(note);
-    wrap.append(fly, label);   // '터치'는 돌아가지 않게 메모(마름모) 밖에
+    wrap.append(fly, label);   // '터치'는 돌아가지 않게 봉투 밖에
     var beat = { duration: 2400, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' };
     var hints = [];
     function showHint() {
@@ -577,7 +578,7 @@
         var u = page.clientHeight / 100;   // 1cqh (px)
         var view = page.querySelector('.win-view');
         var wr = wrap.getBoundingClientRect(), vr = view ? view.getBoundingClientRect() : null;
-        var half = fly.offsetWidth * 0.7071;                     // 마름모의 반 대각선
+        var half = fly.offsetWidth * 0.5;                        // 봉투의 반 너비 (흔들려도 이 안)
         var cy = wr.top + wr.height / 2;
         var y0 = vr ? (vr.top - cy) - half * 1.2 : -48 * u;       // 창 너머 위쪽, 보이지 않는 곳에서 시작
         var ySw = vr ? Math.min(-0.5 * u, (vr.bottom - cy) - half - 0.6 * u) : -6 * u;   // 창 아래쪽(아직 창 밖)
@@ -592,11 +593,14 @@
           var yb = t <= T_IN ? y0 + (ySw - y0) * ease : ySw * (1 - Math.sin((t - T_IN) / (1 - T_IN) * Math.PI / 2));
           var x = -16 * u * (1 - Math.min(1, t / 0.9)) + L * Math.sin(th);
           var y = yb - L * (1 - Math.cos(th));                          // 호의 양 끝에서는 살짝 떠오른다
-          var sy = Math.max(0.42, Math.cos(th * 1.9));                  // 기울수록 세로가 납작 (원근)
-          var rot = 45 + th * 180 / Math.PI * 0.9;
+          // 기울수록 세로가 납작 (원근). 마지막에는 창틀에 누운 모양(세로 0.45)으로 스르르
+          var lie = t < 0.8 ? 0 : Math.pow((t - 0.8) / 0.2, 2) * (3 - 2 * (t - 0.8) / 0.2) / 1;
+          lie = Math.min(1, Math.max(0, lie));
+          var sy = Math.max(0.35, Math.cos(th * 1.9)) * (1 - lie) + 0.45 * lie;
+          var rot = th * 180 / Math.PI * 0.6;
           frames.push({ transform: 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) scale(1,' + sy.toFixed(3) + ') rotate(' + rot.toFixed(1) + 'deg)', offset: t });
         }
-        frames[N].transform = 'translate(0px,0px) scale(1,1) rotate(45deg)';
+        frames[N].transform = 'translate(0px,0px) scale(1,0.45) rotate(0deg)';
         setTimeout(function () { wrap.style.clipPath = ''; }, D * T_IN);   // 창 안으로 들어온다
         var a = fly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
         fly.style.opacity = '';
@@ -618,8 +622,10 @@
     var c = ctx();
     var close = el('button', { type: 'button', class: 'fortune-close', 'aria-label': '메모 닫기' }, '×');
     var ft = S.fortune && S.fortune.title, title = typeof ft === 'function' ? ft(c) : (ft || '요정의 한마디!');
-    var card = el('div', { class: 'fortune-card', role: 'dialog', 'aria-label': title },
-      close, el('h3', { class: 'fortune-title', text: title }), fortuneBody(c));
+    // 펼친 모습: 덮개가 열린 봉투가 비스듬히 놓이고, 그 위로 편지지가 쏙 나와 있다 (글은 편지지에)
+    var paper = el('div', { class: 'fortune-paper' }, close, el('h3', { class: 'fortune-title', text: title }), fortuneBody(c));
+    var card = el('div', { class: 'fortune-letter', role: 'dialog', 'aria-label': title },
+      el('img', { class: 'fortune-env', src: 'assets/fortune/envelope-open.png', alt: '', draggable: 'false' }), paper);
     var veil = el('div', { class: 'fortune-open' }, card);
     page.append(veil);
     // 창틀의 메모 자리에서 커지며 펼쳐진다
@@ -3177,6 +3183,7 @@
 
   document.getElementById('btn-start').addEventListener('click', function () {
     if (window.StarSoupSound) window.StarSoupSound.start();   // 처음 누를 때 배경 음악을 켠다 (브라우저는 누르기 전엔 소리를 막는다)
+    sfx('begin');
     start(document.getElementById('cover-card'));
   });
   // 소리 켜기/끄기 (오른쪽 위)
@@ -3190,9 +3197,13 @@
     paintSound();
     soundBtn.addEventListener('click', function () { if (window.StarSoupSound) { window.StarSoupSound.toggle(); paintSound(); } });
   }
-  document.getElementById('btn-guide').addEventListener('click', openGuide);
-  document.getElementById('btn-guide-back').addEventListener('click', backToCover);
-  document.getElementById('btn-guide-start').addEventListener('click', function () { start(document.getElementById('guide-card')); });
+  document.getElementById('btn-guide').addEventListener('click', function () { sfx('tap'); openGuide(); });
+  document.getElementById('btn-guide-back').addEventListener('click', function () { sfx('tap'); backToCover(); });
+  document.getElementById('btn-guide-start').addEventListener('click', function () {
+    if (window.StarSoupSound) window.StarSoupSound.start();
+    sfx('begin');
+    start(document.getElementById('guide-card'));
+  });
 
   // 표지의 저자: 이름을 정하기 전에는 '당신', 정한 뒤에는 그 이름
   function paintAuthor() {

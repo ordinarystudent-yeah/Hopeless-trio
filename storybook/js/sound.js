@@ -324,6 +324,19 @@
     o.start(t + 0.06); lfo.start(t + 0.06); o.stop(t + 0.6); lfo.stop(t + 0.6);
     noise(t + 0.25, 1.1, 0.2, 300, 1200, 0.7);                            // 휘—
   }
+  // 표지 '시작하기': 동화가 열리는 반짝이는 하프 (아래에서 위로 사르르)
+  function begin() {
+    if (!ready()) return;
+    var t = ctx.currentTime;
+    [392, 523.3, 659.3, 784, 1046.5, 1318.5, 1568].forEach(function (f, k) { tone(f, t + k * 0.055, 1.3, 0.13); tone(f * 2.01, t + k * 0.055, 0.5, 0.03); });
+    tone(2093, t + 0.42, 1.6, 0.07);
+  }
+  // 표지 '사용 설명' 같은 버튼: 부드러운 '톡'
+  function tap() {
+    if (!ready()) return;
+    var t = ctx.currentTime;
+    tone(880, t, 0.3, 0.2, 'sine', 0, ui); tone(1318.5, t + 0.06, 0.35, 0.14, 'sine', 0, ui);
+  }
   // 종이 소리: 접힌 메모를 펼칠 때 바스락
   function paper() {
     if (!ready()) return;
@@ -365,23 +378,9 @@
       chain(loopNoise(3), [filt('bandpass', 4200, 0.6)], 0.08);
       every(45, 160, function () { blip(2200 + Math.random() * 2800, 0.02 + Math.random() * 0.02, 0.03 + Math.random() * 0.05); });
     } else if (id === 'snow') {
-      // 눈 오는 날: 맑은 종소리 — 종처럼 맞지 않는 배음(0.5·1·1.19·1.5·2·2.5·3배)이 길게 울리되, 음은 조금 낮게(피치 다운)
-      var bellTone = function (f, vol) {
-        var t = ctx.currentTime;
-        [[0.5, 0.5, 4.5], [1, 1, 3.6], [1.19, 0.45, 2.6], [1.5, 0.35, 2.2], [2, 0.3, 1.6], [2.5, 0.16, 1.1], [3, 0.1, 0.8]].forEach(function (pp) {
-          var o = ctx.createOscillator(), g = ctx.createGain();
-          o.frequency.value = f * pp[0];
-          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * pp[1], t + 0.006);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + pp[2]);
-          o.connect(g); g.connect(out); o.start(t); o.stop(t + pp[2] + 0.05);
-        });
-      };
-      chain(loopNoise(4, true), [filt('lowpass', 300)], 0.08);   // 아주 작은 눈바람
-      var bells = [392, 440, 523.3, 587.3, 659.3];                 // 5음계를 한 옥타브 낮춰
-      every(1600, 3400, function () {
-        bellTone(bells[Math.floor(Math.random() * bells.length)], 0.05);
-        if (Math.random() < 0.35) setTimeout(function () { if (amb && amb.out === out) bellTone(bells[Math.floor(Math.random() * bells.length)], 0.03); }, 380 + Math.random() * 300);
-      });
+      // 눈 오는 날: 음악 없이 바람 소리만 — 아주 낮고 포근한 '쉬—' 바람이 천천히 오간다
+      var g1 = chain(loopNoise(4, true), [filt('lowpass', 380)], 0.3);
+      lfo(g1.gain, 0.06, 0.12);
     } else if (id === 'cloudy') {
       // 흐린 날: 살랑이는 바람 + 멀리서 지저귀는 새
       chain(loopNoise(4, true), [filt('lowpass', 700)], 0.18);
@@ -400,7 +399,7 @@
     } else if (id === 'dishes') {
       // #4 5쪽 식탁: 숟가락·포크가 그릇에 닿는 '쨍'·'달그락' (금속은 맞지 않는 배음이 높게 짧게 울리고, 사기그릇은 낮고 둔하게 톡)
       var clink = function (vol) {   // 쨍: 높은 금속 배음이 오래(~1초) 반짝이며 남고, 짝을 이룬 배음이 살짝 어긋나 '찰랑' 떨린다
-        var t = ctx.currentTime, base = 2600 + Math.random() * 2200;
+        var t = ctx.currentTime, base = 1500 + Math.random() * 1300;   // 조금 낮게
         [[1, 1, 1.1], [2.76, 0.7, 0.8], [5.4, 0.45, 0.55], [8.93, 0.3, 0.35], [13.3, 0.18, 0.25]].forEach(function (pp) {
           [0, 1].forEach(function (k) {
             var o = ctx.createOscillator(), g = ctx.createGain();
@@ -419,7 +418,7 @@
       };
       var clatter = function (vol) { clink(vol * 0.7); };   // 달그락도 금속성으로
       chain(loopNoise(4, true), [filt('lowpass', 500)], 0.05);   // 식탁 둘레의 아주 작은 웅성임
-      every(350, 1300, function () {
+      every(900, 2600, function () {   // 느릿하게
         var r = Math.random();
         if (r < 0.55) clink(0.05 + Math.random() * 0.04);
         else if (r < 0.75) { clatter(0.08); setTimeout(function () { if (amb && amb.out === out) clatter(0.05); }, 70 + Math.random() * 60); }
@@ -430,7 +429,7 @@
       chain(loopNoise(4, true), [filt('lowpass', 600)], 0.25);
     }
     // 크기: 날씨 배경 소리는 배경 음악보다 10dB 정도만 크게 (실제로 잰 크기에 맞춘 값). 식탁 소리는 그대로
-    var LEVEL = { rain: 0.375, snow: 0.406, cloudy: 0.175, sunny: 0.397, custom: 0.127, dishes: 0.5 };
+    var LEVEL = { rain: 0.375, snow: 0.093, cloudy: 0.175, sunny: 0.397, custom: 0.127, dishes: 0.5 };
     out.gain.setTargetAtTime(LEVEL[id] || 0.2, ctx.currentTime, 0.8);   // 천천히 커진다
     return { id: id, refs: 0, out: out, stopAll: function () {
       timers.forEach(clearTimeout);
@@ -471,7 +470,7 @@
   function _probe() { return { ctx: ctx, music: music, amb: amb, master: master, sfx: sfx, ui: ui }; }
   window.StarSoupSound = {
     _probe: _probe,
-    start: start, flip: flip, ambient: ambient, pick: pick, timePick: timePick, clap: clap, taste: taste, windowOpen: windowOpen, paper: paper, stir: stir, stirDone: stirDone, plop: plop, dip: dip, gulp: gulp, chime: chime,
+    start: start, flip: flip, ambient: ambient, begin: begin, tap: tap, pick: pick, timePick: timePick, clap: clap, taste: taste, windowOpen: windowOpen, paper: paper, stir: stir, stirDone: stirDone, plop: plop, dip: dip, gulp: gulp, chime: chime,
     isOn: function () { return on; },
     toggle: function () { setOn(!on); return on; }
   };
