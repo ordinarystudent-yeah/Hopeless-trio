@@ -1836,7 +1836,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 @media (max-width: 600px) and (orientation: portrait), (max-height: 500px) and (orientation: landscape) {
   .fortune { top: 54.6cqh; }
 }
-.fortune-fly { position: relative; transform: scale(1, 0.45); transform-origin: 50% 50%; }   /* 창틀에 누운 봉투 */
+.fortune-fly { position: relative; transform: perspective(30cqh) rotateX(58deg); transform-origin: 50% 50%; }   /* 창틀에 누운 봉투: 먼 쪽(윗면)이 좁아진다 */
 .fortune-note { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
   filter: drop-shadow(0 0.8cqh 0.8cqh rgb(120 70 10 / 0.3)); }
 .fortune-note img { display: block; width: 100%; height: auto; pointer-events: none; }

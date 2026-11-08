@@ -583,7 +583,7 @@
         var y0 = vr ? (vr.top - cy) - half * 1.2 : -48 * u;       // 창 너머 위쪽, 보이지 않는 곳에서 시작
         var ySw = vr ? Math.min(-0.5 * u, (vr.bottom - cy) - half - 0.6 * u) : -6 * u;   // 창 아래쪽(아직 창 밖)
         if (vr) wrap.style.clipPath = 'inset(' + [vr.top - wr.top, wr.right - vr.right, wr.bottom - vr.bottom, vr.left - wr.left].map(function (v) { return v.toFixed(1) + 'px'; }).join(' ') + ')';
-        var N = 100, D = 9500, frames = [], T_IN = 0.86;
+        var N = 100, D = 9500, frames = [], T_IN = 0.86, PERS = Math.round(30 * u);   // 원근 거리 (30cqh)
         var L = 20 * u, SWINGS = 3;
         for (var i = 0; i <= N; i++) {
           var t = i / N;
@@ -596,11 +596,13 @@
           // 기울수록 세로가 납작 (원근). 마지막에는 창틀에 누운 모양(세로 0.45)으로 스르르
           var lie = t < 0.8 ? 0 : Math.pow((t - 0.8) / 0.2, 2) * (3 - 2 * (t - 0.8) / 0.2) / 1;
           lie = Math.min(1, Math.max(0, lie));
-          var sy = Math.max(0.35, Math.cos(th * 1.9)) * (1 - lie) + 0.45 * lie;
+          var sy = Math.max(0.35, Math.cos(th * 1.9)) * (1 - lie) + 0.53 * lie;
           var rot = th * 180 / Math.PI * 0.6;
-          frames.push({ transform: 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) scale(1,' + sy.toFixed(3) + ') rotate(' + rot.toFixed(1) + 'deg)', offset: t });
+          // 세로로 납작해지는 만큼 앞으로 눕힌다(rotateX) → 먼 쪽인 봉투 윗면이 원근으로 좁아진다
+          var ax = Math.acos(Math.min(1, sy)) * 180 / Math.PI;
+          frames.push({ transform: 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) perspective(' + PERS + 'px) rotateX(' + ax.toFixed(1) + 'deg) rotate(' + rot.toFixed(1) + 'deg)', offset: t });
         }
-        frames[N].transform = 'translate(0px,0px) scale(1,0.45) rotate(0deg)';
+        frames[N].transform = 'translate(0px,0px) perspective(' + PERS + 'px) rotateX(58deg) rotate(0deg)';
         setTimeout(function () { wrap.style.clipPath = ''; }, D * T_IN);   // 창 안으로 들어온다
         var a = fly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
         fly.style.opacity = '';
