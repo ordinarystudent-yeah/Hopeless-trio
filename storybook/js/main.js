@@ -538,9 +538,13 @@
       });
       hint.animate([{ opacity: 0.55 }, { opacity: 1 }, { opacity: 0.55 }], { duration: 2000, iterations: Infinity });
     }
+    var opening = false;
     btn.addEventListener('click', function () {
-      if (switching) return;
+      if (switching || opening) return;   // 창이 열리는 중에는 다시 눌러도 그대로
+      // 편지가 떨어지는 동안에는 창을 눌러도 날씨 화면으로 넘어가지 않는다
+      if (leaf.querySelector('.fortune.is-falling')) return;
       if (chosen || !paneL.animate) { showAsk('wake', 1); return; }
+      opening = true;
       // 두 창이 바깥으로 활짝 열리는 걸 보여 준 다음 묻는다
       btn.classList.remove('is-closed');
       sfx('windowOpen');
@@ -608,7 +612,7 @@
         var half = fly.offsetWidth * 0.5;
         var y0 = (vTop - cy) - half * 0.55;                          // 창 너머 위쪽, 막 보이기 직전
         var ySw = Math.min(-0.5 * u, (vBot - cy) - half - 0.6 * u);  // 창 아래쪽
-        var N = 100, D = 6000, frames = [], T_IN = 0.86, PERS = Math.round(30 * u), BEHIND = 1000;   // 6초 동안, 처음 1초는 창틀 뒤
+        var N = 100, D = 6000, frames = [], T_IN = 0.86, PERS = Math.round(30 * u);   // 6초 동안
         var L = 20 * u, SWINGS = 2.5;
         for (var i = 0; i <= N; i++) {
           var t = i / N;
@@ -627,26 +631,20 @@
           frames.push({ transform: 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) perspective(' + PERS + 'px) rotateX(' + ax.toFixed(1) + 'deg) rotate(' + rot.toFixed(1) + 'deg)', offset: t });
         }
         frames[N].transform = 'translate(0px,0px) perspective(' + PERS + 'px) rotateX(58deg) rotate(0deg)';
-        // 처음 1초: 같은 봉투를 창 안쪽(날씨 위, 창틀 아래)에 하나 더 두고 똑같이 움직인다 (창 밖에서 떨어지는 모습).
-        // 1초 뒤에는 창 안쪽 것을 지우고 앞쪽(창틀 위) 봉투로 바꿔, 창틀로 내려앉는다
+        // 봉투 하나만 움직이고, 창 안쪽(창 너머 하늘) 자리로 위·양옆만 잘라 둔다 → 창 밖에서 떨어지는 것처럼 보이고,
+        // 창 아래쪽으로 내려오면 잘리지 않은 아래로 나와 창틀 앞에 내려앉는다. (복사본을 바꿔 끼우지 않아 움직임이 끊기지 않음)
+        // 자르는 자리는 배치 값(offset)으로 재서 책장이 넘어가는 중에도 틀리지 않는다
         var a = fly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
-        var sky = null;
         if (view && win) {
-          sky = el('div', { class: 'fortune-sky', 'aria-hidden': 'true' });
-          sky.style.left = -(win.offsetLeft + view.offsetLeft) + 'px';
-          sky.style.top = -(win.offsetTop + view.offsetTop) + 'px';
-          sky.style.width = page.clientWidth + 'px';
-          sky.style.height = page.clientHeight + 'px';
-          var twin = el('div', { class: 'fortune' }), twinFly = el('div', { class: 'fortune-fly' },
-            el('div', { class: 'fortune-note' }, el('img', { src: 'assets/fortune/envelope-closed.png', alt: '', draggable: 'false' })));
-          twin.append(twinFly); sky.append(twin); view.append(sky);
-          twinFly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
-          wrap.style.visibility = 'hidden';
-          setTimeout(function () { wrap.style.visibility = ''; if (sky) sky.remove(); }, BEHIND);
+          var wl = wrap.offsetLeft - wrap.offsetWidth / 2, wt = wrap.offsetTop - wrap.offsetHeight;   // .fortune은 -50%·-100% 옮겨져 있다
+          var vl = win.offsetLeft + view.offsetLeft, vw = view.offsetWidth;
+          wrap.style.clipPath = 'inset(' + (vTop - wt).toFixed(1) + 'px ' + (wl + wrap.offsetWidth - (vl + vw)).toFixed(1) + 'px -200vh ' + (vl - wl).toFixed(1) + 'px)';
+          a.finished.then(function () { wrap.style.clipPath = ''; }, function () {});
         }
+        wrap.classList.add('is-falling');
         fly.style.opacity = '';
         wrap._fall = a;
-        a.finished.then(function () { a.commitStyles && a.commitStyles(); a.cancel(); if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } }, function () {});
+        a.finished.then(function () { a.commitStyles && a.commitStyles(); a.cancel(); wrap.classList.remove('is-falling'); if (fly.isConnected) { ring.style.opacity = label.style.opacity = ''; showHint(); } }, function () {});
       }, 250);   // 쪽이 보이자마자 곧 떨어지기 시작
     } else showHint();
     note.addEventListener('click', function (e) {

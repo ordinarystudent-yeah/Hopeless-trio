@@ -1881,8 +1881,6 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* 황금빛 메모: 누를 때 노란 초점 테두리가 남지 않게 (키보드로 옮길 때만 보이도록) */
 .fortune-note:focus:not(:focus-visible), .fortune-close:focus:not(:focus-visible) { outline: none; }
 .fortune-note:focus-visible { outline: none; filter: brightness(1.1); }
-/* 떨어지기 시작할 때 창 안쪽(창 너머 하늘)에 두는 봉투 자리: 쪽과 같은 크기·같은 cqh로 맞춘다 */
-.fortune-sky { position: absolute; container-type: size; pointer-events: none; }
 
 /* 동화 쪽 안의 글(본문·말풍선·곡선 글·이름표)은 본문용 큰 글씨, 쪽 안에 들어간 선택지(재료 넣기·맛 고르기)는 UI 글씨 */
 .book .page { --font-display: "Ownglyph PDH Story", "Ownglyph PDH", "Jua", "Gowun Dodum", sans-serif;
