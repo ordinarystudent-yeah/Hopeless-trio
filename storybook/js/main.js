@@ -2451,7 +2451,7 @@
     var note = el('p', { class: 'prompt-text ask-note inline-note', text: cfg.note() });
     var box = el('div', { class: 'inline-ask', 'data-ask': id },
       el('div', { class: 'choice-text' }, paragraphs(cfg.text(sc, ctx()))),
-      el('div', { class: 'ask-body' }, cfg.body()), note);
+      note, el('div', { class: 'ask-body' }, cfg.body()));   // 안내는 질문 아래, 선택지 위
     return box;
   }
 
