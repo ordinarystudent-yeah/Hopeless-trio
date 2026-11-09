@@ -287,7 +287,10 @@
     return box;
   }
 
+  // 쪽 위의 머리글(기승전결 · 소제목 · #번호)은 쓰지 않는다 (본문만 남김)
+  var SHOW_EYEBROW = false;
   function eyebrow(scene, index, page) {
+    if (!SHOW_EYEBROW) return null;
     var act = S.acts[scene.act];
     var no = (page && page.no) || scene.no || String(index + 1);
     return el('p', { class: 'eyebrow' },
@@ -2448,7 +2451,7 @@
     var cfg = ASK[askId], scene = S.scenes[askScene(askId)];
     var card = document.getElementById('ask-card');
     card.setAttribute('data-ask', askId);
-    document.getElementById('ask-kicker').textContent = S.acts[scene.act].label + ' · ' + S.acts[scene.act].title + ' #' + scene.no;
+    var kk = document.getElementById('ask-kicker'); kk.textContent = ''; kk.hidden = true;   // 기승전결·소제목·#번호는 쓰지 않는다
     var q = document.getElementById('ask-text');
     q.replaceChildren.apply(q, paragraphs(cfg.text(scene, ctx())));
     var body = document.getElementById('ask-body');

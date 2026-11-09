@@ -723,7 +723,7 @@
 
   function drawMemo(ctx, W) {
     var pad = MEMO.pad * W, w = MEMO.w * W, fs = MEMO.font * W, hs = MEMO.head * W;
-    ctx.font = fs + 'px Jua, "Gowun Dodum", sans-serif';
+    ctx.font = fs + 'px "Ownglyph PDH", Jua, "Gowun Dodum", sans-serif';
     var lines = wrapText(ctx, memo.text, w - pad * 2);
     var h = pad * 2 + hs * 1.5 + lines.length * fs * MEMO.line;
     var cx = memo.x * W, cy = memo.y * W;
@@ -742,10 +742,10 @@
     ctx.fillRect(-w * 0.14, -h / 2 - W * 0.012, w * 0.28, W * 0.028);
     ctx.textBaseline = 'top';
     ctx.fillStyle = '#9a7323';
-    ctx.font = hs + 'px Jua, "Gowun Dodum", sans-serif';
+    ctx.font = hs + 'px "Ownglyph PDH", Jua, "Gowun Dodum", sans-serif';
     ctx.fillText('내가 한 착한 일', -w / 2 + pad, -h / 2 + pad);
     ctx.fillStyle = '#3b2c18';
-    ctx.font = fs + 'px Jua, "Gowun Dodum", sans-serif';
+    ctx.font = fs + 'px "Ownglyph PDH", Jua, "Gowun Dodum", sans-serif';
     lines.forEach(function (ln, i) { ctx.fillText(ln, -w / 2 + pad, -h / 2 + pad + hs * 1.5 + i * fs * MEMO.line); });
     ctx.restore();
   }

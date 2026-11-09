@@ -1,3 +1,9 @@
+@font-face {
+  font-family: "Ownglyph PDH";
+  src: url("../assets/fonts/ownglyph-pdh.woff2") format("woff2");
+  font-display: swap;
+  size-adjust: 118%;   /* 손글씨라 같은 크기에서 작아 보여서, 예전 글꼴과 비슷한 크기로 */
+}
 /* 별빛스프 — 책 화면
    Layout: 장면 하나 = 펼친 책 한 면 = 가로 A4 두 쪽(297×210mm ×2).
    넓은 가로 화면은 펼침면 전체, 휴대폰·세로 화면은 한 쪽씩 넘겨 본다.
@@ -23,8 +29,9 @@
   --paper: #fbf6ea;      /* 그림판 종이 */
 
   /* Type */
-  --font-display: "Jua", "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  --font-body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  /* 글꼴: 온글잎 박다현체 (assets/fonts, 손글씨 느낌). 불러오기 전·없는 글자는 예전 글꼴로 */
+  --font-display: "Ownglyph PDH", "Jua", "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "Ownglyph PDH", "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
   /* Book */
