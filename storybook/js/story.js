@@ -136,7 +136,7 @@
         { no: '2', text: function (c) { return [you(c).concat(['의 꿈속에는 ']).concat(you(c, '을/를'), [' 위한 식탁이 준비되어 있어요.'])]; }, place: 'bottom', art: 'table' },
         {
           no: '3', text: function () { return [['당신의 자리도 있어요.\n당신의 이름은 무엇인가요?']]; },
-          place: 'top', ink: 'dark', art: 'seat', artPos: 'bottom', textAt: { x: 0.24, y: 0.06 },   // 글은 흰 여백에: 쪽 왼쪽에서 24%, 위에서 6% 자리부터
+          place: 'top', ink: 'dark', art: 'seat', artPos: 'bottom', textAt: { x: 0.24, y: 0.09 },   // 글은 흰 여백에: 쪽 왼쪽에서 24%, 위에서 9% 자리부터
           // 그림 속 이름표 앞면 자리(이 쪽 기준 비율). 앱에서는 여기에 바로 이름을 쓰고, 종이책에서는 빈칸으로 남는다.
           // r: 기울기 — 오른쪽이 조금 내려가게 (점선이 이름표 윗면과 나란하도록)
           nameplate: { x: 0.34, y: 0.5, w: 0.46, h: 0.19, r: 3 }
@@ -443,7 +443,7 @@
   };
 
   window.StarSoup = {
-    version: '1.23',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.24',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
