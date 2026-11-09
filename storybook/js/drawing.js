@@ -201,7 +201,8 @@
     $('ed-name-field').hidden = !opts.askName;
     $('ed-name-field').querySelector('label').textContent = opts.nameLabel || '무슨 음식인가요? (안 써도 돼요)';
     nameInput.placeholder = opts.namePlaceholder || '음식 이름 (안 써도 돼요)';
-    nameInput.value = opts.name || '';
+    nameInput.maxLength = opts.maxName || 12;   // 이름 글자 수 한도 (음식 7자 등)
+    nameInput.value = (opts.name || '').slice(0, nameInput.maxLength);
     // 캔버스 비율: 쪽 안 그림판은 삽화 크기(가로:세로)와 같게, 창으로 열 때는 정사각형
     var nw = opts.aspect ? 1000 : SIZE, nh = opts.aspect ? Math.round(1000 / opts.aspect) : SIZE;
     if (nw !== CW || nh !== CH) { CW = nw; CH = nh; canvas.width = CW; canvas.height = CH; g = canvas.getContext('2d', { willReadFrequently: true }); }

@@ -456,7 +456,7 @@
   };
 
   window.StarSoup = {
-    version: '1.31',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.32',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -471,7 +471,8 @@
     customTaste: { label: '직접 그리기', fallbackName: '내가 그린 맛', hint: '직접 그리기를 골랐어요. 다음으로 넘기면 16쪽에서 어떤 맛이었는지 바로 그릴 수 있어요.' },
     motifs: motifs,
     josa: josa,
-    limits: { name: 12, deed: 80, foodName: 12, weatherName: 12, ingredient: 10, ingredients: 5, tasteName: 12 },
+    limits: { name: 12, deed: 80, foodName: 7,   // 음식 이름 7자: 6쪽 식자 윗줄 원을 따라 글씨가 줄지 않고 자연스럽게 들어가는 길이
+              weatherName: 12, ingredient: 10, ingredients: 5, tasteName: 12 },
     // #10 18쪽: 창 밖 날씨를 고르면 창문으로 날아 들어오는 황금빛 메모 (운세·조언)
     // text(c): 지금까지 고른 조합(c.time, c.weather, c.food, c.taste, c.wakeWeather, c.deed, 재료)에 맞는 문구를 돌려준다.
     //          문단 배열([['한 줄'], ['다음 줄']]) 또는 null. null이면 '문구 준비 중' 자리표시와 고른 조합만 보여 준다.
