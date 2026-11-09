@@ -156,7 +156,16 @@
         // 직접 그린 음식에 이름을 적었으면 그 이름이 들어가야 하므로, 식자 그림과 같은 자리·같은 곡선을 따라 글꼴로 쓴다
         lettering: function (c) {
           if (!c.food) return null;
-          if (c.food.custom && c.food.typedName) return null;
+          // 직접 그린 음식에 이름을 적었으면: 식자 그림에서 '직접 고른 음식을'만 지운 그림 위에,
+          // 그 자리(윗줄 원의 호)를 따라 같은 크기의 글꼴로 '직접 고른 (이름)을/를'을 쓴다
+          if (c.food.custom && c.food.typedName) {
+            var nm = c.food.name;
+            return { src: 'assets/lettering/06-food-custom-rest.png', arc: {
+              text: '직접 고른 ' + nm + josa(nm, '을/를'),
+              // 식자 그림(쪽 856×624px) 기준: 윗줄 글자 가운데를 지나는 원, '을'이 끝나던 자리, 글씨 크기(px)
+              w: 856, h: 624, cx: 382.9, cy: -34.5, r: 374.5, endX: 366, size: 39.5, track: 0.867, gap: 0, minX: 30
+            } };
+          }
           return 'assets/lettering/06-food-' + (c.food.custom ? 'custom' : c.food.id) + '.png';
         },
         curve: {
@@ -447,7 +456,7 @@
   };
 
   window.StarSoup = {
-    version: '1.29',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.30',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

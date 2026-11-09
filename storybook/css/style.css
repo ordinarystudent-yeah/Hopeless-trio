@@ -1893,3 +1893,6 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .prompt-memo { align-items: center; text-align: center; }
 /* 손글씨 식자 그림(투명 PNG, 쪽 크기 그대로): 글 상자 대신 쪽 위에 */
 .page-lettering { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; z-index: 3; pointer-events: none; }
+/* 식자 그림 위에 덧쓰는 글자 (직접 고른 음식 이름): 식자와 같은 글꼴·검정 */
+.arc-lettering { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.arc-ch { position: absolute; font-family: "Ownglyph PDH", "Gowun Dodum", sans-serif; line-height: 1; color: #111; white-space: pre; }

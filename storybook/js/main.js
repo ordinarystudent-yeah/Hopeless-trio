@@ -432,7 +432,9 @@
       var letter = p.lettering ? (typeof p.lettering === 'function' ? p.lettering(c) : p.lettering) : null;
       if (letter) {
         var ltxt = body ? flatText(body) : (p.curve && p.curve.text ? (function (t) { return t ? [t.head, t.body].filter(Boolean).join(' ') : ''; })(p.curve.text(c)) : '');
-        page.append(el('img', { class: 'page-lettering', src: letter, alt: ltxt, draggable: 'false' }));
+        var lsrc = typeof letter === 'string' ? letter : letter.src;
+        page.append(el('img', { class: 'page-lettering', src: lsrc, alt: ltxt, draggable: 'false' }));
+        if (letter.arc) page.append(arcLettering(page, letter.arc));
         curveDone = true;
       }
       if (p.curve && !letter) {
@@ -786,6 +788,49 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
     // 본문용 글꼴은 쓰일 때 받아지므로, 받아진 뒤에 한 번 더 놓는다 (그 전에 재면 글자 사이가 좁게 잡힌다)
     if (document.fonts && document.fonts.load) document.fonts.load('20px "Ownglyph PDH Story"').then(function () { layout(); }, function () {});
+    return box;
+  }
+
+  /* ---------- 식자 그림 위에 글자 덧쓰기: 원의 호를 따라 (직접 고른 음식 이름) ----------
+     a: { text, w, h (식자 그림 크기), cx, cy, r (글자 가운데가 지나는 원, 그림 px), endX (마지막 글자가 끝나는 x),
+          size (글씨 크기 px), gap (끝 자리에서 띄울 px), minX (이보다 왼쪽으로 넘치면 글씨를 줄임) }
+     글은 끝 자리에서 왼쪽으로 원을 따라 거슬러 놓는다 → 이름이 길어도 뒤의 '한 입 먹으니,'와 겹치지 않는다 */
+  function arcLettering(page, a) {
+    var box = el('div', { class: 'arc-lettering', 'aria-hidden': 'true' });
+    var measure = document.createElement('canvas').getContext('2d');
+    var FAMILY = '"Ownglyph PDH", "Gowun Dodum", sans-serif', ADJ = 1.16;   // 'Ownglyph PDH'는 size-adjust 116%
+    var layout = function () {
+      var W = page.clientWidth, H = page.clientHeight;
+      if (!W) return;
+      box.replaceChildren();
+      var sx = W / a.w, sy = H / a.h, s = (sx + sy) / 2;
+      var size = a.size, chars = Array.from(a.text);
+      var endPhi = Math.asin((a.endX - a.gap * 0 - a.cx) / a.r);
+      var widths, total, fits = false;
+      for (var tries = 0; tries < 12 && !fits; tries++) {
+        measure.font = (size / ADJ) + 'px ' + FAMILY;   // 그림 px 단위로 잰다
+        widths = chars.map(function (ch) { return measure.measureText(ch).width * ADJ * (a.track || 1); });   // track: 식자의 좁은 자간
+        total = widths.reduce(function (x, y) { return x + y; }, 0);
+        var startPhi = endPhi - total / a.r;
+        fits = a.cx + a.r * Math.sin(startPhi) >= a.minX;
+        if (!fits) size *= 0.93;
+      }
+      var acc = total;
+      chars.forEach(function (ch, i) {
+        acc -= widths[i];
+        var phi = endPhi - (acc + widths[i] / 2) / a.r;   // 이 글자 가운데의 각도 (아래 꼭짓점이 0, 오른쪽이 +)
+        var x = a.cx + a.r * Math.sin(phi), y = a.cy + a.r * Math.cos(phi);
+        if (ch === ' ') return;
+        var sp = el('span', { class: 'arc-ch', text: ch });
+        sp.style.left = (x * sx) + 'px'; sp.style.top = (y * sy) + 'px';
+        sp.style.fontSize = (size * s / ADJ) + 'px';
+        sp.style.transform = 'translate(-50%, -50%) rotate(' + (-phi * 180 / Math.PI).toFixed(2) + 'deg)';
+        box.append(sp);
+      });
+    };
+    requestAnimationFrame(function () { requestAnimationFrame(layout); });
+    if (window.ResizeObserver) { var last = 0; new ResizeObserver(function () { if (page.clientWidth !== last) { last = page.clientWidth; layout(); } }).observe(page); }
+    if (document.fonts && document.fonts.load) document.fonts.load('20px "Ownglyph PDH"').then(function () { layout(); }, function () {});
     return box;
   }
 
