@@ -152,15 +152,19 @@
       // 5쪽: 글은 위, 스티커 안내는 아래 식탁보 위 / 6쪽: 고른 음식 설명은 가운데 노란 빈자리
       pages: [{ text: true, place: 'top', ink: 'dark', art: 'table', note: 'food-sticker', noteAt: 'bottom' }, {
         widgets: ['food-result'], place: 'center', art: 'feast', artPos: 'bottom',
-        // 6쪽: 고른 음식 설명을 노란 빛 아래 미소 모양 곡선을 따라 (첫 곡선은 제목)
+        // 6쪽: 고른 음식의 글은 손글씨 식자 그림(assets/lettering, 투명 PNG)으로.
+        // 직접 그린 음식에 이름을 적었으면 그 이름이 들어가야 하므로, 식자 그림과 같은 자리·같은 곡선을 따라 글꼴로 쓴다
+        lettering: function (c) {
+          if (!c.food) return null;
+          if (c.food.custom && c.food.typedName) return null;
+          return 'assets/lettering/06-food-' + (c.food.custom ? 'custom' : c.food.id) + '.png';
+        },
         curve: {
           ink: 'dark', replacesWidgets: true,
-          text: function (c) { return c.food ? { head: '한입 냠, ' + c.food.name, body: c.food.desc } : null; },
+          text: function (c) { return c.food ? { body: c.food.desc } : null; },
           lines: [
-            { head: true, pts: [[0.18, 0.34], [0.26, 0.42], [0.40, 0.44]] },
-            { pts: [[0.14, 0.39], [0.31, 0.51], [0.45, 0.56], [0.62, 0.49], [0.74, 0.33]] },
-            { pts: [[0.16, 0.51], [0.31, 0.63], [0.45, 0.68], [0.62, 0.63], [0.78, 0.45]] },
-            { pts: [[0.36, 0.73], [0.50, 0.77], [0.67, 0.69], [0.81, 0.59]] }
+            { pts: [[0.235, 0.475], [0.36, 0.525], [0.50, 0.54], [0.66, 0.515], [0.80, 0.455]] },
+            { pts: [[0.235, 0.60], [0.36, 0.655], [0.50, 0.665], [0.66, 0.635], [0.80, 0.555]] }
           ]
         }
       }],
@@ -172,15 +176,15 @@
       image: 'assets/backgrounds/05-fairies-arrive.jpg', alt: '뚜껑 덮인 음식을 트레이에 끌고 오는 요정과 그 모습을 바라보는 주인공',
       // 왼쪽 쪽: 위에 트레이를 끌고 오는 요정, 그 아래 빈 자리에 글 / 오른쪽 쪽: 다 먹은 식탁에서 요정을 보는 주인공
       pages: [
-        // 7쪽: 글은 위쪽 연기 물결 안에 (물결을 따라 살짝 기울여)
-        { text: true, place: 'top', ink: 'dark', art: 'fairies', artPos: 'top',
+        // 7쪽: 글은 위쪽 연기 물결 안에 — 손글씨 식자 그림으로
+        { text: true, place: 'top', ink: 'dark', art: 'fairies', artPos: 'top', lettering: 'assets/lettering/07-fairies.png',
           curve: { ink: 'dark', eyebrowAt: [0.24, 0.04], lines: [
             { pts: [[0.24, 0.10], [0.39, 0.15], [0.54, 0.12]] },
             { pts: [[0.18, 0.25], [0.43, 0.26], [0.58, 0.22], [0.72, 0.25]] },
             { pts: [[0.45, 0.37], [0.63, 0.35], [0.82, 0.40]] }
           ] } },
         // 8쪽: 글은 왼쪽 아래 보랏빛 연기 위에, 연기 흐름을 따라 비스듬히
-        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'bottom',
+        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'bottom', lettering: 'assets/lettering/08-fairies.png',
           curve: { ink: 'light', eyebrowAt: [0.30, 0.71], lines: [
             { pts: [[0.30, 0.79], [0.46, 0.82], [0.63, 0.87]] },
             { pts: [[0.26, 0.86], [0.43, 0.89], [0.61, 0.93]] },
@@ -443,7 +447,7 @@
   };
 
   window.StarSoup = {
-    version: '1.27',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.29',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

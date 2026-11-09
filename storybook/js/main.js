@@ -66,10 +66,11 @@
   function customFood(c) {
     var label = state.customFoodName.trim() || S.customFood.fallbackName;
     return {
-      id: 'custom', custom: true, name: label, noun: label, emoji: '🎨',
+      id: 'custom', custom: true, name: label, noun: label, emoji: '🎨', typedName: !!state.customFoodName.trim(),
       image: images[IMG_FOOD] || null,
-      desc: c.you + S.josa(c.you, '이/가') + ' 직접 그린 ' + label + S.josa(label, '을/를') +
-        ' 한입 먹으니, 세상에 하나뿐인 맛이 입 안 가득 퍼졌어요.'
+      // 6쪽 글: 이름을 적었으면 그 이름을, 안 적었으면 '음식'을 넣는다 (식자 그림과 같은 문장)
+      desc: '직접 고른 ' + (state.customFoodName.trim() || '음식') + S.josa(state.customFoodName.trim() || '음식', '을/를') +
+        ' 한 입 먹으니,\n세상에 하나뿐인 맛이 입 안 가득 퍼졌어요.'
     };
   }
 
@@ -427,7 +428,14 @@
       var block = null;
       // 그려 준 곡선을 따라 글자를 한 자씩 놓는 나레이션 (curve). 이때는 보통 글 상자를 만들지 않는다
       var curveDone = false;
-      if (p.curve) {
+      // 손글씨 식자 그림(lettering): 글 대신 그 그림을 쪽에 그대로 얹는다 (글은 읽어 주기용으로만)
+      var letter = p.lettering ? (typeof p.lettering === 'function' ? p.lettering(c) : p.lettering) : null;
+      if (letter) {
+        var ltxt = body ? flatText(body) : (p.curve && p.curve.text ? (function (t) { return t ? [t.head, t.body].filter(Boolean).join(' ') : ''; })(p.curve.text(c)) : '');
+        page.append(el('img', { class: 'page-lettering', src: letter, alt: ltxt, draggable: 'false' }));
+        curveDone = true;
+      }
+      if (p.curve && !letter) {
         var ct = p.curve.text ? p.curve.text(c) : (body ? { body: flatText(body) } : null);
         if (ct) {
           page.append(curveText(page, p.curve, ct, p.curve.eyebrowAt ? eyebrow(scene, index, p) : null));
@@ -725,24 +733,28 @@
       var a = S.pts[i - 1], b = S.pts[i], seg = (S.acc[i] - S.acc[i - 1]) || 1, t = Math.min(1, Math.max(0, (d - S.acc[i - 1]) / seg));
       return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, ang: Math.atan2(b[1] - a[1], b[0] - a[0]) };
     };
-    var family = getComputedStyle(document.body).fontFamily;
+    var family = '';
     var layout = function () {
       var W = page.clientWidth, H = page.clientHeight;
       if (!W) return;
+      family = getComputedStyle(page).fontFamily;   // 쪽 안 글꼴(본문용)으로 잰다 — 쪽이 화면에 붙은 뒤에야 알 수 있다
       layer.replaceChildren();
       var heads = [], bodies = [];
       cv.lines.forEach(function (ln) { (ln.head ? heads : bodies).push(sample(ln.pts, W, H)); });
       // 단어 단위로 곡선에 채워 본다. 마지막 곡선을 넘치면 글씨를 조금씩 줄여 다시 (최대 16번)
       var fill = function (curves, text, fs, font, cls) {
         if (!text || !curves.length) return;
-        var words = text.split(' ');
+        var words = text.replace(/\n/g, ' \n ').split(' ').filter(Boolean);   // '\n'이면 다음 곡선으로
+        var forced = text.indexOf('\n') >= 0;
         for (var tries = 0; tries < 16; tries++) {
           measure.font = fs + 'px ' + font;
           var space = measure.measureText(' ').width, li = 0, d = 0, out = [], over = false;
           for (var wi = 0; wi < words.length && !over; wi++) {
-            var w = words[wi], ww = measure.measureText(w).width;
+            var w = words[wi];
+            if (w === '\n') { if (li < curves.length - 1) { li++; d = 0; } continue; }
+            var ww = measure.measureText(w).width;
             while (d > 0 && d + ww > curves[li].len) {
-              if (li === curves.length - 1) { over = true; break; }
+              if (li === curves.length - 1 || forced) { over = true; break; }   // 줄을 정해 둔 글은 넘치면 글씨를 줄인다
               li++; d = 0;
             }
             if (over) break;
@@ -772,6 +784,8 @@
     requestAnimationFrame(function () { requestAnimationFrame(layout); });
     if (window.ResizeObserver) { var last = 0; new ResizeObserver(function () { if (page.clientWidth !== last) { last = page.clientWidth; layout(); } }).observe(page); }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+    // 본문용 글꼴은 쓰일 때 받아지므로, 받아진 뒤에 한 번 더 놓는다 (그 전에 재면 글자 사이가 좁게 잡힌다)
+    if (document.fonts && document.fonts.load) document.fonts.load('20px "Ownglyph PDH Story"').then(function () { layout(); }, function () {});
     return box;
   }
 

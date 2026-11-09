@@ -1891,3 +1891,5 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   --font-body: "Ownglyph PDH", "Gowun Dodum", sans-serif; font-family: var(--font-body); }
 /* 착한 일 메모지(그림 그리러 가기 화면의 미리보기 포함): 글은 가운데 정렬 */
 .prompt-memo { align-items: center; text-align: center; }
+/* 손글씨 식자 그림(투명 PNG, 쪽 크기 그대로): 글 상자 대신 쪽 위에 */
+.page-lettering { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; z-index: 3; pointer-events: none; }
