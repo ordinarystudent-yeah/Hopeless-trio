@@ -2,7 +2,14 @@
   font-family: "Ownglyph PDH";
   src: url("../assets/fonts/ownglyph-pdh.woff2") format("woff2");
   font-display: swap;
-  size-adjust: 130%;   /* 손글씨라 같은 크기에서 작아 보여서 조금 크게 */
+  size-adjust: 116%;   /* 선택지·버튼 같은 UI 글씨 (손글씨라 같은 크기에서 작아 보여 조금 키움) */
+}
+/* 같은 글꼴을 동화 본문용으로 한 번 더: 본문만 더 크게 */
+@font-face {
+  font-family: "Ownglyph PDH Story";
+  src: url("../assets/fonts/ownglyph-pdh.woff2") format("woff2");
+  font-display: swap;
+  size-adjust: 145%;
 }
 /* 별빛스프 — 책 화면
    Layout: 장면 하나 = 펼친 책 한 면 = 가로 A4 두 쪽(297×210mm ×2).
@@ -1876,3 +1883,9 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .fortune-note:focus-visible { outline: none; filter: brightness(1.1); }
 /* 떨어지기 시작할 때 창 안쪽(창 너머 하늘)에 두는 봉투 자리: 쪽과 같은 크기·같은 cqh로 맞춘다 */
 .fortune-sky { position: absolute; container-type: size; pointer-events: none; }
+
+/* 동화 쪽 안의 글(본문·말풍선·곡선 글·이름표)은 본문용 큰 글씨, 쪽 안에 들어간 선택지(재료 넣기·맛 고르기)는 UI 글씨 */
+.book .page { --font-display: "Ownglyph PDH Story", "Ownglyph PDH", "Jua", "Gowun Dodum", sans-serif;
+  --font-body: "Ownglyph PDH Story", "Ownglyph PDH", "Gowun Dodum", sans-serif; font-family: var(--font-body); }
+.book .page .inline-ask, .book .page .tdraw-dock, .book .page .editor { --font-display: "Ownglyph PDH", "Jua", "Gowun Dodum", sans-serif;
+  --font-body: "Ownglyph PDH", "Gowun Dodum", sans-serif; font-family: var(--font-body); }
