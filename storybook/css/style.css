@@ -2,7 +2,7 @@
   font-family: "Ownglyph PDH";
   src: url("../assets/fonts/ownglyph-pdh.woff2") format("woff2");
   font-display: swap;
-  size-adjust: 118%;   /* 손글씨라 같은 크기에서 작아 보여서, 예전 글꼴과 비슷한 크기로 */
+  size-adjust: 130%;   /* 손글씨라 같은 크기에서 작아 보여서 조금 크게 */
 }
 /* 별빛스프 — 책 화면
    Layout: 장면 하나 = 펼친 책 한 면 = 가로 A4 두 쪽(297×210mm ×2).

@@ -439,6 +439,14 @@
         if (p.wave) waveText(block, p.wave);
         if (p.tilt) block.style.transform = 'rotate(' + p.tilt + 'deg)';
         if (p.wide) block.style.maxWidth = p.wide * 100 + '%';   // 삽화의 물결을 따라 살짝 기울이기
+        // textAt: 글이 시작할 자리 (쪽 기준 비율). 쪽 안쪽 여백을 빼고 그만큼 옮긴다
+        if (p.textAt) {
+          var padL = pi === 1 ? 11 : 9;   // .page--right .pg 왼쪽 여백 11cqh, 왼쪽 쪽 9cqh
+          block.style.marginLeft = 'calc(' + (p.textAt.x * 100) + 'cqw - ' + padL + 'cqh)';
+          block.style.marginTop = 'calc(' + (p.textAt.y * 100) + 'cqh - 8cqh)';
+          block.style.alignSelf = 'flex-start';
+          block.style.textAlign = 'left';
+        }
         pg.append(block);
       }
       // 작은 안내 (#4 5쪽: 스티커 붙이기, #6 10쪽: 보드 꾸미기). noteAt 'bottom'이면 쪽 아래 왼쪽에 따로
