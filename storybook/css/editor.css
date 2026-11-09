@@ -373,3 +373,5 @@
 .ed-circle { position: absolute; left: 50%; top: 50%; width: 64%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
   border: 2px dashed rgb(70 52 40 / 0.32); pointer-events: none; }
 .ed-circle[hidden] { display: none; }
+/* 착한 일 메모지: 글은 가운데 정렬 */
+.ed-memo { align-items: center; text-align: center; }

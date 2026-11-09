@@ -1889,3 +1889,5 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   --font-body: "Ownglyph PDH Story", "Ownglyph PDH", "Gowun Dodum", sans-serif; font-family: var(--font-body); }
 .book .page .inline-ask, .book .page .tdraw-dock, .book .page .editor { --font-display: "Ownglyph PDH", "Jua", "Gowun Dodum", sans-serif;
   --font-body: "Ownglyph PDH", "Gowun Dodum", sans-serif; font-family: var(--font-body); }
+/* 착한 일 메모지(그림 그리러 가기 화면의 미리보기 포함): 글은 가운데 정렬 */
+.prompt-memo { align-items: center; text-align: center; }
