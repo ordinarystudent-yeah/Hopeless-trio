@@ -1148,7 +1148,7 @@
   function drawFood() {
     window.StarSoupEditor.open({
       title: '음식 그리기', image: images[IMG_FOOD], askName: true, name: state.customFoodName, noBg: true, circle: true,
-      maxName: S.limits.foodName, namePlaceholder: '음식 이름 (' + S.limits.foodName + '자까지, 안 써도 돼요)'
+      maxName: S.limits.foodName
     }).then(function (res) {
       if (!res) return;
       state.customFoodName = res.name.slice(0, S.limits.foodName);

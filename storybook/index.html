@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
-<link rel="stylesheet" href="css/style.css?v=1.32">
-<link rel="stylesheet" href="css/editor.css?v=1.32">
+<link rel="stylesheet" href="css/style.css?v=1.33">
+<link rel="stylesheet" href="css/editor.css?v=1.33">
 </head>
 <body>
 <div class="app" id="app" data-screen="cover">
@@ -153,7 +153,10 @@
 
       <div class="field ed-name-field" id="ed-name-field">
         <label for="ed-name">무슨 음식인가요? (안 써도 돼요)</label>
-        <input type="text" class="input input-sm" id="ed-name" maxlength="12" placeholder="음식 이름 (안 써도 돼요)" autocomplete="off">
+        <div class="ed-name-box">
+          <input type="text" class="input input-sm" id="ed-name" maxlength="12" placeholder="음식 이름 (안 써도 돼요)" autocomplete="off">
+          <span class="ed-count" id="ed-count" aria-live="polite">0/12</span>
+        </div>
       </div>
 
       <div class="ed-tools" role="group" aria-label="그리기 도구">
@@ -233,12 +236,12 @@
   </div>
 </div>
 
-<script src="js/storage.js?v=1.32"></script>
-<script src="js/story.js?v=1.32"></script>
-<script src="js/drawing.js?v=1.32"></script>
-<script src="js/weather.js?v=1.32"></script>
-<script src="js/sound.js?v=1.32"></script>
-<script src="js/shared.js?v=1.32"></script>
-<script src="js/main.js?v=1.32"></script>
+<script src="js/storage.js?v=1.33"></script>
+<script src="js/story.js?v=1.33"></script>
+<script src="js/drawing.js?v=1.33"></script>
+<script src="js/weather.js?v=1.33"></script>
+<script src="js/sound.js?v=1.33"></script>
+<script src="js/shared.js?v=1.33"></script>
+<script src="js/main.js?v=1.33"></script>
 </body>
 </html>

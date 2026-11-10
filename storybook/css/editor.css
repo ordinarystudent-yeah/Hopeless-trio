@@ -375,3 +375,8 @@
 .ed-circle[hidden] { display: none; }
 /* 착한 일 메모지: 글은 가운데 정렬 */
 .ed-memo { align-items: center; text-align: center; }
+/* 이름 칸 오른쪽 안에 글자 수 (예: 3/7) */
+.ed-name-box { position: relative; }
+.ed-name-box .input { padding-right: 3.6em !important; width: 100%; box-sizing: border-box; }
+.ed-count { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.78rem; color: rgb(255 255 255 / 0.55);
+  pointer-events: none; font-variant-numeric: tabular-nums; }
