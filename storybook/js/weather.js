@@ -33,7 +33,8 @@
       // 맑은 날: 받은 구름 그림을 흰색으로 더 또렷하게, 가로만 줄여(0.6) 동글게
       make: function (w, h) {
         var list = [];
-        for (var i = 0; i < 5; i++) list.push({ x: rand(0, w), y: h * (0.08 + i * 0.15) + rand(-h * 0.03, h * 0.03), s: Math.max(40, rand(h * 0.16, h * 0.24)), v: rand(0.1, 0.25), k: i % 2, f: Math.random() < 0.5 });
+        for (var i = 0; i < 5; i++) list.push({ x: rand(0, w), y: h * (-0.02 + i * 0.09) + rand(-h * 0.03, h * 0.03),   // 흐린 날 구름처럼 하늘 위쪽(0~42%)에
+                                        s: Math.max(40, rand(h * 0.16, h * 0.24)), v: rand(0.1, 0.25), k: i % 2, f: Math.random() < 0.5 });
         return list;
       },
       step: function (g, list, w, h, t, move) {
@@ -106,6 +107,8 @@
 
   function start(canvas, kind) {
     var fx = kinds[kind];
+    // 맑은 날 구름은 아래 하늘 위에 스크린으로 겹친다
+    canvas.style.mixBlendMode = kind === 'sunny' ? 'screen' : '';
     var g = canvas.getContext && canvas.getContext('2d');
     if (!fx || !g) return function () {};
     var w = 0, h = 0, raf = 0, list = null;
