@@ -1899,7 +1899,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
    창 자리는 삽화 그대로(쪽 기준): 창틀 상자 left 29.13% · top 18.45% · 40.34% × 62.7%.
    창 너머(날씨)는 창틀 안쪽에, 그린 창틀이 그 위에, 덧창은 닫히면 창을 덮고 열리면 창 양옆(그림 자리)에 */
 .page.has-window .win, .book.is-print .page.has-window .win, .page.has-window .win.is-open, .book.is-print .page.has-window .win.is-open {
-  left: 31.6cqw !important; top: 4.5cqh !important; width: 35.4cqw !important; height: 55cqh !important; margin: 0 !important; }   /* 글 상자가 창을 가리지 않게 삽화보다 조금 위로 */
+  left: 30cqw !important; top: 3cqh !important; width: 38.6cqw !important; height: 60cqh !important; margin: 0 !important; }   /* 글 상자가 창을 가리지 않게 삽화보다 조금 위로 */
 .page.has-window .win-view { inset: 5% 6% !important; border-radius: 0 !important; }
 .page.has-window .win-frame, .book.is-print .page.has-window .win-frame { inset: 0; border: 0 !important; outline: none !important; box-shadow: none !important; border-radius: 0;
   background: url("../assets/backgrounds/10-window-frame.png") center / 100% 100% no-repeat !important; }

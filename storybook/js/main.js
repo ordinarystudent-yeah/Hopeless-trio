@@ -580,6 +580,17 @@
   function fortuneNote(leaf, page) {
     var wrap = el('div', { class: 'fortune' });
     var fly = el('div', { class: 'fortune-fly' });
+    // 창틀 아래 가로대 바로 위에 앉게: 창 자리(배치 값)에서 계산. 봉투는 눕혀(rotateX) 그려져 보이는 아래끝이
+    // 상자 아래끝보다 위에 있으므로 그만큼 내려 둔다 (가로·세로 화면 모두 같은 자리)
+    var placeOnSill = function () {
+      var win = page.querySelector('.win');
+      if (!win || !win.offsetHeight) return;
+      var h = fly.offsetHeight || wrap.offsetWidth * 0.49;
+      wrap.style.left = (win.offsetLeft + win.offsetWidth * 0.76) + 'px';
+      wrap.style.top = (win.offsetTop + win.offsetHeight * 0.895 + h * 0.16) + 'px';
+    };
+    requestAnimationFrame(placeOnSill);
+    if (window.ResizeObserver) { var sro = new ResizeObserver(function () { placeOnSill(); }); sro.observe(page); leaf._teardown.push(function () { sro.disconnect(); }); }
     // 황금빛 편지봉투 (tools/envelope_art.py). 떨어질 땐 흔들리며, 창틀에서는 납작하게 누워 있다
     var note = el('button', { type: 'button', class: 'fortune-note', 'aria-label': '황금빛 편지 열기' },
       el('img', { src: 'assets/fortune/envelope-closed.png', alt: '', draggable: 'false' }));
@@ -611,8 +622,8 @@
         var vTop = win && view ? win.offsetTop + view.offsetTop : 9 * u, vBot = win && view ? vTop + view.offsetHeight : 57 * u;
         var cy = wrap.offsetTop - wrap.offsetHeight / 2;            // 봉투(창틀에 앉을 자리)의 가운데 (.fortune은 -50%·-100% 옮겨져 있다)
         var half = fly.offsetWidth * 0.5;
-        var y0 = (vTop - cy) - half * 0.55;                          // 창 너머 위쪽, 막 보이기 직전
-        var ySw = Math.min(-0.5 * u, (vBot - cy) - half - 0.6 * u);  // 창 아래쪽
+        var y0 = -cy - fly.offsetHeight * 1.2;                       // 쪽 위(천장) 바깥에서
+        var ySw = -6 * u;                                            // 창틀 조금 위까지 내려와 흔들림이 잦아들며 앉는다
         var N = 100, D = 6000, frames = [], T_IN = 0.86, PERS = Math.round(30 * u);   // 6초 동안
         var L = 20 * u, SWINGS = 2.5;
         for (var i = 0; i <= N; i++) {
@@ -636,12 +647,6 @@
         // 창 아래쪽으로 내려오면 잘리지 않은 아래로 나와 창틀 앞에 내려앉는다. (복사본을 바꿔 끼우지 않아 움직임이 끊기지 않음)
         // 자르는 자리는 배치 값(offset)으로 재서 책장이 넘어가는 중에도 틀리지 않는다
         var a = fly.animate(frames, { duration: D, easing: 'linear', fill: 'forwards' });
-        if (view && win) {
-          var wl = wrap.offsetLeft - wrap.offsetWidth / 2, wt = wrap.offsetTop - wrap.offsetHeight;   // .fortune은 -50%·-100% 옮겨져 있다
-          var vl = win.offsetLeft + view.offsetLeft, vw = view.offsetWidth;
-          wrap.style.clipPath = 'inset(' + (vTop - wt).toFixed(1) + 'px ' + (wl + wrap.offsetWidth - (vl + vw)).toFixed(1) + 'px -200vh ' + (vl - wl).toFixed(1) + 'px)';
-          a.finished.then(function () { wrap.style.clipPath = ''; }, function () {});
-        }
         wrap.classList.add('is-falling');
         fly.style.opacity = '';
         wrap._fall = a;
