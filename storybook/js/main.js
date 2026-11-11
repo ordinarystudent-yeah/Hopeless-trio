@@ -330,7 +330,7 @@
       // sky가 때 id면 그 때로 고정 (#10 창 밖은 화창한 아침), true면 #1 앞에서 고른 때
       var skyId = typeof scene.sky === 'string' ? scene.sky : state.time;
       var t = S.times.find(function (x) { return x.id === skyId; });
-      bg.style.background = t ? t.sky : S.times[S.times.length - 1].sky;
+      bg.style.background = t ? (t.fxSky || t.sky) : S.times[S.times.length - 1].sky;   // fxSky: 효과용 하늘색 (노을)
       bg.setAttribute('data-sky', t ? t.id : 'night');
     }
     spread.append(bg);

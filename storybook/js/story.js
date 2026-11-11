@@ -119,10 +119,10 @@
       // 층 순서 (위에서 아래로): 날씨 효과 / 도심(01-city.png) / 밤하늘 삽화(01-intro.jpg, 스크린 70%) / 고른 때의 하늘색
       id: 'intro', act: 0, tone: 'night', no: '1', asks: ['time', 'weather'], sky: true, weatherFx: true,
       image: 'assets/backgrounds/01-intro.jpg', alt: '초승달과 별이 걸린 하늘 아래 알록달록한 마을',
-      // 삽화를 고른 때의 하늘색 위에 효과로 겹친다: 노을(저녁)은 오버레이, 밤은 효과 없이 삽화 그대로, 나머지는 스크린
+      // 삽화를 고른 때의 하늘색 위에 효과로 겹친다: 밤은 효과 없이 삽화 그대로, 나머지는 스크린 (노을은 어두운 마젠타 위에)
       imageBlend: function (time) {
         if (time === 'night') return null;
-        if (time === 'evening') return { mode: 'overlay', opacity: 0.7 };
+
         return { mode: 'screen', opacity: 0.7 };
       },
       overlay: 'assets/backgrounds/01-city.png',
@@ -409,7 +409,9 @@
       sky: 'linear-gradient(180deg, #3b8de0 0%, #7cc0f2 55%, #cdeafb 100%)' },
     { id: 'evening', phrase: '노을 진 저녁', label: '노을이 진 저녁', word: '저녁', mood: '노곤노곤 지친 기분',
       say: '노을이 진 저녁이네요.', after: '잠을 자기에는 이르지만, 노곤노곤 몸이 피곤해지는 시간이에요.',
-      sky: 'linear-gradient(180deg, #3a2f6b 0%, #b85c7c 55%, #f6a65a 100%)' },
+      sky: 'linear-gradient(180deg, #3a2f6b 0%, #b85c7c 55%, #f6a65a 100%)',
+      // #1 효과 레이어: 조금 어두운 마젠타 위에 삽화를 스크린으로
+      fxSky: 'linear-gradient(180deg, #6a1458 0%, #7e1a68 100%)' },
     { id: 'night', phrase: '깜깜한 밤', label: '깜깜한 밤', word: '밤', mood: '고요하고 졸린 기분',
       say: '깜깜한 밤이에요.', pre: '모두가 잠이 든 시간이에요.', after: '불 꺼진 밖을 보니 저절로 잠이 와요.',
       sky: 'linear-gradient(180deg, #0b1030 0%, #1d2452 60%, #2d2f6c 100%)' }
@@ -462,7 +464,7 @@
   };
 
   window.StarSoup = {
-    version: '1.36',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.37',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
