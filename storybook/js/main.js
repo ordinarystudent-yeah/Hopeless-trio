@@ -551,8 +551,9 @@
       [glow, paneL, paneR, hint].forEach(function (n) { n.getAnimations().forEach(function (a) { a.cancel(); }); });
       hint.style.opacity = '0';
       // 덧창이 바깥으로 활짝 펼쳐지며 창 양옆에 접힌다 (닫힌 자리 → 양옆)
-      var openL = [{ left: '3cqh', width: 'calc(50% - 3cqh)' }, { left: '-15%', width: '15%' }];
-      var openR = [{ right: '3cqh', width: 'calc(50% - 3cqh)' }, { right: '-15%', width: '15%' }];
+      // 그린 덧창: 창을 덮은 자리 → 창 양옆(삽화 속 자리)으로
+      var openL = [{ left: '5%', width: '45%' }, { left: '-54.2%', width: '63.5%' }];
+      var openR = [{ right: '5%', width: '45%' }, { right: '-54.9%', width: '62.5%' }];
       // 두 창이 다 열리고 나서 0.2초 뒤에 묻는 화면이 나온다 (열리는 도중에 넘어가며 튕기지 않게)
       var aL = paneL.animate(openL, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
       var aR = paneR.animate(openR, { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
@@ -2809,6 +2810,20 @@
     });
     chain.then(function () {
       if (pendingHalf) { addCanvas(pendingHalf, 0, pendingHalf.width); pendingHalf = null; }
+      // 뒷표지 (화면에는 없고 PDF 맨 끝에만, 가로 A4 한 장)
+      if (!S.cover.backImage) return;
+      pdfBusy('뒷표지를 담고 있어요…');
+      return new Promise(function (resolve) {
+        var im = new Image();
+        im.onload = function () {
+          var cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+          cv.getContext('2d').drawImage(im, 0, 0);
+          addCanvas(cv, 0, cv.width); resolve();
+        };
+        im.onerror = function () { resolve(); };
+        im.src = S.cover.backImage;
+      });
+    }).then(function () {
       pdfBusy('');
       host.remove();
       var n = (state.name || '').trim();

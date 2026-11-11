@@ -1846,9 +1846,9 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 }
 
 /* ---------- #10 18쪽: 황금빛 편지 (창틀에 누워 '터치'로 펼치는 운세·조언) ---------- */
-.fortune { position: absolute; left: calc(50% + 21cqh); top: 60.6cqh; width: 17cqh; transform: translate(-50%, -100%); z-index: 4; }
+.fortune { position: absolute; left: calc(50% + 21cqh); top: 59cqh; width: 15cqh; transform: translate(-50%, -100%); z-index: 4; }
 @media (max-width: 600px) and (orientation: portrait), (max-height: 500px) and (orientation: landscape) {
-  .fortune { top: 54.6cqh; }
+  .fortune { top: 59cqh; }
 }
 .fortune-fly { position: relative; transform: perspective(30cqh) rotateX(58deg); transform-origin: 50% 50%; }   /* 창틀에 누운 봉투: 먼 쪽(윗면)이 좁아진다 */
 .fortune-note { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -1894,3 +1894,20 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 /* 식자 그림 위에 덧쓰는 글자 (직접 고른 음식 이름): 식자와 같은 글꼴·검정 */
 .arc-lettering { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 .arc-ch { position: absolute; font-family: "Ownglyph PDH", "Gowun Dodum", sans-serif; line-height: 1; color: #111; white-space: pre; }
+
+/* ---------- #10 18쪽 창문: 그린 창틀(10-window-frame.png)과 덧창(10-shutter-l/r.png) ----------
+   창 자리는 삽화 그대로(쪽 기준): 창틀 상자 left 29.13% · top 18.45% · 40.34% × 62.7%.
+   창 너머(날씨)는 창틀 안쪽에, 그린 창틀이 그 위에, 덧창은 닫히면 창을 덮고 열리면 창 양옆(그림 자리)에 */
+.page.has-window .win, .book.is-print .page.has-window .win, .page.has-window .win.is-open, .book.is-print .page.has-window .win.is-open {
+  left: 31.6cqw !important; top: 4.5cqh !important; width: 35.4cqw !important; height: 55cqh !important; margin: 0 !important; }   /* 글 상자가 창을 가리지 않게 삽화보다 조금 위로 */
+.page.has-window .win-view { inset: 5% 6% !important; border-radius: 0 !important; }
+.page.has-window .win-frame, .book.is-print .page.has-window .win-frame { inset: 0; border: 0 !important; outline: none !important; box-shadow: none !important; border-radius: 0;
+  background: url("../assets/backgrounds/10-window-frame.png") center / 100% 100% no-repeat !important; }
+.page.has-window .win-sill { display: none !important; }
+.page.has-window .win-pane, .book.is-print .page.has-window .win-pane {
+  top: 0.6% !important; bottom: auto !important; height: 100% !important; border: 0 !important; outline: none !important; box-shadow: none !important; border-radius: 0 !important;
+  background: center / 100% 100% no-repeat !important; }
+.page.has-window .win-pane--l, .book.is-print .page.has-window .win-pane--l { background-image: url("../assets/backgrounds/10-shutter-l.png") !important; left: 5%; right: auto; width: 45%; }
+.page.has-window .win-pane--r, .book.is-print .page.has-window .win-pane--r { background-image: url("../assets/backgrounds/10-shutter-r.png") !important; right: 5%; left: auto; width: 45%; }
+.page.has-window .win.is-open .win-pane--l, .book.is-print .page.has-window .win.is-open .win-pane--l { left: -54.2% !important; right: auto !important; width: 63.5% !important; transform: none !important; }
+.page.has-window .win.is-open .win-pane--r, .book.is-print .page.has-window .win.is-open .win-pane--r { right: -54.9% !important; left: auto !important; width: 62.5% !important; transform: none !important; }

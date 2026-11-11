@@ -1,6 +1,6 @@
 /* 별빛스프 — #1 날씨 효과 (가장 위층)
    StarSoupWeather.start(canvas, kind) → stop 함수
-   kind: sunny(작고 푸른 그림자가 있는 구름 몇 개) · rain(빗줄기) · snow(눈송이) · cloudy(구름이 잔뜩 끼어 흘러감)
+   kind: sunny(흰 구름 몇 개) · rain(빗줄기) · snow(눈송이) · cloudy(구름이 잔뜩 끼어 흘러감) — 구름은 받은 구름 그림
    날씨는 #1의 핵심 장면이라 '움직임 줄이기'(갤럭시 '애니메이션 제거' 등)가 켜져 있어도 끄지 않고 절반 속도로 움직인다. */
 (function () {
   'use strict';
@@ -8,42 +8,48 @@
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function rand(a, b) { return a + Math.random() * (b - a); }
 
-  // 구름 한 덩이: 겹친 동그라미 + 아래쪽 푸른 그림자
-  // sy: 세로 비율 (1보다 작으면 납작한 구름)
-  function drawCloud(g, x, y, s, body, shade, alpha, sy) {
-    sy = sy || 1;
-    var bumps = [[-0.9, 0.1, 0.55], [-0.4, -0.25, 0.75], [0.25, -0.35, 0.85], [0.85, 0, 0.6], [0, 0.15, 0.7]];
-    var blob = function (b, dy) { g.beginPath(); g.ellipse(x + b[0] * s, y + (b[1] * s + dy) * sy, b[2] * s, b[2] * s * sy, 0, 0, Math.PI * 2); g.fill(); };
-    g.globalAlpha = alpha * 0.9;
-    g.fillStyle = shade;
-    bumps.forEach(function (b) { blob(b, s * 0.22); });
+  // 받은 구름 그림 (assets/weather/cloud-1·2.png, 반투명한 흰 구름). 맑은 날용은 알파를 키워 흰색으로 또렷하게 만든다
+  var clouds = [], whiteClouds = [];
+  ['cloud-1', 'cloud-2'].forEach(function (n, i) {
+    var im = new Image();
+    im.onload = function () {
+      clouds[i] = im;
+      var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+      var x = c.getContext('2d'); for (var k = 0; k < 3; k++) x.drawImage(im, 0, 0);   // 세 번 겹쳐 흰색으로
+      whiteClouds[i] = c;
+    };
+    im.src = 'assets/weather/' + n + '.png';
+  });
+  function drawSprite(g, im, x, y, w, h, alpha, flip) {
+    if (!im) return;
     g.globalAlpha = alpha;
-    g.fillStyle = body;
-    bumps.forEach(function (b) { blob(b, 0); });
+    if (flip) { g.save(); g.translate(x, 0); g.scale(-1, 1); g.drawImage(im, -w / 2, y - h / 2, w, h); g.restore(); }
+    else g.drawImage(im, x - w / 2, y - h / 2, w, h);
     g.globalAlpha = 1;
   }
 
   var kinds = {
     sunny: {
+      // 맑은 날: 받은 구름 그림을 흰색으로 더 또렷하게, 가로만 줄여(0.6) 동글게
       make: function (w, h) {
         var list = [];
-        // 하늘 전체에 고르게 (글 상자에 다 가려지지 않게), 작은 화면에서도 보이도록 최소 크기
-        for (var i = 0; i < 6; i++) list.push({ x: rand(0, w), y: h * (0.12 + i * 0.13) + rand(-h * 0.04, h * 0.04), s: Math.max(13, rand(h * 0.05, h * 0.08)), v: rand(0.1, 0.25), a: rand(0.85, 0.97) });
+        for (var i = 0; i < 5; i++) list.push({ x: rand(0, w), y: h * (0.08 + i * 0.15) + rand(-h * 0.03, h * 0.03), s: Math.max(40, rand(h * 0.16, h * 0.24)), v: rand(0.1, 0.25), k: i % 2, f: Math.random() < 0.5 });
         return list;
       },
       step: function (g, list, w, h, t, move) {
         list.forEach(function (c) {
+          var cw = c.s * 2.9 * 0.6;
           if (move !== false) c.x += c.v;
-          if (c.x - c.s * 2 > w) c.x = -c.s * 2;
-          drawCloud(g, c.x, c.y, c.s, '#ffffff', 'rgba(110, 150, 215, .38)', c.a);
+          if (c.x - cw / 2 > w) c.x = -cw / 2;
+          drawSprite(g, whiteClouds[c.k], c.x, c.y, cw, c.s, 1, c.f);
         });
       }
     },
     cloudy: {
+      // 흐린 날: 받은 구름 그림이 하늘 위쪽에 잔뜩 흘러간다
       make: function (w, h) {
         var list = [];
-        // 흐린 날: 납작한 구름이 하늘 위쪽에 잔뜩 (아래 마을을 가리지 않게)
-        for (var i = 0; i < 24; i++) list.push({ x: rand(-w * 0.1, w * 1.1), y: rand(-h * 0.06, h * 0.42), s: Math.max(18, rand(h * 0.1, h * 0.2)), v: rand(0.12, 0.45), a: rand(0.55, 0.9), tone: Math.random() });
+        for (var i = 0; i < 14; i++) list.push({ x: rand(-w * 0.1, w * 1.1), y: rand(-h * 0.04, h * 0.42), s: Math.max(50, rand(h * 0.22, h * 0.4)), v: rand(0.12, 0.4), a: rand(0.75, 1), k: i % 2, f: Math.random() < 0.5 });
         list.sort(function (a, b) { return a.s - b.s; });
         return list;
       },
@@ -51,10 +57,10 @@
         g.fillStyle = 'rgba(120, 128, 150, .22)';
         g.fillRect(0, 0, w, h);
         list.forEach(function (c) {
+          var cw = c.s * 2.9;
           if (move !== false) c.x += c.v;
-          if (c.x - c.s * 2 > w) c.x = -c.s * 2;
-          var body = c.tone < 0.5 ? '#d9dce6' : '#c3c8d6';
-          drawCloud(g, c.x, c.y, c.s, body, 'rgba(90, 98, 125, .45)', c.a, 0.55);
+          if (c.x - cw / 2 > w) c.x = -cw / 2;
+          drawSprite(g, clouds[c.k], c.x, c.y, cw, c.s, c.a, c.f);
         });
       }
     },
