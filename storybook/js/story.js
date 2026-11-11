@@ -311,89 +311,6 @@
     boardFood: { x: 0.86, y: 0.64, w: 0.11, r: 5 }    // #6 10쪽 보드: 가장 좋아하는 음식 메모지
   };
 
-  /* ---------- 임시 그림 (실제 삽화가 들어오기 전까지만 사용) ---------- */
-  function star(x, y, r) {
-    return 'M' + x + ' ' + (y - r) + 'Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + 'Q' + x + ' ' + y + ' ' + x + ' ' + (y + r) +
-      'Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + 'Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + 'Z';
-  }
-  function stars(list, fill) {
-    return list.map(function (s) { return '<path d="' + star(s[0], s[1], s[2]) + '" fill="' + (fill || '#fff3cf') + '"/>'; }).join('');
-  }
-  var V = '<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">';
-  var motifs = {
-    moon: V +
-      '<mask id="m-moon"><rect width="200" height="160" fill="#fff"/><circle cx="122" cy="62" r="40" fill="#000"/></mask>' +
-      '<circle cx="100" cy="78" r="46" fill="#ffd98a" mask="url(#m-moon)"/>' +
-      stars([[150, 34, 7], [168, 92, 4], [36, 40, 5], [52, 118, 3.5], [140, 128, 5]]) + '</svg>',
-    table: V +
-      '<path d="M18 108 Q100 84 182 108 L176 132 Q100 150 24 132Z" fill="#f2e6cf"/>' +
-      '<ellipse cx="100" cy="106" rx="82" ry="14" fill="#fbf4e4"/>' +
-      '<ellipse cx="52" cy="102" rx="18" ry="6" fill="#ffffff"/><circle cx="52" cy="96" r="8" fill="#ff9e8c"/>' +
-      '<ellipse cx="100" cy="98" rx="20" ry="6" fill="#ffffff"/><path d="M86 96 Q100 72 114 96Z" fill="#ffc65a"/>' +
-      '<ellipse cx="148" cy="102" rx="18" ry="6" fill="#ffffff"/><circle cx="142" cy="96" r="6" fill="#9fd3a8"/><circle cx="153" cy="95" r="6" fill="#f5efe2"/>' +
-      stars([[30, 40, 5], [170, 46, 6], [100, 30, 4]]) + '</svg>',
-    seat: V +
-      '<rect x="56" y="30" width="88" height="62" rx="16" fill="#3f4a86"/>' +
-      '<ellipse cx="100" cy="104" rx="70" ry="16" fill="#fbf4e4"/>' +
-      '<ellipse cx="100" cy="100" rx="30" ry="9" fill="#ffffff"/>' +
-      '<rect x="138" y="88" width="5" height="26" rx="2.5" fill="#d9cdb4"/><rect x="56" y="88" width="5" height="26" rx="2.5" fill="#d9cdb4"/>' +
-      stars([[34, 34, 5], [168, 30, 4]]) + '</svg>',
-    fairies: V +
-      '<ellipse cx="62" cy="66" rx="18" ry="28" fill="#cfe0ff" opacity=".55" transform="rotate(-24 62 66)"/>' +
-      '<ellipse cx="86" cy="66" rx="18" ry="28" fill="#cfe0ff" opacity=".55" transform="rotate(24 86 66)"/>' +
-      '<circle cx="74" cy="78" r="14" fill="#ffd6e2"/>' +
-      '<ellipse cx="132" cy="54" rx="14" ry="22" fill="#e6d6ff" opacity=".55" transform="rotate(-24 132 54)"/>' +
-      '<ellipse cx="150" cy="54" rx="14" ry="22" fill="#e6d6ff" opacity=".55" transform="rotate(24 150 54)"/>' +
-      '<circle cx="141" cy="64" r="11" fill="#fff0c9"/>' +
-      '<ellipse cx="108" cy="124" rx="34" ry="8" fill="#fbf4e4"/><path d="M80 122 Q108 86 136 122Z" fill="#e9d9b8"/><circle cx="108" cy="100" r="4" fill="#ffc65a"/>' +
-      stars([[44, 36, 5], [176, 98, 5], [104, 30, 4]], '#ffd98a') + '</svg>',
-    bubble: V +
-      '<rect x="66" y="26" width="112" height="62" rx="22" fill="#fbf4e4"/><path d="M84 84 L72 106 L102 86Z" fill="#fbf4e4"/>' +
-      stars([[98, 57, 9], [122, 57, 9], [146, 57, 9]], '#ffc65a') +
-      '<ellipse cx="38" cy="104" rx="14" ry="22" fill="#cfe0ff" opacity=".55" transform="rotate(-24 38 104)"/>' +
-      '<ellipse cx="60" cy="104" rx="14" ry="22" fill="#cfe0ff" opacity=".55" transform="rotate(24 60 104)"/>' +
-      '<circle cx="49" cy="116" r="12" fill="#ffd6e2"/></svg>',
-    cloche: V +
-      '<ellipse cx="100" cy="120" rx="70" ry="14" fill="#fbf4e4"/>' +
-      '<path d="M44 116 Q46 56 100 54 Q154 56 156 116Z" fill="#e9d9b8"/><circle cx="100" cy="50" r="7" fill="#ffc65a"/>' +
-      '<path d="M62 100 Q66 74 88 66" stroke="#fff8e8" stroke-width="5" fill="none" stroke-linecap="round" opacity=".7"/>' +
-      stars([[30, 60, 7], [172, 52, 8], [52, 30, 4], [150, 26, 5]], '#ffd98a') + '</svg>',
-    soup: V +
-      '<path d="M34 84 H166 Q160 138 100 140 Q40 138 34 84Z" fill="#fbf4e4"/>' +
-      '<ellipse cx="100" cy="84" rx="66" ry="14" fill="#ffc65a"/>' +
-      '<ellipse cx="100" cy="84" rx="54" ry="9" fill="#ffd98a"/>' +
-      stars([[80, 83, 5], [106, 81, 6], [128, 85, 4]], '#fffbe9') +
-      '<rect x="70" y="140" width="60" height="6" rx="3" fill="#e9d9b8"/></svg>',
-    starsky: V +
-      '<path d="M40 112 Q40 92 62 92 Q68 76 88 80 Q104 70 118 86 Q140 86 138 106 Q138 118 124 118 H52 Q40 118 40 112Z" fill="#cfd8ff" opacity=".55"/>' +
-      '<path d="M120 138 Q120 126 134 126 Q140 116 152 120 Q166 116 170 130 Q182 132 180 142 H128 Q120 142 120 138Z" fill="#cfd8ff" opacity=".35"/>' +
-      stars([[150, 40, 8], [176, 74, 5], [112, 34, 4], [30, 54, 5], [92, 128, 3.5], [186, 116, 4]], '#ffe3a0') + '</svg>',
-    feast: V +
-      '<ellipse cx="100" cy="128" rx="88" ry="16" fill="#fbf4e4"/>' +
-      '<ellipse cx="46" cy="122" rx="20" ry="6" fill="#ffffff"/><path d="M30 120 Q46 92 62 120Z" fill="#ff9e8c"/>' +
-      '<ellipse cx="100" cy="118" rx="24" ry="7" fill="#ffffff"/><circle cx="92" cy="110" r="9" fill="#ffd98a"/><circle cx="108" cy="110" r="9" fill="#9fd3a8"/>' +
-      '<ellipse cx="154" cy="122" rx="20" ry="6" fill="#ffffff"/><path d="M140 120 h28 v-12 q-14 -8 -28 0z" fill="#e9b97a"/>' +
-      stars([[60, 50, 5], [140, 40, 6], [100, 70, 4]], '#fff3cf') + '</svg>',
-    coverArt: '<svg viewBox="0 0 400 283" xmlns="http://www.w3.org/2000/svg">' +
-      '<mask id="m-cover-moon"><rect width="400" height="283" fill="#fff"/><circle cx="338" cy="52" r="30" fill="#000"/></mask>' +
-      '<circle cx="322" cy="64" r="34" fill="#ffd98a" mask="url(#m-cover-moon)"/>' +
-      '<ellipse cx="200" cy="250" rx="150" ry="22" fill="#2a3266"/>' +
-      '<path d="M120 196 H280 Q272 256 200 258 Q128 256 120 196Z" fill="#fbf4e4"/>' +
-      '<ellipse cx="200" cy="196" rx="80" ry="16" fill="#ffc65a"/>' +
-      '<ellipse cx="200" cy="196" rx="64" ry="10" fill="#ffd98a"/>' +
-      stars([[176, 195, 5], [204, 193, 7], [228, 197, 4]], '#fffbe9') +
-      stars([[182, 160, 6], [214, 138, 8], [196, 112, 5], [226, 94, 4], [168, 128, 4]], '#ffe3a0') +
-      stars([[60, 50, 6], [110, 90, 4], [36, 150, 5], [362, 150, 5], [300, 120, 3.5], [250, 40, 4]], '#fff3cf') +
-      '</svg>',
-    dawn: V +
-      '<circle cx="152" cy="40" r="20" fill="#ffd27a"/>' +
-      '<rect x="22" y="78" width="70" height="34" rx="16" fill="#fbf4e4"/>' +
-      '<circle cx="66" cy="84" r="17" fill="#ffd9c2"/>' +
-      '<path d="M58 84 q4 3 8 0 M70 84 q4 3 8 0" stroke="#5a3d2e" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-      '<path d="M40 100 Q100 82 184 100 L184 140 L40 140Z" fill="#8fa6e8"/>' +
-      '<path d="M40 100 Q100 82 184 100" stroke="#b8c8f5" stroke-width="5" fill="none"/>' +
-      stars([[180, 70, 4], [120, 24, 3]], '#fff3cf') + '</svg>'
-  };
 
   /* ---------- #1 앞: 때와 날씨 ----------
      때는 그날의 기분에 빗댄다. sky는 #1의 가장 아래층에 깔리는 하늘색. */
@@ -464,7 +381,7 @@
   };
 
   window.StarSoup = {
-    version: '1.39',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.40',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -477,7 +394,6 @@
     stickerSpots: stickerSpots,
     customFood: { label: '직접 그리기', fallbackName: '내가 그린 음식' },
     customTaste: { label: '직접 그리기', fallbackName: '내가 그린 맛', hint: '직접 그리기를 골랐어요. 다음으로 넘기면 16쪽에서 어떤 맛이었는지 바로 그릴 수 있어요.' },
-    motifs: motifs,
     josa: josa,
     limits: { name: 12, deed: 80, foodName: 7,   // 음식 이름 7자: 6쪽 식자 윗줄 원을 따라 글씨가 줄지 않고 자연스럽게 들어가는 길이
               weatherName: 12, ingredient: 10, ingredients: 5, tasteName: 12 },

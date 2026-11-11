@@ -281,12 +281,7 @@
   }
 
   /* ---------- 삽화 자리 (임시 그림) ---------- */
-  function motif(name, pos) {
-    if (!name || !S.motifs[name]) return null;
-    var box = el('div', { class: 'pg-art', 'data-pos': pos || 'center', 'aria-hidden': 'true' });
-    box.insertAdjacentHTML('beforeend', S.motifs[name]); // 코드에 고정된 그림만
-    return box;
-  }
+
 
   // 쪽 위의 머리글(기승전결 · 소제목 · #번호)은 쓰지 않는다 (본문만 남김)
   var SHOW_EYEBROW = false;
@@ -416,12 +411,6 @@
         // 다른 사람들의 메모는 보드 뒤(벽)로 떠다닌다: 메모 층 위에 보드 앞판을 다시 얹고, 그 위에 안쪽 판 색
         if (p.board && !printing) page.append(boardFloat(leaf), el('img', { class: 'page-img board-front is-loaded is-instant', src: 'assets/backgrounds/06-board-front.png', alt: '', draggable: 'false' }));
         if (p.board) { var tint = el('div', { class: 'board-tint', 'aria-hidden': 'true' }); page.append(tint); leaf._boardTint = tint; paintPadBg(leaf, IMG_BOARD); }
-      }
-      // 임시 그림(motif)은 삽화가 없는 쪽에만 그린다. 삽화가 있으면 그 아래에 아무것도 깔지 않는다
-      if (p.art && !scene.image && !pageImage && !p.window) {
-        var m = motif(p.art, p.artPos);
-        if (p.faint) m.classList.add('is-faint');
-        pg.append(m);
       }
       if (p.text) {
         var body = typeof p.text === 'function' ? p.text(c) : scene.text(c);
@@ -3349,7 +3338,6 @@
     paintAuthor();
     document.getElementById('build-tag').textContent = 'V' + S.version;
     var artBox = document.getElementById('cover-art');
-    artBox.insertAdjacentHTML('beforeend', S.motifs.coverArt || S.motifs.soup); // 코드에 고정된 그림만
     if (c.image) {
       var img = new Image();
       img.alt = '';
