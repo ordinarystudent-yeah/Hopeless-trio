@@ -1911,3 +1911,8 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .page.has-window .win-pane--r, .book.is-print .page.has-window .win-pane--r { background-image: url("../assets/backgrounds/10-shutter-r.png") !important; right: 5%; left: auto; width: 45%; }
 .page.has-window .win.is-open .win-pane--l, .book.is-print .page.has-window .win.is-open .win-pane--l { left: -54.2% !important; right: auto !important; width: 63.5% !important; transform: none !important; }
 .page.has-window .win.is-open .win-pane--r, .book.is-print .page.has-window .win.is-open .win-pane--r { right: -54.9% !important; left: auto !important; width: 62.5% !important; transform: none !important; }
+/* 표지 글씨: 밝은 표지 그림 위에서 잘 보이게 훨씬 어둡게 */
+.cover-kicker { color: #5a3d1c; }
+.cover-title { color: #a8600c; text-shadow: 0 0.5cqh 0 #4a2a08, 0 0 2cqh rgb(255 250 235 / 0.9); }
+.cover-sub { color: #3e2a14; opacity: 1; }
+.cover-author { color: #3e2a14; margin-left: var(--author-indent, 0px); }

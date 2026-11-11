@@ -3325,7 +3325,21 @@
   function paintAuthor() {
     var n = (state.name || '').trim(), box = document.getElementById('cover-author');
     if (box) box.textContent = '저자: ' + (n || '당신');
+    indentAuthor();
   }
+  // 저자 줄은 제목 '별빛스프'의 '스' 가운데부터 시작하게 민다 (제목 글자 자리를 재서)
+  function indentAuthor() {
+    var t = document.getElementById('cover-title'), box = document.getElementById('cover-author');
+    if (!t || !box || !t.firstChild || !t.offsetParent) return;
+    var txt = t.textContent, i = txt.indexOf('스');
+    if (i < 0) return;
+    var r = document.createRange(); r.setStart(t.firstChild, i); r.setEnd(t.firstChild, i + 1);
+    var g = r.getBoundingClientRect(), tb = t.getBoundingClientRect();
+    if (!g.width) return;
+    box.style.setProperty('--author-indent', (g.left + g.width / 2 - tb.left) + 'px');
+  }
+  window.addEventListener('resize', function () { indentAuthor(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { indentAuthor(); });
 
   function paintCover() {
     var c = S.cover;
