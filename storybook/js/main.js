@@ -318,7 +318,8 @@
       // 미리 불러 둔 그림이면 서서히 나타나지 않고 바로
       if (img.complete && img.naturalWidth) { leaf.classList.add('has-image'); img.classList.add('is-loaded', 'is-instant'); }
       // #1처럼 삽화를 효과 레이어로 겹칠 때 (예: 스크린 70%) — 아래의 하늘색이 비쳐 보인다
-      if (scene.imageBlend) { img.style.mixBlendMode = scene.imageBlend.mode; img.style.opacity = String(scene.imageBlend.opacity); }
+      var blend = sceneBlend(scene);
+      if (blend) { img.style.mixBlendMode = blend.mode; img.style.opacity = String(blend.opacity); }
       bg.append(img);
       // 그 위에 놓는 그림(투명 PNG, 예: #1 도심)
       if (scene.overlay) bg.append(el('img', { class: 'spread-overlay', src: scene.overlay, alt: '', decoding: 'async' }));
@@ -2709,16 +2710,22 @@
     stops.forEach(function (st) { var m = st.split(/\s+/); gr.addColorStop(parseFloat(m[1]) / 100, m[0]); });
     g.fillStyle = stops.length ? gr : '#1d2452'; g.fillRect(0, 0, w, h);
   }
+  // 장면 삽화를 하늘색 위에 겹치는 방식 (고른 때에 따라 다를 수 있다)
+  function sceneBlend(scene) {
+    var b = scene.imageBlend;
+    return typeof b === 'function' ? b(state.time) : (b || null);
+  }
   function prepForPrint(leaf, scene) {
     var jobs = [];
     var bg = leaf.querySelector('.spread-bg'), bimg = bg && bg.querySelector('img:not(.spread-overlay)');
-    if (scene.imageBlend && bimg) {
+    var blend = sceneBlend(scene);
+    if (blend && bimg) {
       jobs.push(imgReady(bimg).then(function () {
         if (!bimg.naturalWidth) return;
         var cv = document.createElement('canvas'); cv.width = bimg.naturalWidth; cv.height = bimg.naturalHeight;
         var g = cv.getContext('2d');
         paintSky(g, bg.style.background, cv.width, cv.height);
-        g.globalAlpha = scene.imageBlend.opacity; g.globalCompositeOperation = scene.imageBlend.mode;
+        g.globalAlpha = blend.opacity; g.globalCompositeOperation = blend.mode;
         g.drawImage(bimg, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
         bimg.style.mixBlendMode = ''; bimg.style.opacity = '';
         bimg.src = cv.toDataURL('image/jpeg', 0.92);
