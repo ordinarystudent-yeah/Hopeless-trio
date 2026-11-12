@@ -198,7 +198,7 @@
             { pts: [[0.45, 0.37], [0.63, 0.35], [0.82, 0.40]] }
           ] } },
         // 8쪽: 글은 왼쪽 아래 보랏빛 연기 위에, 연기 흐름을 따라 비스듬히
-        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'bottom', lettering: 'assets/lettering/08-fairies.png',
+        { text: function () { return [['요정은 아이들이 했던 착한 일들을 하나하나 말해주었어요.']]; }, place: 'bottom', lettering: 'assets/lettering/08-fairies.png', letterRotate: { deg: 3, at: '50% 86%' },   // 글씨 가운데를 축으로 시계 방향 3°
           curve: { ink: 'light', eyebrowAt: [0.30, 0.71], lines: [
             { pts: [[0.30, 0.79], [0.46, 0.82], [0.63, 0.87]] },
             { pts: [[0.26, 0.86], [0.43, 0.89], [0.61, 0.93]] },
@@ -381,7 +381,7 @@
   };
 
   window.StarSoup = {
-    version: '1.40',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.41',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,

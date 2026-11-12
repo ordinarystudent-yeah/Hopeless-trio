@@ -423,7 +423,9 @@
       if (letter) {
         var ltxt = body ? flatText(body) : (p.curve && p.curve.text ? (function (t) { return t ? [t.head, t.body].filter(Boolean).join(' ') : ''; })(p.curve.text(c)) : '');
         var lsrc = typeof letter === 'string' ? letter : letter.src;
-        page.append(el('img', { class: 'page-lettering', src: lsrc, alt: ltxt, draggable: 'false' }));
+        var limg = el('img', { class: 'page-lettering', src: lsrc, alt: ltxt, draggable: 'false' });
+        if (p.letterRotate) { limg.style.transformOrigin = p.letterRotate.at; limg.style.transform = 'rotate(' + p.letterRotate.deg + 'deg)'; }
+        page.append(limg);
         if (letter.arc) page.append(arcLettering(page, letter.arc));
         curveDone = true;
       }
@@ -2675,7 +2677,7 @@
   function imgReady(img) {
     return img.complete && img.naturalWidth ? Promise.resolve() : new Promise(function (r) { img.addEventListener('load', r, { once: true }); img.addEventListener('error', r, { once: true }); setTimeout(r, 4000); });
   }
-  var FADE = [[0, 0], [0.001, 0], [0.14, 1]];   // 16쪽: 왼쪽 1/10 투명 → 57%에서 다 보임 (css의 mask와 같게)
+  var FADE = [[0, 0], [0.03, 0.009], [0.06, 0.058], [0.09, 0.163], [0.12, 0.317], [0.15, 0.5], [0.18, 0.683], [0.21, 0.837], [0.24, 0.942], [0.27, 0.991], [0.3, 1]];   // 16쪽: 왼쪽 30%에 걸쳐 부드럽게 나타남 (css의 mask와 같게)
   function fadeAlpha(g, w, h) {
     var gr = g.createLinearGradient(0, 0, w, 0);
     FADE.forEach(function (f) { gr.addColorStop(f[0], 'rgba(0,0,0,' + f[1] + ')'); });
