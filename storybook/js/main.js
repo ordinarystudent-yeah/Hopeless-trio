@@ -2677,7 +2677,7 @@
   function imgReady(img) {
     return img.complete && img.naturalWidth ? Promise.resolve() : new Promise(function (r) { img.addEventListener('load', r, { once: true }); img.addEventListener('error', r, { once: true }); setTimeout(r, 4000); });
   }
-  var FADE = [[0, 0], [0.03, 0.009], [0.06, 0.058], [0.09, 0.163], [0.12, 0.317], [0.15, 0.5], [0.18, 0.683], [0.21, 0.837], [0.24, 0.942], [0.27, 0.991], [0.3, 1]];   // 16쪽: 왼쪽 30%에 걸쳐 부드럽게 나타남 (css의 mask와 같게)
+  var FADE = [[0, 0], [0.0312, 0.01], [0.0625, 0.038], [0.0938, 0.084], [0.125, 0.146], [0.1562, 0.222], [0.1875, 0.309], [0.2188, 0.402], [0.25, 0.5], [0.2812, 0.598], [0.3125, 0.691], [0.3438, 0.778], [0.375, 0.854], [0.4062, 0.916], [0.4375, 0.962], [0.4688, 0.99], [0.5, 1]];   // 16쪽: 왼쪽 50%에 걸쳐 아주 부드럽게 나타남 (css의 mask와 같게)
   function fadeAlpha(g, w, h) {
     var gr = g.createLinearGradient(0, 0, w, 0);
     FADE.forEach(function (f) { gr.addColorStop(f[0], 'rgba(0,0,0,' + f[1] + ')'); });

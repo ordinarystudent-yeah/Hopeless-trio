@@ -1537,9 +1537,9 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .pg-text.is-end { align-self: flex-end; max-width: 70%; text-align: right; }
 /* #9 16쪽: 왼쪽 1/3은 투명, 거기서부터 서서히 나타나 15쪽 삽화와 이어진다 */
 .page.is-fade .page-img, .page.is-fade .tdraw-paper {
-  /* 왼쪽 30%에 걸쳐 부드럽게(smootherstep) 나타난다 — JS의 FADE와 같은 값 */
-  -webkit-mask-image: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.009) 3%, rgb(0 0 0 / 0.058) 6%, rgb(0 0 0 / 0.163) 9%, rgb(0 0 0 / 0.317) 12%, rgb(0 0 0 / 0.5) 15%, rgb(0 0 0 / 0.683) 18%, rgb(0 0 0 / 0.837) 21%, rgb(0 0 0 / 0.942) 24%, rgb(0 0 0 / 0.991) 27%, rgb(0 0 0 / 1) 30%);
-          mask-image: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.009) 3%, rgb(0 0 0 / 0.058) 6%, rgb(0 0 0 / 0.163) 9%, rgb(0 0 0 / 0.317) 12%, rgb(0 0 0 / 0.5) 15%, rgb(0 0 0 / 0.683) 18%, rgb(0 0 0 / 0.837) 21%, rgb(0 0 0 / 0.942) 24%, rgb(0 0 0 / 0.991) 27%, rgb(0 0 0 / 1) 30%);
+  /* 왼쪽 50%에 걸쳐 아주 부드럽게(코사인 곡선) 나타난다 — JS의 FADE와 같은 값 */
+  -webkit-mask-image: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.01) 3.12%, rgb(0 0 0 / 0.038) 6.25%, rgb(0 0 0 / 0.084) 9.38%, rgb(0 0 0 / 0.146) 12.5%, rgb(0 0 0 / 0.222) 15.62%, rgb(0 0 0 / 0.309) 18.75%, rgb(0 0 0 / 0.402) 21.88%, rgb(0 0 0 / 0.5) 25%, rgb(0 0 0 / 0.598) 28.12%, rgb(0 0 0 / 0.691) 31.25%, rgb(0 0 0 / 0.778) 34.38%, rgb(0 0 0 / 0.854) 37.5%, rgb(0 0 0 / 0.916) 40.62%, rgb(0 0 0 / 0.962) 43.75%, rgb(0 0 0 / 0.99) 46.88%, rgb(0 0 0 / 1) 50%);
+          mask-image: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.01) 3.12%, rgb(0 0 0 / 0.038) 6.25%, rgb(0 0 0 / 0.084) 9.38%, rgb(0 0 0 / 0.146) 12.5%, rgb(0 0 0 / 0.222) 15.62%, rgb(0 0 0 / 0.309) 18.75%, rgb(0 0 0 / 0.402) 21.88%, rgb(0 0 0 / 0.5) 25%, rgb(0 0 0 / 0.598) 28.12%, rgb(0 0 0 / 0.691) 31.25%, rgb(0 0 0 / 0.778) 34.38%, rgb(0 0 0 / 0.854) 37.5%, rgb(0 0 0 / 0.916) 40.62%, rgb(0 0 0 / 0.962) 43.75%, rgb(0 0 0 / 0.99) 46.88%, rgb(0 0 0 / 1) 50%);
 }
 .tdraw-paper { position: absolute; inset: 0; background: #fdfaf4; pointer-events: none; }
 /* 그림 도구 자리만큼 줄었던 책이 부드럽게 원래 크기로 */
