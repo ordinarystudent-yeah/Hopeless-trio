@@ -1537,9 +1537,9 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .pg-text.is-end { align-self: flex-end; max-width: 70%; text-align: right; }
 /* #9 16쪽: 왼쪽 1/3은 투명, 거기서부터 서서히 나타나 15쪽 삽화와 이어진다 */
 .page.is-fade .page-img, .page.is-fade .tdraw-paper {
-  /* 왼쪽 50%에 걸쳐 아주 부드럽게(코사인 곡선) 나타난다 — JS의 FADE와 같은 값 */
-  -webkit-mask-image: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.01) 3.12%, rgb(0 0 0 / 0.038) 6.25%, rgb(0 0 0 / 0.084) 9.38%, rgb(0 0 0 / 0.146) 12.5%, rgb(0 0 0 / 0.222) 15.62%, rgb(0 0 0 / 0.309) 18.75%, rgb(0 0 0 / 0.402) 21.88%, rgb(0 0 0 / 0.5) 25%, rgb(0 0 0 / 0.598) 28.12%, rgb(0 0 0 / 0.691) 31.25%, rgb(0 0 0 / 0.778) 34.38%, rgb(0 0 0 / 0.854) 37.5%, rgb(0 0 0 / 0.916) 40.62%, rgb(0 0 0 / 0.962) 43.75%, rgb(0 0 0 / 0.99) 46.88%, rgb(0 0 0 / 1) 50%);
-          mask-image: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.01) 3.12%, rgb(0 0 0 / 0.038) 6.25%, rgb(0 0 0 / 0.084) 9.38%, rgb(0 0 0 / 0.146) 12.5%, rgb(0 0 0 / 0.222) 15.62%, rgb(0 0 0 / 0.309) 18.75%, rgb(0 0 0 / 0.402) 21.88%, rgb(0 0 0 / 0.5) 25%, rgb(0 0 0 / 0.598) 28.12%, rgb(0 0 0 / 0.691) 31.25%, rgb(0 0 0 / 0.778) 34.38%, rgb(0 0 0 / 0.854) 37.5%, rgb(0 0 0 / 0.916) 40.62%, rgb(0 0 0 / 0.962) 43.75%, rgb(0 0 0 / 0.99) 46.88%, rgb(0 0 0 / 1) 50%);
+  /* 왼쪽 35%에 걸쳐 부드럽게(코사인 곡선) 나타난다 — JS의 FADE와 같은 값 */
+  -webkit-mask-image: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.01) 2.19%, rgb(0 0 0 / 0.038) 4.37%, rgb(0 0 0 / 0.084) 6.56%, rgb(0 0 0 / 0.146) 8.75%, rgb(0 0 0 / 0.222) 10.94%, rgb(0 0 0 / 0.309) 13.12%, rgb(0 0 0 / 0.402) 15.31%, rgb(0 0 0 / 0.5) 17.5%, rgb(0 0 0 / 0.598) 19.69%, rgb(0 0 0 / 0.691) 21.88%, rgb(0 0 0 / 0.778) 24.06%, rgb(0 0 0 / 0.854) 26.25%, rgb(0 0 0 / 0.916) 28.44%, rgb(0 0 0 / 0.962) 30.62%, rgb(0 0 0 / 0.99) 32.81%, rgb(0 0 0 / 1) 35%);
+          mask-image: linear-gradient(90deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.01) 2.19%, rgb(0 0 0 / 0.038) 4.37%, rgb(0 0 0 / 0.084) 6.56%, rgb(0 0 0 / 0.146) 8.75%, rgb(0 0 0 / 0.222) 10.94%, rgb(0 0 0 / 0.309) 13.12%, rgb(0 0 0 / 0.402) 15.31%, rgb(0 0 0 / 0.5) 17.5%, rgb(0 0 0 / 0.598) 19.69%, rgb(0 0 0 / 0.691) 21.88%, rgb(0 0 0 / 0.778) 24.06%, rgb(0 0 0 / 0.854) 26.25%, rgb(0 0 0 / 0.916) 28.44%, rgb(0 0 0 / 0.962) 30.62%, rgb(0 0 0 / 0.99) 32.81%, rgb(0 0 0 / 1) 35%);
 }
 .tdraw-paper { position: absolute; inset: 0; background: #fdfaf4; pointer-events: none; }
 /* 그림 도구 자리만큼 줄었던 책이 부드럽게 원래 크기로 */
@@ -1917,3 +1917,5 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .cover-title { color: #a8600c; text-shadow: 0 0.5cqh 0 #4a2a08, 0 0 2cqh rgb(255 250 235 / 0.9); }
 .cover-sub { color: #3e2a14; opacity: 1; }
 .cover-author { color: #3e2a14; margin-left: var(--author-indent, 0px); }
+/* 쪽 번호: 밝은 삽화 위에서도 보이게 진한 갈색 + 옅은 흰 테두리 빛 */
+.folio { color: #4a3418; opacity: 1; text-shadow: 0 0 0.6cqh rgb(255 252 240 / 0.9); }
