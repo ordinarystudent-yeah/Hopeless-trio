@@ -567,6 +567,11 @@
     var f = S.fortune || {}, lines = f.text ? f.text(c) : null;
     var box = el('div', { class: 'fortune-body' });
     if (lines && lines.length) append(box, paragraphs(lines));
+    // 아래에 행운의 주문 한 줄 (음식 × #1 꿈속 날씨)
+    var lk = f.lucky ? f.lucky(c) : null;
+    if (lk) box.append(el('p', { class: 'fortune-lucky' },
+      el('span', { class: 'fortune-lucky-label', text: '✨ 행운의 주문 · ' + lk.item }),
+      el('span', { class: 'fortune-lucky-tip', text: lk.tip })));
     return box;
   }
   function fortuneNote(leaf, page) {

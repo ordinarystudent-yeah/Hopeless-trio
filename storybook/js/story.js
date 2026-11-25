@@ -548,8 +548,70 @@
     return ((fortuneLines[t] || {})[ta] || {})[ww] || fortuneFallback;
   }
 
+
+  /* 행운의 주문: 음식 × #1 꿈속 날씨 35가지마다 따로 쓴 한 줄 (운세의 '행운 아이템'처럼).
+     item = '<날씨> <음식 이름>', tip = 오늘 해 볼 작은 행동 (감각 깨우기·음미하기·작은 보살핌 등). */
+  var luckyWeather = { sunny: '햇살 가득한 날의', rain: '비 오는 날의', snow: '눈 오는 날의', cloudy: '구름 낀 날의', custom: '내가 그린 하늘 아래' };
+  var luckyTips = {   // [음식][꿈속 날씨]
+    'cotton-candy': {
+      sunny: '창문을 열고 바람을 한 번 느껴 보세요',
+      rain: '무거운 생각은 빗물에 살살 녹여 보내요',
+      snow: '하얀 것을 보면 소원을 하나 빌어 보세요',
+      cloudy: '구름 모양에서 재미있는 그림을 찾아보세요',
+      custom: '좋아하는 색 물건을 하나 챙겨 다니세요'
+    },
+    pudding: {
+      sunny: '말랑한 미소로 먼저 인사해 보세요',
+      rain: '흔들려도 괜찮아요, 천천히 숨 쉬어요',
+      snow: '부드러운 담요를 덮고 잠깐 쉬어 가요',
+      cloudy: '말랑한 것을 손에 쥐고 마음을 풀어 보세요',
+      custom: '오늘의 기분을 맛으로 표현해 보세요'
+    },
+    chicken: {
+      sunny: '좋아하는 사람과 맛있는 것을 나눠 보세요',
+      rain: '바삭한 소리처럼 크게 한 번 웃어 보세요',
+      snow: '신나는 노래에 맞춰 몸을 흔들어 보세요',
+      cloudy: '제일 좋아하는 것을 나에게 먼저 주세요',
+      custom: '오늘의 나에게 작은 상을 하나 주세요'
+    },
+    bread: {
+      sunny: '햇살 아래에서 기지개를 쭉 켜 보세요',
+      rain: '따뜻한 것 하나를 가까이 두세요',
+      snow: '천천히 꼭꼭 씹으며 맛을 느껴 보세요',
+      cloudy: '고소한 냄새처럼 좋은 기억을 떠올려 보세요',
+      custom: '나만의 작은 습관 하나를 만들어 보세요'
+    },
+    omurice: {
+      sunny: '나에게 다정한 말 한 줄을 써 주세요',
+      rain: '포근한 이불 속에서 잠깐 눈을 감아요',
+      snow: '가족에게 고맙다는 말을 전해 보세요',
+      cloudy: '케첩으로 웃는 얼굴을 그리듯 미소 지어요',
+      custom: '오늘 하루를 그림 한 장으로 남겨 보세요'
+    },
+    'rice-ball': {
+      sunny: '가벼운 산책길에 작은 간식을 챙겨요',
+      rain: '작은 일 하나를 끝내고 나를 칭찬해요',
+      snow: '손을 꼭 쥐었다 펴며 내 힘을 느껴 보세요',
+      cloudy: '물 한 잔을 천천히 마셔 보세요',
+      custom: '오늘 할 일을 딱 하나만 정해 보세요'
+    },
+    custom: {   // 직접 그린 음식
+      sunny: '떠오르는 생각을 그림으로 그려 보세요',
+      rain: '빗소리를 들으며 상상 여행을 떠나요',
+      snow: '하얀 종이에 오늘의 소원을 적어 보세요',
+      cloudy: '좋아하는 색으로 하루를 채워 보세요',
+      custom: '세상에 없는 나만의 것을 하나 만들어 보세요'
+    }
+  };
+  function fortuneLucky(c) {
+    var f = c.food, w = c.weather;
+    var tip = f && w && (luckyTips[f.id] || {})[w.id];
+    if (!tip) return null;
+    return { item: luckyWeather[w.id] + ' ' + (f.name || ''), tip: tip };
+  }
+
   window.StarSoup = {
-    version: '1.46',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.47',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -571,7 +633,8 @@
       // 모든 조합에 공통으로 맨 위에 나오는 문구 (이름이 없으면 '당신')
       title: function (c) { return c.you + '에게 하는 요정의 한마디!'; },
       text: function (c) { return [[fortuneLine(c)]]; },
-      line: fortuneLine
+      line: fortuneLine,
+      lucky: fortuneLucky   // { item, tip } 또는 null (음식·꿈속 날씨를 안 골랐을 때)
     },
     // 삽화 자리에 "어떤 파일을 넣으면 되는지" 경로를 표시한다. 실제 삽화를 다 넣은 뒤에는 false로 바꾼다.
     showAssetNotes: false

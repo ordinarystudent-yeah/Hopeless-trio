@@ -1922,3 +1922,7 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .cover-author { margin: 0; color: #fff6dc; text-shadow: 0 0 0.4cqh #e8901c, 0 0 1.6cqh rgb(245 160 40 / 0.85), 0 0.3cqh 0.8cqh rgb(10 14 40 / 0.7); }
 /* 쪽 번호: 밝은 삽화 위에서도 보이게 진한 갈색 + 옅은 흰 테두리 빛 */
 .folio { color: #4a3418; opacity: 1; text-shadow: 0 0 0.6cqh rgb(255 252 240 / 0.9); }
+/* 편지: 행운의 주문 한 줄 (한마디 아래, 작고 옅게) */
+.fortune-lucky { margin: 0; padding-top: 1.6cqh; border-top: 0.25cqh dashed rgb(168 112 26 / 0.45); display: grid; gap: 0.4cqh; font-size: max(3cqh, 11px); line-height: 1.45; word-break: keep-all; }
+.fortune-lucky-label { font-family: var(--font-display); color: #a8701a; }
+.fortune-lucky-tip { color: #5a4020; }
