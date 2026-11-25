@@ -1939,3 +1939,35 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 }
 @keyframes secret-glow { from { background-position: 0 0, 0% 50%; } to { background-position: 0 0, 300% 50%; } }
 .fortune-body p, .fortune-lucky-tip, .fortune-lucky-label { text-wrap: balance; }
+
+/* ---------- '터치' 안내를 못 보고 넘어가지 않게: 주황 배지 + 손가락 + 통통 튀기 + 퍼지는 빛 고리 (#8 스프 떠먹기, #10 편지) ---------- */
+.scoop-label {
+  display: inline-flex; align-items: center; gap: 0.8cqh; white-space: nowrap;
+  padding: 1cqh 2.6cqh 1.1cqh; border-radius: 999px; font-size: max(5cqh, 14px); line-height: 1.1; color: #fff;
+  background: linear-gradient(180deg, #ffb53f 0%, #ec7f14 100%);
+  border: max(2px, 0.5cqh) solid #fff;
+  box-shadow: 0 0.7cqh 1.6cqh rgb(80 35 0 / 0.5), 0 0 3.4cqh rgb(255 214 120 / 0.95);
+  text-shadow: 0 0.2cqh 0.3cqh rgb(120 50 0 / 0.55);
+}
+.scoop-label::before { content: '👆'; font-size: 1.15em; }
+.fortune .fortune-touch { top: -95%; font-size: max(4.4cqh, 12px); }   /* 누운 봉투 위로 띄우고, 손가락은 봉투를 가리킨다 */
+.fortune .fortune-touch::before { content: '👇'; }
+/* 누를 자리에서 퍼져 나가는 빛 고리 */
+.scoop-layer::after, .fortune.is-hinting::before {
+  content: ""; position: absolute; pointer-events: none; border-radius: 50%;
+  border: max(3px, 0.8cqh) solid rgb(255 236 170 / 0.95); box-shadow: 0 0 2cqh rgb(255 200 90 / 0.9);
+  opacity: 0;
+}
+.scoop-layer::after { left: 50%; top: 51%; width: 30%; aspect-ratio: 1; transform: translate(-50%, -50%); z-index: 4; }
+.scoop-layer.is-scooped::after { display: none; }
+.fortune.is-hinting::before { left: 50%; top: 45%; width: 170%; aspect-ratio: 1.6; transform: translate(-50%, -50%); z-index: -1; }
+@media (prefers-reduced-motion: no-preference) {
+  .scoop-label { animation: touch-bob 1.1s ease-in-out infinite; }
+  .scoop-layer::after, .fortune.is-hinting::before { animation: touch-ripple 1.8s ease-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scoop-layer::after, .fortune.is-hinting::before { opacity: 0.8; }
+}
+@keyframes touch-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1.4cqh; } }
+@keyframes touch-ripple { 0% { scale: 0.75; opacity: 0.95; } 100% { scale: 1.45; opacity: 0; } }
+.book.is-print .scoop-layer::after, .book.is-print .fortune::before, .book.is-print .scoop-label { display: none !important; }
