@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
-<link rel="stylesheet" href="css/style.css?v=1.54">
-<link rel="preload" as="image" href="assets/backgrounds/00-cover.jpg?v=1.54">
-<link rel="stylesheet" href="css/editor.css?v=1.54">
+<link rel="stylesheet" href="css/style.css?v=1.55">
+<link rel="preload" as="image" href="assets/backgrounds/00-cover.jpg?v=1.55">
+<link rel="stylesheet" href="css/editor.css?v=1.55">
 </head>
 <body>
 <div class="app" id="app" data-screen="cover">
@@ -237,12 +237,40 @@
   </div>
 </div>
 
-<script src="js/storage.js?v=1.54"></script>
-<script src="js/story.js?v=1.54"></script>
-<script src="js/drawing.js?v=1.54"></script>
-<script src="js/weather.js?v=1.54"></script>
-<script src="js/sound.js?v=1.54"></script>
-<script src="js/shared.js?v=1.54"></script>
-<script src="js/main.js?v=1.54"></script>
+<div class="modal" id="pdf-modal" hidden>
+  <div class="modal-card pdf-card" role="dialog" aria-modal="true" aria-labelledby="pdf-title">
+    <div class="pdf-head">
+      <h2 id="pdf-title">PDF로 저장하기</h2>
+      <button type="button" class="pdf-x" id="pdf-x" aria-label="닫기">×</button>
+    </div>
+    <p class="pdf-lead">어떤 용도로 저장할까요?</p>
+    <div class="pdf-options" role="radiogroup" aria-label="PDF 용도">
+      <label class="pdf-opt">
+        <input type="radio" name="pdf-purpose" value="screen" checked>
+        <span class="pdf-opt-name">다운용</span>
+        <span class="pdf-opt-desc">휴대폰·컴퓨터로 보고, 가족과 나눠 보기 좋아요.</span>
+        <span class="pdf-tags"><span>책처럼 두 쪽씩 보기</span><span>가벼운 파일</span><span>가운데 접힌 그림자</span></span>
+      </label>
+      <label class="pdf-opt">
+        <input type="radio" name="pdf-purpose" value="print">
+        <span class="pdf-opt-name">인쇄용</span>
+        <span class="pdf-opt-desc">종이에 뽑아서 책으로 엮기 좋아요.</span>
+        <span class="pdf-tags"><span>A4 가로 한 장에 한 쪽</span><span>고화질</span><span>그림자 없이 평평하게</span></span>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="pdf-cancel">취소</button>
+      <button type="button" class="btn btn-primary" id="pdf-ok">PDF 저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/storage.js?v=1.55"></script>
+<script src="js/story.js?v=1.55"></script>
+<script src="js/drawing.js?v=1.55"></script>
+<script src="js/weather.js?v=1.55"></script>
+<script src="js/sound.js?v=1.55"></script>
+<script src="js/shared.js?v=1.55"></script>
+<script src="js/main.js?v=1.55"></script>
 </body>
 </html>

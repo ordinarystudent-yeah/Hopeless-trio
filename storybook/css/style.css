@@ -1968,3 +1968,22 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 @keyframes touch-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -0.9cqh; } }
 @keyframes touch-ripple { 0% { scale: 0.8; opacity: 0.9; } 100% { scale: 1.35; opacity: 0; } }
 .book.is-print .scoop-layer::after, .book.is-print .fortune::before, .book.is-print .scoop-label { display: none !important; }
+
+/* ---------- PDF 용도 고르기 (다운용 / 인쇄용) ---------- */
+.pdf-card { max-width: 560px; gap: 14px; }
+.pdf-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pdf-x { width: 40px; height: 40px; flex: none; border: 0; border-radius: 50%; background: transparent; color: var(--soft); font-size: 26px; line-height: 1; cursor: pointer; }
+.pdf-x:hover { background: var(--night-3); color: var(--milk); }
+.modal-card p.pdf-lead { margin: 0; }
+.pdf-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 520px) { .pdf-options { grid-template-columns: 1fr; } }
+.pdf-opt { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; border: 1.5px solid var(--line); border-radius: 18px; background: var(--night); cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.pdf-opt:hover { border-color: #5d6799; }
+.pdf-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.pdf-opt:has(input:checked) { border-color: var(--soup); background: rgb(255 198 90 / 0.08); }
+.pdf-opt:has(input:focus-visible) { outline: 2px solid var(--soup); outline-offset: 2px; }
+.pdf-opt-name { font-family: var(--font-display); font-size: 1.2rem; color: var(--milk); }
+.pdf-opt:has(input:checked) .pdf-opt-name { color: var(--soup); }
+.pdf-opt-desc { color: var(--soft); font-size: 0.92rem; line-height: 1.45; word-break: keep-all; }
+.pdf-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.pdf-tags span { padding: 3px 9px; border-radius: 999px; background: var(--night-3); color: var(--soft); font-size: 0.78rem; white-space: nowrap; }

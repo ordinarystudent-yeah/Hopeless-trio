@@ -2741,39 +2741,61 @@
     if (!box) { box = el('div', { class: 'pdf-busy', id: 'pdf-busy', role: 'status' }, el('div', { class: 'pdf-busy-card' }, el('span', { class: 'pdf-spin', 'aria-hidden': 'true' }), el('p'))); document.body.append(box); }
     box.querySelector('p').textContent = text;
   }
-  // PDF 저장: '기본'(화면처럼 가운데 접힌 그림자) 또는 '인쇄용'(접힌 그림자 없이 평평하게) 중에서 고른다
+  // PDF 저장: 용도를 고른다 (index.html #pdf-modal)
+  //   다운용: 화면으로 보고 나눠 보기 — 가운데 접힌 그림자, 가벼운 파일, PDF를 열면 책처럼 두 쪽씩 보이게
+  //   인쇄용: 종이에 뽑아 엮기 — 그림자 없이 평평하게, 고화질
+  //   두 가지 모두 모든 쪽을 가로 A4(297×210mm) 한 장에 한 쪽씩 같은 크기로 담는다
   function choosePdf() {
     if (printing || document.getElementById('pdf-busy')) return;
-    ask({
-      title: 'PDF로 저장할까요?',
-      message: '기본: 화면에서 보는 것처럼 책 가운데가 접힌 모습으로 저장해요.\n인쇄용: 가운데 접힌 그림자 없이 평평하게 저장해요. 종이에 뽑아 제본할 때 좋아요.',
-      ok: '인쇄용', cancel: '기본'
-    }).then(function (r) {
-      if (r === null) return;     // 바깥을 누르거나 Esc → 저장하지 않음
-      makePdf({ flat: r === true });
-    });
+    var pm = document.getElementById('pdf-modal');
+    var okBtn = document.getElementById('pdf-ok'), cancelBtn = document.getElementById('pdf-cancel'), xBtn = document.getElementById('pdf-x');
+    var before = document.activeElement;
+    function done(go) {
+      pm.hidden = true;
+      okBtn.onclick = cancelBtn.onclick = xBtn.onclick = null;
+      pm.removeEventListener('click', onBackdrop);
+      document.removeEventListener('keydown', onKey, true);
+      if (before && before.focus) before.focus({ preventScroll: true });
+      if (go) {
+        var r = pm.querySelector('input[name="pdf-purpose"]:checked');
+        makePdf({ purpose: r && r.value === 'print' ? 'print' : 'screen' });
+      }
+    }
+    function onBackdrop(e) { if (e.target === pm) done(false); }
+    function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } }
+    okBtn.onclick = function () { done(true); };
+    cancelBtn.onclick = xBtn.onclick = function () { done(false); };
+    pm.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey, true);
+    pm.hidden = false;
+    var checked = pm.querySelector('input[name="pdf-purpose"]:checked');
+    if (checked) checked.focus();
   }
 
   function makePdf(opt) {
     opt = opt || {};
     if (printing || document.getElementById('pdf-busy')) return;
+    var forPrint = opt.purpose === 'print';
+    var Q = forPrint ? { scale: 2.6, jpeg: 0.95 } : { scale: 1.5, jpeg: 0.85 };   // 인쇄용 약 220dpi, 다운용은 화면용 해상도
     pdfBusy('PDF를 만들 준비를 하고 있어요…');
     var host = el('div', { class: 'pdf-host', 'aria-hidden': 'true' });
-    var pbook = el('div', { class: 'book is-print' + (opt.flat ? ' is-flat' : ''), 'data-mode': 'spread' });
+    var pbook = el('div', { class: 'book is-print' + (forPrint ? ' is-flat' : ''), 'data-mode': 'spread' });
     host.append(pbook);
     document.body.append(host);
-    // 표지는 가로 A4 한 장, 장면은 펼침면(가로 A4 두 쪽을 나란히, 594×210mm) 한 장으로
-    var pdf, PH = 210, first = true, pendingHalf = null;
+    // 모든 쪽을 가로 A4 한 장에 한 쪽씩: 표지 → 1쪽, 2쪽 … (펼침면은 왼쪽·오른쪽으로 나눔, 한 쪽짜리 장면은 왼쪽만) → 뒷표지
+    var pdf, first = true, pageCount = 0;
     var addCanvas = function (cv, sx, sw) {
       var part = document.createElement('canvas'); part.width = sw; part.height = cv.height;
-      part.getContext('2d').drawImage(cv, sx, 0, sw, cv.height, 0, 0, sw, cv.height);
-      var w = Math.round(PH * sw / cv.height);
-      if (!first) pdf.addPage([w, PH], 'landscape');
-      else if (w !== 297) { pdf.deletePage(1); pdf.addPage([w, PH], 'landscape'); }
-      first = false;
-      pdf.addImage(part.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, w, PH);
+      var g = part.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, sw, cv.height);
+      g.drawImage(cv, sx, 0, sw, cv.height, 0, 0, sw, cv.height);
+      if (!first) pdf.addPage('a4', 'landscape');
+      first = false; pageCount++;
+      // 쪽 비율이 297:210과 아주 조금 달라도 늘이지 않고 가운데 맞춤 (cover)
+      var r = sw / cv.height, W = 297, H = 210, w = W, h = W / r;
+      if (h < H) { h = H; w = H * r; }
+      pdf.addImage(part.toDataURL('image/jpeg', Q.jpeg), 'JPEG', (W - w) / 2, (H - h) / 2, w, h, undefined, forPrint ? 'NONE' : 'FAST');
     };
-    var shoot = function (node) { return window.html2canvas(node, { scale: 1.5, backgroundColor: '#ffffff', useCORS: true, logging: false }); };
+    var shoot = function (node) { return window.html2canvas(node, { scale: Q.scale, backgroundColor: '#ffffff', useCORS: true, logging: false }); };
     var chain = Promise.all([loadScript('js/vendor/jspdf.umd.min.js'), loadScript('js/vendor/html2canvas.min.js')]).then(function () {
       pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       // 표지
@@ -2798,28 +2820,14 @@
           .then(function () { return wait(700); })   // 글자 곡선·날씨 그림이 자리 잡을 때까지
           .then(function () { return shoot(pbook); })
           .then(function (cv) {
-            if (sc.onePage) {
-              // 한 쪽짜리 장면(#7 11쪽, #8 13쪽)은 왼쪽 쪽만 떼어 두었다가 둘을 이어 한 장으로 (빈 12·14쪽은 넣지 않는다)
-              var halfW = Math.round(cv.width / 2), part = document.createElement('canvas');
-              part.width = halfW; part.height = cv.height;
-              part.getContext('2d').drawImage(cv, 0, 0, halfW, cv.height, 0, 0, halfW, cv.height);
-              if (!pendingHalf) { pendingHalf = part; }
-              else {
-                var both = document.createElement('canvas'); both.width = pendingHalf.width + halfW; both.height = cv.height;
-                var bg = both.getContext('2d'); bg.drawImage(pendingHalf, 0, 0); bg.drawImage(part, pendingHalf.width, 0);
-                pendingHalf = null;
-                addCanvas(both, 0, both.width);
-              }
-            } else {
-              if (pendingHalf) { addCanvas(pendingHalf, 0, pendingHalf.width); pendingHalf = null; }
-              addCanvas(cv, 0, cv.width);   // 펼침면 그대로 (양면)
-            }
+            var halfW = Math.round(cv.width / 2);
+            addCanvas(cv, 0, halfW);                                   // 왼쪽 쪽
+            if (!sc.onePage) addCanvas(cv, halfW, cv.width - halfW);   // 오른쪽 쪽 (한 쪽짜리 장면 #7·#8은 빈 오른쪽을 넣지 않는다)
             (leaf._teardown || []).forEach(function (fn) { fn(); });
           });
       });
     });
     chain.then(function () {
-      if (pendingHalf) { addCanvas(pendingHalf, 0, pendingHalf.width); pendingHalf = null; }
       // 뒷표지 (화면에는 없고 PDF 맨 끝에만, 가로 A4 한 장)
       if (!S.cover.backImage) return;
       pdfBusy('뒷표지를 담고 있어요…');
@@ -2837,8 +2845,11 @@
       pdfBusy('');
       host.remove();
       var n = (state.name || '').trim();
-      pdf.save('별빛스프' + (n ? '-' + n : '') + '.pdf');
-      toast('PDF로 저장했어요.');
+      pdf.setProperties({ title: '별빛스프' + (n ? ' — ' + n : ''), subject: forPrint ? '인쇄용' : '다운용', creator: '별빛스프 V' + S.version });
+      // 다운용: PDF를 열면 표지 한 장, 그다음부터 두 쪽씩 나란히 (책처럼). 인쇄용: 한 쪽씩
+      pdf.setDisplayMode('fullpage', forPrint ? 'single' : 'tworight');
+      pdf.save('별빛스프' + (n ? '-' + n : '') + (forPrint ? '-인쇄용' : '') + '.pdf');
+      toast((forPrint ? '인쇄용' : '다운용') + ' PDF로 저장했어요. (' + pageCount + '쪽)');
     }, function (err) {
       pdfBusy('');
       host.remove();
