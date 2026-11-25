@@ -1938,3 +1938,4 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
   .fortune-paper.is-secret { animation: secret-glow 4s linear infinite; }
 }
 @keyframes secret-glow { from { background-position: 0 0, 0% 50%; } to { background-position: 0 0, 300% 50%; } }
+.fortune-body p, .fortune-lucky-tip, .fortune-lucky-label { text-wrap: balance; }
