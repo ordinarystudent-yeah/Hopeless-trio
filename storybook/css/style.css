@@ -1926,3 +1926,15 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .fortune-lucky { margin: 0; padding-top: 1.6cqh; border-top: 0.25cqh dashed rgb(168 112 26 / 0.45); display: grid; gap: 0.4cqh; font-size: max(3cqh, 11px); line-height: 1.45; word-break: keep-all; }
 .fortune-lucky-label { font-family: var(--font-display); color: #a8701a; }
 .fortune-lucky-tip { color: #5a4020; }
+/* 이스터 에그: 모두 '직접 그리기'를 고르면 편지지가 무지갯빛 테두리로 반짝인다 */
+.fortune-paper.is-secret {
+  background: linear-gradient(#fffaf0, #fffaf0) padding-box,
+    linear-gradient(120deg, #ff9ec7, #ffd36e, #9ef0a8, #8fd3ff, #c6a2ff, #ff9ec7) border-box;
+  border: max(0.8cqh, 3px) solid transparent;
+  background-size: 100% 100%, 300% 300%;
+}
+.fortune-paper.is-secret .fortune-title { background: linear-gradient(90deg, #e0569a, #e0901c, #3aa36a, #3a86d6, #8a5ad6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+@media (prefers-reduced-motion: no-preference) {
+  .fortune-paper.is-secret { animation: secret-glow 4s linear infinite; }
+}
+@keyframes secret-glow { from { background-position: 0 0, 0% 50%; } to { background-position: 0 0, 300% 50%; } }

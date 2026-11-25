@@ -570,7 +570,7 @@
     // 아래에 행운의 주문 한 줄 (음식 × #1 꿈속 날씨)
     var lk = f.lucky ? f.lucky(c) : null;
     if (lk) box.append(el('p', { class: 'fortune-lucky' },
-      el('span', { class: 'fortune-lucky-label', text: '✨ 행운의 주문 · ' + lk.item }),
+      el('span', { class: 'fortune-lucky-label', text: (lk.label || '✨ 행운의 주문') + ' · ' + lk.item }),
       el('span', { class: 'fortune-lucky-tip', text: lk.tip })));
     return box;
   }
@@ -665,7 +665,8 @@
     var close = el('button', { type: 'button', class: 'fortune-close', 'aria-label': '메모 닫기' }, '×');
     var ft = S.fortune && S.fortune.title, title = typeof ft === 'function' ? ft(c) : (ft || '요정의 한마디!');
     // 펼친 모습: 덮개가 열린 봉투가 비스듬히 놓이고, 그 위로 편지지가 쏙 나와 있다 (글은 편지지에)
-    var paper = el('div', { class: 'fortune-paper' }, close, el('h3', { class: 'fortune-title', text: title }), fortuneBody(c));
+    var secret = !!(S.fortune && S.fortune.secret && S.fortune.secret(c));   // 모두 '직접 그리기' → 비밀 편지
+    var paper = el('div', { class: 'fortune-paper' + (secret ? ' is-secret' : '') }, close, el('h3', { class: 'fortune-title', text: title }), fortuneBody(c));
     var card = el('div', { class: 'fortune-letter', role: 'dialog', 'aria-label': title },
       el('img', { class: 'fortune-env', src: 'assets/fortune/envelope-open.png', alt: '', draggable: 'false' }), paper);
     var veil = el('div', { class: 'fortune-open' }, card);

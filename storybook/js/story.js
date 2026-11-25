@@ -604,14 +604,22 @@
     }
   };
   function fortuneLucky(c) {
+    if (fortuneSecret(c)) return { item: '세상에 하나뿐인 당신의 그림', tip: '오늘 그린 그림에 이름을 붙여 소중히 간직해 보세요', label: '🌈 비밀 주문' };
     var f = c.food, w = c.weather;
     var tip = f && w && (luckyTips[f.id] || {})[w.id];
     if (!tip) return null;
     return { item: luckyWeather[w.id] + ' ' + (f.name || ''), tip: tip };
   }
 
+
+  /* 이스터 에그: 꿈속 날씨·음식·스프 맛·창 밖 날씨를 모두 '직접 그리기'로 고르면 비밀 편지가 나온다 ('때'에는 직접 그리기가 없다).
+     제목·한마디·행운의 주문이 모두 바뀌고, 편지지가 무지갯빛으로 반짝인다 (style.css .fortune-paper.is-secret) */
+  function fortuneSecret(c) {
+    return ['weather', 'food', 'taste', 'wakeWeather'].every(function (k) { return c[k] && c[k].id === 'custom'; });
+  }
+
   window.StarSoup = {
-    version: '1.47',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.48',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
@@ -631,8 +639,11 @@
     // text(c): 지금까지 고른 조합(c.time, c.taste, c.wakeWeather)에 맞는 한 문장 → 위의 fortuneLine
     fortune: {
       // 모든 조합에 공통으로 맨 위에 나오는 문구 (이름이 없으면 '당신')
-      title: function (c) { return c.you + '에게 하는 요정의 한마디!'; },
-      text: function (c) { return [[fortuneLine(c)]]; },
+      title: function (c) { return fortuneSecret(c) ? '🎨 ' + c.you + '에게만 보이는 비밀 편지!' : c.you + '에게 하는 요정의 한마디!'; },
+      text: function (c) {
+        return [[fortuneSecret(c) ? '하늘도, 음식도, 맛도 모두 직접 그려 낸 당신은 이미 멋진 이야기의 작가예요.' : fortuneLine(c)]];
+      },
+      secret: fortuneSecret,
       line: fortuneLine,
       lucky: fortuneLucky   // { item, tip } 또는 null (음식·꿈속 날씨를 안 골랐을 때)
     },
