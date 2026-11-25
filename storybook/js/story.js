@@ -373,15 +373,15 @@
 
   /* ---------- 표지 ---------- */
   var cover = {
-    image: 'assets/backgrounds/00-cover.jpg',          // 앞표지 그림 (가로 A4, 297:210)
-    backImage: 'assets/backgrounds/00-back-cover.jpg', // 뒷표지: 화면에는 안 띄우고 PDF 맨 끝에만
+    image: 'assets/backgrounds/00-cover.jpg?v=1.44',          // 앞표지 그림 (가로 A4, 297:210) — 제목·소제목 글씨가 그림 안에 들어 있다
+    backImage: 'assets/backgrounds/00-back-cover.jpg?v=1.44', // 뒷표지: 화면에는 안 띄우고 PDF 맨 끝에만
     kicker: '꿈속 식탁 이야기',
     title: '별빛스프',
     subtitle: '착한 아이에게 주는 특별한 스프'
   };
 
   window.StarSoup = {
-    version: '1.43',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.44',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
