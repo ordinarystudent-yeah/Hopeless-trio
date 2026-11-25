@@ -569,8 +569,8 @@
     if (lines && lines.length) append(box, paragraphs(lines));
     // 아래에 행운의 주문 한 줄 (음식 × #1 꿈속 날씨)
     var lk = f.lucky ? f.lucky(c) : null;
+    // (주황 글씨 '행운의 주문 · 날씨 음식' 줄은 넣지 않고, 해 볼 일 한 줄만)
     if (lk) box.append(el('p', { class: 'fortune-lucky' },
-      el('span', { class: 'fortune-lucky-label', text: (lk.label || '✨ 행운의 주문') + ' · ' + lk.item }),
       el('span', { class: 'fortune-lucky-tip', text: lk.tip })));
     return box;
   }
