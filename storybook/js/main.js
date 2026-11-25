@@ -592,7 +592,7 @@
     var note = el('button', { type: 'button', class: 'fortune-note', 'aria-label': '황금빛 편지 열기' },
       el('img', { src: 'assets/fortune/envelope-closed.png', alt: '', draggable: 'false' }));
     var ring = el('span', { class: 'fortune-glow', 'aria-hidden': 'true' });   // 동그란 원 대신 메모 자체가 은은하게 빛난다
-    var label = el('span', { class: 'scoop-label fortune-touch', 'aria-hidden': 'true', text: '편지를 눌러 봐!' });
+    var label = el('span', { class: 'scoop-label fortune-touch', 'aria-hidden': 'true', text: '편지 열어 보기' });
     fly.append(note);
     wrap.append(fly, label);   // '터치'는 돌아가지 않게 봉투 밖에
     var beat = { duration: 2400, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' };
@@ -600,7 +600,7 @@
     function showHint() {
       if (!ring.animate) return;
       wrap.classList.add('is-hinting');   // 봉투 둘레로 빛 고리가 퍼지고 '터치' 배지가 통통 튄다 (style.css)
-      hints = [note.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.18) drop-shadow(0 0 2.2cqh rgb(255 220 120 / 1))' }], { duration: 1200, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' })];
+      hints = [note.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.12) drop-shadow(0 0 1.6cqh rgb(255 220 120 / 0.9))' }], { duration: 1200, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' })];
     }
     function hideHint() { wrap.classList.remove('is-hinting'); hints.forEach(function (a) { a.cancel(); }); hints = []; ring.style.opacity = label.style.opacity = '0'; }
     var visible = function () { return mode === 'spread' || state.page === 1; };
@@ -2877,7 +2877,7 @@
     var sink = spoon.querySelector('.pot-spoon-sink'), soup = spoon.querySelector('.pot-spoon-soup');
     var ring = el('button', { type: 'button', class: 'scoop-target', 'aria-label': '별빛스프 한 숟갈 떠먹기' });
     // '터치'는 원 위에 따로 얹어, 원과 같은 박자로 깜빡이되 더 밝게 (원은 0.25~1, 글자는 0.7~1). 누르면 아래 원이 받는다
-    var label = el('span', { class: 'scoop-label', 'aria-hidden': 'true', text: '눌러서 먹어 봐!' });
+    var label = el('span', { class: 'scoop-label', 'aria-hidden': 'true', text: '눌러서 먹어 보기' });
     box.append(spoon, ring, label);
     var beat = { duration: 2400, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' };
     var blink = ring.animate ? ring.animate([{ opacity: 0.25 }, { opacity: 1 }], beat) : null;
