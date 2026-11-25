@@ -563,10 +563,10 @@
      그 뒤로는 창틀에 놓여 있다. 스프 떠먹기처럼 '터치' 안내가 깜빡이고, 누르면 메모가 커지며 펼쳐진다 (위에 × 닫기).
      내용은 펼칠 때마다 지금 고른 조합으로 다시 만든다 → 선택지를 바꾸면 메모 내용도 바뀐다 (다시 떨어지지는 않음). */
   function fortuneBody(c) {
-    // 조합별 문구(fortune.text)가 정해지면 공통 문구 아래에 나온다. 아직은 공통 문구만
+    // 조합별 한 문장(story.js fortuneLine)이 제목 아래에 나온다
     var f = S.fortune || {}, lines = f.text ? f.text(c) : null;
     var box = el('div', { class: 'fortune-body' });
-    if (lines && lines.length) box.append(paragraphs(lines));
+    if (lines && lines.length) append(box, paragraphs(lines));
     return box;
   }
   function fortuneNote(leaf, page) {
