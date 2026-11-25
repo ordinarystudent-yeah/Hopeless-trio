@@ -592,7 +592,7 @@
       sunny: '산책 갈 때 작은 간식을 챙겨 가',
       rain: '작은 일 하나 끝내고 너를 칭찬해 줘',
       snow: '손을 꼭 쥐었다 펴며 네 힘을 느껴 봐',
-      cloudy: '물 한 잔을 천천히 마셔 봐',
+      cloudy: '흐린 날일수록 밥 든든히 챙겨 먹자!',
       custom: '오늘 할 일을 딱 하나만 정해 봐'
     },
     custom: {   // 직접 그린 음식
@@ -619,7 +619,7 @@
   }
 
   window.StarSoup = {
-    version: '1.51',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
+    version: '1.52',   // 게시할 때마다 0.01씩 올린다 (1.19 → 1.20 …, index.html의 ?v= 와 맞춘다)
     cover: cover,
     acts: acts,
     foods: foods,
