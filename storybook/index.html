@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
-<link rel="stylesheet" href="css/style.css?v=1.55">
-<link rel="preload" as="image" href="assets/backgrounds/00-cover.jpg?v=1.55">
-<link rel="stylesheet" href="css/editor.css?v=1.55">
+<link rel="stylesheet" href="css/style.css?v=1.56">
+<link rel="preload" as="image" href="assets/backgrounds/00-cover.jpg?v=1.56">
+<link rel="stylesheet" href="css/editor.css?v=1.56">
 </head>
 <body>
 <div class="app" id="app" data-screen="cover">
@@ -109,7 +109,7 @@
       <button type="button" class="btn btn-primary" id="btn-recap">나의 기록</button>
       <button type="button" class="btn btn-ghost" id="btn-reread">동화 다시 보기</button>
       <button type="button" class="btn btn-ghost" id="btn-restart">처음부터 하기</button>
-      <button type="button" class="btn btn-soft" id="btn-pdf">PDF로 저장하기</button>
+      <button type="button" class="btn btn-soft" id="btn-pdf">PDF·PNG로 저장하기</button>
     </div>
   </nav>
 </div>
@@ -240,11 +240,11 @@
 <div class="modal" id="pdf-modal" hidden>
   <div class="modal-card pdf-card" role="dialog" aria-modal="true" aria-labelledby="pdf-title">
     <div class="pdf-head">
-      <h2 id="pdf-title">PDF로 저장하기</h2>
+      <h2 id="pdf-title">저장하기</h2>
       <button type="button" class="pdf-x" id="pdf-x" aria-label="닫기">×</button>
     </div>
-    <p class="pdf-lead">어떤 용도로 저장할까요?</p>
-    <div class="pdf-options" role="radiogroup" aria-label="PDF 용도">
+    <p class="pdf-lead">어떤 방식으로 저장할까요?</p>
+    <div class="pdf-options" role="radiogroup" aria-label="저장 방식">
       <label class="pdf-opt">
         <input type="radio" name="pdf-purpose" value="screen" checked>
         <span class="pdf-opt-name">다운용</span>
@@ -257,20 +257,26 @@
         <span class="pdf-opt-desc">종이에 뽑아서 책으로 엮기 좋아요.</span>
         <span class="pdf-tags"><span>A4 가로 한 장에 한 쪽</span><span>고화질</span><span>그림자 없이 평평하게</span></span>
       </label>
+      <label class="pdf-opt">
+        <input type="radio" name="pdf-purpose" value="png">
+        <span class="pdf-opt-name">PNG 그림</span>
+        <span class="pdf-opt-desc">쪽마다 그림 파일로 받아 사진첩·SNS에 올리기 좋아요.</span>
+        <span class="pdf-tags"><span>쪽마다 한 장씩</span><span>zip으로 묶어서</span><span>선명한 그림</span></span>
+      </label>
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost" id="pdf-cancel">취소</button>
-      <button type="button" class="btn btn-primary" id="pdf-ok">PDF 저장</button>
+      <button type="button" class="btn btn-primary" id="pdf-ok">저장하기</button>
     </div>
   </div>
 </div>
 
-<script src="js/storage.js?v=1.55"></script>
-<script src="js/story.js?v=1.55"></script>
-<script src="js/drawing.js?v=1.55"></script>
-<script src="js/weather.js?v=1.55"></script>
-<script src="js/sound.js?v=1.55"></script>
-<script src="js/shared.js?v=1.55"></script>
-<script src="js/main.js?v=1.55"></script>
+<script src="js/storage.js?v=1.56"></script>
+<script src="js/story.js?v=1.56"></script>
+<script src="js/drawing.js?v=1.56"></script>
+<script src="js/weather.js?v=1.56"></script>
+<script src="js/sound.js?v=1.56"></script>
+<script src="js/shared.js?v=1.56"></script>
+<script src="js/main.js?v=1.56"></script>
 </body>
 </html>

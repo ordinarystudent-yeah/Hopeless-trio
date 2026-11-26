@@ -1970,13 +1970,14 @@ button, .tile, .chip { touch-action: manipulation; }   /* 두 번 탭 확대와 
 .book.is-print .scoop-layer::after, .book.is-print .fortune::before, .book.is-print .scoop-label { display: none !important; }
 
 /* ---------- PDF 용도 고르기 (다운용 / 인쇄용) ---------- */
-.pdf-card { max-width: 560px; gap: 14px; }
+.pdf-card { max-width: 760px; gap: 14px; }
 .pdf-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .pdf-x { width: 40px; height: 40px; flex: none; border: 0; border-radius: 50%; background: transparent; color: var(--soft); font-size: 26px; line-height: 1; cursor: pointer; }
 .pdf-x:hover { background: var(--night-3); color: var(--milk); }
 .modal-card p.pdf-lead { margin: 0; }
-.pdf-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 520px) { .pdf-options { grid-template-columns: 1fr; } }
+.pdf-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 700px) { .pdf-options { grid-template-columns: 1fr; } .pdf-opt { padding: 12px 14px; gap: 6px; } }
+.pdf-card { max-height: calc(100dvh - 32px); overflow-y: auto; }
 .pdf-opt { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; border: 1.5px solid var(--line); border-radius: 18px; background: var(--night); cursor: pointer; transition: border-color 0.15s, background 0.15s; }
 .pdf-opt:hover { border-color: #5d6799; }
 .pdf-opt input { position: absolute; opacity: 0; pointer-events: none; }

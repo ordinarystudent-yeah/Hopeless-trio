@@ -2741,7 +2741,7 @@
     if (!box) { box = el('div', { class: 'pdf-busy', id: 'pdf-busy', role: 'status' }, el('div', { class: 'pdf-busy-card' }, el('span', { class: 'pdf-spin', 'aria-hidden': 'true' }), el('p'))); document.body.append(box); }
     box.querySelector('p').textContent = text;
   }
-  // PDF 저장: 용도를 고른다 (index.html #pdf-modal)
+  // PDF 저장: 용도를 고른다 (index.html #pdf-modal) — PNG(쪽마다 그림 한 장, zip으로 묶음)도
   //   다운용: 화면으로 보고 나눠 보기 — 가운데 접힌 그림자, 가벼운 파일, PDF를 열면 책처럼 두 쪽씩 보이게
   //   인쇄용: 종이에 뽑아 엮기 — 그림자 없이 평평하게, 고화질
   //   두 가지 모두 모든 쪽을 가로 A4(297×210mm) 한 장에 한 쪽씩 같은 크기로 담는다
@@ -2758,7 +2758,7 @@
       if (before && before.focus) before.focus({ preventScroll: true });
       if (go) {
         var r = pm.querySelector('input[name="pdf-purpose"]:checked');
-        makePdf({ purpose: r && r.value === 'print' ? 'print' : 'screen' });
+        makePdf({ purpose: r && (r.value === 'print' || r.value === 'png') ? r.value : 'screen' });
       }
     }
     function onBackdrop(e) { if (e.target === pm) done(false); }
@@ -2775,19 +2775,35 @@
   function makePdf(opt) {
     opt = opt || {};
     if (printing || document.getElementById('pdf-busy')) return;
-    var forPrint = opt.purpose === 'print';
-    var Q = forPrint ? { scale: 2.6, jpeg: 0.95 } : { scale: 1.5, jpeg: 0.85 };   // 인쇄용 약 220dpi, 다운용은 화면용 해상도
-    pdfBusy('PDF를 만들 준비를 하고 있어요…');
+    var forPrint = opt.purpose === 'print', forPng = opt.purpose === 'png';
+    // 인쇄용 약 220dpi, PNG는 쪽마다 2000px 너비, 다운용은 화면용 해상도
+    var Q = forPrint ? { scale: 2.6, jpeg: 0.95 } : forPng ? { scale: 2 } : { scale: 1.5, jpeg: 0.85 };
+    var what = forPng ? 'PNG 그림' : 'PDF';
+    pdfBusy(what + '을 만들 준비를 하고 있어요…');
     var host = el('div', { class: 'pdf-host', 'aria-hidden': 'true' });
-    var pbook = el('div', { class: 'book is-print' + (forPrint ? ' is-flat' : ''), 'data-mode': 'spread' });
+    var pbook = el('div', { class: 'book is-print' + (forPrint || forPng ? ' is-flat' : ''), 'data-mode': 'spread' });
     host.append(pbook);
     document.body.append(host);
     // 모든 쪽을 가로 A4 한 장에 한 쪽씩: 표지 → 1쪽, 2쪽 … (펼침면은 왼쪽·오른쪽으로 나눔, 한 쪽짜리 장면은 왼쪽만) → 뒷표지
-    var pdf, first = true, pageCount = 0;
-    var addCanvas = function (cv, sx, sw) {
+    // PNG: 같은 순서로 쪽마다 PNG 한 장씩 만들어 zip 하나로 묶는다 (00-cover.png, 01.png … 17-back-cover.png)
+    var pdf, zip, pngJobs = [], first = true, pageCount = 0;
+    var addCanvas = function (cv, sx, sw, name) {
       var part = document.createElement('canvas'); part.width = sw; part.height = cv.height;
       var g = part.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, sw, cv.height);
       g.drawImage(cv, sx, 0, sw, cv.height, 0, 0, sw, cv.height);
+      if (forPng) {
+        // 모든 그림을 같은 크기(2000×1414, 가로 A4 비율)로. 비율이 조금 달라도 늘이지 않고 가운데 맞춤
+        var out = document.createElement('canvas'); out.width = 2000; out.height = 1414;
+        var og = out.getContext('2d'), rr = sw / cv.height, ow = 2000, oh = 2000 / rr;
+        if (oh < 1414) { oh = 1414; ow = 1414 * rr; }
+        og.imageSmoothingQuality = 'high';
+        og.drawImage(part, (2000 - ow) / 2, (1414 - oh) / 2, ow, oh);
+        // 파일 이름은 영문 (압축 프로그램에 따라 한글 이름이 깨지므로)
+        var file = (pageCount < 10 ? '0' : '') + pageCount + (name ? '-' + name : '') + '.png';
+        pageCount++;
+        pngJobs.push(new Promise(function (res) { out.toBlob(function (b) { if (b) zip.file(file, b); res(); }, 'image/png'); }));
+        return;
+      }
       if (!first) pdf.addPage('a4', 'landscape');
       first = false; pageCount++;
       // 쪽 비율이 297:210과 아주 조금 달라도 늘이지 않고 가운데 맞춤 (cover)
@@ -2796,8 +2812,9 @@
       pdf.addImage(part.toDataURL('image/jpeg', Q.jpeg), 'JPEG', (W - w) / 2, (H - h) / 2, w, h, undefined, forPrint ? 'NONE' : 'FAST');
     };
     var shoot = function (node) { return window.html2canvas(node, { scale: Q.scale, backgroundColor: '#ffffff', useCORS: true, logging: false }); };
-    var chain = Promise.all([loadScript('js/vendor/jspdf.umd.min.js'), loadScript('js/vendor/html2canvas.min.js')]).then(function () {
-      pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    var chain = Promise.all([loadScript(forPng ? 'js/vendor/jszip.min.js' : 'js/vendor/jspdf.umd.min.js'), loadScript('js/vendor/html2canvas.min.js')]).then(function () {
+      if (forPng) zip = new window.JSZip();
+      else pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       // 표지
       pdfBusy('표지를 담고 있어요…');
       paintAuthor();
@@ -2805,11 +2822,11 @@
       cover.removeAttribute('id'); cover.querySelectorAll('[id]').forEach(function (n) { n.removeAttribute('id'); });
       cover.classList.add('is-print-cover');
       host.append(cover);
-      return wait(300).then(function () { return shoot(cover); }).then(function (cv) { addCanvas(cv, 0, cv.width); cover.remove(); });
+      return wait(300).then(function () { return shoot(cover); }).then(function (cv) { addCanvas(cv, 0, cv.width, 'cover'); cover.remove(); });
     });
     S.scenes.forEach(function (sc, i) {
       chain = chain.then(function () {
-        pdfBusy('PDF를 만들고 있어요… (' + (i + 1) + ' / ' + S.scenes.length + ')');
+        pdfBusy(what + '을 만들고 있어요… (' + (i + 1) + ' / ' + S.scenes.length + ')');
         var keep = mode; mode = 'spread'; printing = true;
         var leaf;
         try { leaf = buildLeaf(i); } finally { printing = false; mode = keep; }
@@ -2836,15 +2853,26 @@
         im.onload = function () {
           var cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight;
           cv.getContext('2d').drawImage(im, 0, 0);
-          addCanvas(cv, 0, cv.width); resolve();
+          addCanvas(cv, 0, cv.width, 'back-cover'); resolve();
         };
         im.onerror = function () { resolve(); };
         im.src = S.cover.backImage;
       });
     }).then(function () {
+      if (!forPng) return;
+      pdfBusy('그림을 하나로 묶고 있어요…');
+      return Promise.all(pngJobs).then(function () { return zip.generateAsync({ type: 'blob' }); }).then(function (blob) { zip = blob; });
+    }).then(function () {
       pdfBusy('');
       host.remove();
       var n = (state.name || '').trim();
+      if (forPng) {
+        var a = el('a', { href: URL.createObjectURL(zip), download: '별빛스프' + (n ? '-' + n : '') + '-그림.zip' });
+        document.body.append(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000);
+        toast('PNG 그림 ' + pageCount + '장을 zip 파일로 저장했어요.');
+        return;
+      }
       pdf.setProperties({ title: '별빛스프' + (n ? ' — ' + n : ''), subject: forPrint ? '인쇄용' : '다운용', creator: '별빛스프 V' + S.version });
       // 다운용: PDF를 열면 표지 한 장, 그다음부터 두 쪽씩 나란히 (책처럼). 인쇄용: 한 쪽씩
       pdf.setDisplayMode('fullpage', forPrint ? 'single' : 'tworight');
@@ -2853,7 +2881,7 @@
     }, function (err) {
       pdfBusy('');
       host.remove();
-      toast('PDF를 만들지 못했어요. 잠시 뒤 다시 해 주세요.');
+      toast(what + '을 만들지 못했어요. 잠시 뒤 다시 해 주세요.');
       if (window.console) console.error(err);
     });
   }
